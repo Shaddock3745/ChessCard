@@ -436,16 +436,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7357398af14895a4fb156f8886caa163, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIManager
-  positionHintItemPrefab: {fileID: 7055330729408079979, guid: 48ad1742c2208e34db61cc81867c95d2, type: 3}
-  typeSpriteConfigs:
-  - type: 0
-    sprite: {fileID: 0}
-  - type: 1
-    sprite: {fileID: 21300000, guid: 5b4d4aa65c262044cbe12f761162beb9, type: 3}
-  - type: 2
-    sprite: {fileID: 21300000, guid: 94b0c9c05f781c541b0d10f87f116975, type: 3}
-  - type: 3
-    sprite: {fileID: 21300000, guid: 24473dd91982ddc4fbe3d778fabdb10f, type: 3}
 --- !u!4 &1170220097
 Transform:
   m_ObjectHideFlags: 0
@@ -491,6 +481,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardManager
   piecePrefab: {fileID: 7927473904604455407, guid: 2f45a722daa5a34438af79e7ce88acc7, type: 3}
+  tilePrefab: {fileID: 4752603091014767210, guid: 10529db85b3c91644a5135ada88e4e81, type: 3}
   pieceDatas:
   - {fileID: 11400000, guid: 0981b73b553139e47910a92ff31c6b7c, type: 2}
   - {fileID: 11400000, guid: 771214f558afbe040aef996f8ae636e0, type: 2}

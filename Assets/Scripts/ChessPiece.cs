@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
-using static MovementStrategy;
 
 public class ChessPiece : MonoBehaviour
 {
     private SpriteRenderer spriteRenderer;
     private PieceData pieceBasicData;
-    private MovementStrategy.MovementType movementType;
+    private MovementType movementType;
 
     void Awake()
     {
@@ -31,10 +30,16 @@ public class ChessPiece : MonoBehaviour
         spriteRenderer.sprite = pieceBasicData.getPieceSprite();
         gameObject.name = (pieceBasicData.isWhite()?"White_":"Black_") + pieceBasicData.getChessType().ToString();
 
-        switch (data.getChessType())
+        movementType = data.getChessType() switch
         {
-            // todo
-        }
+            ChessType.Pawn => new PawnMovement(),
+            ChessType.Rook => new RookMovement(),
+            ChessType.Bishop => new BishopMovement(),
+            ChessType.Knight => new KnightMovement(),
+            ChessType.Queen => new QueenMovement(),
+            ChessType.King => new KingMovement(),
+            _ => null
+        };        
     }
 
     public bool isWhite()

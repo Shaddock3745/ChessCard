@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8840641749028748724}
   - component: {fileID: 5941810629510293086}
   - component: {fileID: 5806598321669678335}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: ChessPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
