@@ -10,7 +10,7 @@ public enum ChessType
     King = 5
 }
 
-[CreateAssetMenu(fileName = "NewPiece", menuName = "Chess/PieceData")]
+[CreateAssetMenu(fileName = "NewPiece", menuName = "PieceData")]
 public class PieceData: ScriptableObject
 {    
 

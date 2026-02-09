@@ -1,0 +1,338 @@
+[
+  {
+    "id": 1,
+    "name_tw": "士兵",
+    "name_en": "Pawn",
+    "cost": 1,
+    "desc_tw": "召喚",
+    "desc_en": "Summon."
+  },
+  {
+    "id": 2,
+    "name_tw": "主教",
+    "name_en": "Bishop",
+    "cost": 3,
+    "desc_tw": "召喚",
+    "desc_en": "Summon."
+  },
+  {
+    "id": 3,
+    "name_tw": "騎士",
+    "name_en": "Knight",
+    "cost": 3,
+    "desc_tw": "召喚",
+    "desc_en": "Summon."
+  },
+  {
+    "id": 4,
+    "name_tw": "城堡",
+    "name_en": "Rook",
+    "cost": 3,
+    "desc_tw": "召喚",
+    "desc_en": "Summon."
+  },
+  {
+    "id": 5,
+    "name_tw": "皇后",
+    "name_en": "Queen",
+    "cost": 5,
+    "desc_tw": "召喚",
+    "desc_en": "Summon."
+  },
+  {
+    "id": 6,
+    "name_tw": "徵兵令",
+    "name_en": "Conscription",
+    "cost": 1,
+    "desc_tw": "僅限我方士兵數量<3時可發動，手牌加入兩張「士兵」(Cost變為0)",
+    "desc_en": "Only if pawns < 3. Add 2 'Pawn' cards (Cost 0) to hand."
+  },
+  {
+    "id": 7,
+    "name_tw": "王車易位",
+    "name_en": "Castling",
+    "cost": 3,
+    "desc_tw": "我方國王與一枚我方城堡互換位置，這回合該城堡無法移動",
+    "desc_en": "Swap King and a Rook. The Rook cannot move this turn."
+  },
+  {
+    "id": 8,
+    "name_tw": "政教合一",
+    "name_en": "Union of Church and State",
+    "cost": 2,
+    "desc_tw": "這回合我方國王可依主教移動方式移動",
+    "desc_en": "King moves like a Bishop this turn."
+  },
+  {
+    "id": 9,
+    "name_tw": "咆嘯",
+    "name_en": "Roar",
+    "cost": 2,
+    "desc_tw": "選擇我方一枚棋子，該棋子周圍8格敵方棋子向外擊退一格",
+    "desc_en": "Selected piece knocks back surrounding enemies 1 square."
+  },
+  {
+    "id": 10,
+    "name_tw": "護盾",
+    "name_en": "Shield",
+    "cost": 2,
+    "desc_tw": "僅限我方棋子數量<對方棋子數量可發動，選擇我方一枚國王以外棋子，下回合對方不能選擇該棋子作為攻擊目標",
+    "desc_en": "Only if outnumbered. One piece (not King) becomes untargetable next turn."
+  },
+  {
+    "id": 11,
+    "name_tw": "亢奮",
+    "name_en": "Adrenaline",
+    "cost": 1,
+    "desc_tw": "選擇我方一枚士兵，直到下一個我方回合結束前，該士兵可橫向或向後移動一格，或是往前移動兩格",
+    "desc_en": "One pawn can move sideways/backwards or 2 squares forward until next turn end."
+  },
+  {
+    "id": 12,
+    "name_tw": "神聖加護",
+    "name_en": "Holy Protection",
+    "cost": 4,
+    "desc_tw": "選擇我方一枚主教，下回合對方不能選擇該主教及其周圍8格棋子作為攻擊目標",
+    "desc_en": "One Bishop and its surrounding 8 squares become untargetable next turn."
+  },
+  {
+    "id": 13,
+    "name_tw": "蓄勢待發",
+    "name_en": "Biding Time",
+    "cost": 3,
+    "desc_tw": "這回合我方無法移動棋子，下一個我方回合AP+3",
+    "desc_en": "Cannot move this turn; AP +3 next turn."
+  },
+  {
+    "id": 14,
+    "name_tw": "愈戰愈勇",
+    "name_en": "Battle Hardened",
+    "cost": 5,
+    "desc_tw": "選擇我方一枚士兵，這回合該士兵移動無須消耗AP，且我方僅能移動該士兵，若該士兵成功吃子，可繼續移動",
+    "desc_en": "One pawn moves for 0 AP; only this pawn can move. Can move again if it captures."
+  },
+  {
+    "id": 15,
+    "name_tw": "限制令",
+    "name_en": "Restriction Order",
+    "cost": 4,
+    "desc_tw": "下一回合，對方若發動卡牌，該回合對方無法移動棋子",
+    "desc_en": "Next turn, if opponent uses a card, they cannot move pieces."
+  },
+  {
+    "id": 16,
+    "name_tw": "鐐銬",
+    "name_en": "Shackles",
+    "cost": 2,
+    "desc_tw": "僅限對方棋子數量>4且我方棋子數量<對方棋子數量時可發動，選擇對方一枚國王以外棋子，下回合對方無法移動該棋子，直到下一個我方回合結束前，我方無法選擇該棋子為攻擊對象",
+    "desc_en": "If opponent has > 4 pieces and outnumbers us: one enemy becomes unmoveable and untargetable next turn."
+  },
+  {
+    "id": 17,
+    "name_tw": "一換一",
+    "name_en": "Trade-off",
+    "cost": 4,
+    "desc_tw": "選擇我方及對方一枚種類相同的棋子，該兩枚棋子從場上移除",
+    "desc_en": "Remove one piece from both sides of the same type."
+  },
+  {
+    "id": 18,
+    "name_tw": "施術準備",
+    "name_en": "Preparation",
+    "cost": 1,
+    "desc_tw": "抽取兩張牌，這回合我方不能發動「施術準備」",
+    "desc_en": "Draw 2 cards. Cannot use 'Preparation' again this turn."
+  },
+  {
+    "id": 19,
+    "name_tw": "回收",
+    "name_en": "Recycle",
+    "cost": 2,
+    "desc_tw": "選擇棄牌區兩張牌加入手牌(不能選擇「回收」)",
+    "desc_en": "Add 2 cards from discard pile to hand (excluding 'Recycle')."
+  },
+  {
+    "id": 20,
+    "name_tw": "冊封",
+    "name_en": "Ennoblement",
+    "cost": 2,
+    "desc_tw": "僅限我方騎士數量=0且士兵數量>=2時可發動，移除我方一枚士兵，手牌加入一張「騎士」(Cost變為0)",
+    "desc_en": "If knights = 0 and pawns >= 2: remove 1 pawn, add 1 'Knight' (Cost 0)."
+  },
+  {
+    "id": 21,
+    "name_tw": "再填充",
+    "name_en": "Redraw",
+    "cost": 1,
+    "desc_tw": "選擇我方任意數量的手牌送回牌組，之後抽出同樣數量的牌",
+    "desc_en": "Shuffle any number of hand cards into deck, then draw the same amount."
+  },
+  {
+    "id": 22,
+    "name_tw": "政治聯姻",
+    "name_en": "Political Marriage",
+    "cost": 4,
+    "desc_tw": "手牌加入一張「皇后」(Cost變為0)，這回合我方無法攻擊，下回合對方AP+2",
+    "desc_en": "Add 1 'Queen' (Cost 0). No attack this turn; opponent AP +2 next turn."
+  },
+  {
+    "id": 23,
+    "name_tw": "停戰協議",
+    "name_en": "Ceasefire",
+    "cost": 4,
+    "desc_tw": "直到下一個我方回合結束前，雙方無法攻擊",
+    "desc_en": "Neither side can attack until the end of our next turn."
+  },
+  {
+    "id": 24,
+    "name_tw": "求援",
+    "name_en": "Call for Help",
+    "cost": 1,
+    "desc_tw": "隨機將我方牌組內一張棋子卡加入手牌",
+    "desc_en": "Add a random piece card from deck to hand."
+  },
+  {
+    "id": 25,
+    "name_tw": "千里馬",
+    "name_en": "Swift Horse",
+    "cost": 2,
+    "desc_tw": "這回合我方騎士不可攻擊，可移動2次",
+    "desc_en": "Knights cannot attack this turn but can move twice."
+  },
+  {
+    "id": 26,
+    "name_tw": "大飢荒",
+    "name_en": "Great Famine",
+    "cost": 3,
+    "desc_tw": "直到下一個我方回合結束前，雙方無法召喚",
+    "desc_en": "Neither side can summon until the end of our next turn."
+  },
+  {
+    "id": 27,
+    "name_tw": "通貨膨脹",
+    "name_en": "Inflation",
+    "cost": 3,
+    "desc_tw": "直到下一個我方回合結束前，雙方所有手牌Cost+1，移動消耗+1",
+    "desc_en": "Until next turn end: card Cost +1 and movement cost +1 for both sides."
+  },
+  {
+    "id": 28,
+    "name_tw": "捨身取義",
+    "name_en": "Self-Sacrifice",
+    "cost": 0,
+    "desc_tw": "移除我方一枚國王以外的棋子， AP+2並抽一張牌。",
+    "desc_en": "Remove one piece (not King); AP +2 and draw 1 card."
+  },
+  {
+    "id": 29,
+    "name_tw": "御駕親征",
+    "name_en": "Emperor's Crusade",
+    "cost": 3,
+    "desc_tw": "這回合我方國王可依皇后移動方式移動，不能攻擊對方國王",
+    "desc_en": "King moves like a Queen this turn (cannot attack enemy King)."
+  },
+  {
+    "id": 30,
+    "name_tw": "魔力爆發",
+    "name_en": "Mana Burst",
+    "cost": 5,
+    "desc_tw": "這回合我方無法移動，所有手牌不消耗AP，回合結束時所有剩餘手牌送入棄排堆",
+    "desc_en": "Cannot move; all cards cost 0 AP. Discard hand at turn end."
+  },
+  {
+    "id": 31,
+    "name_tw": "防禦陣型",
+    "name_en": "Defensive Formation",
+    "cost": 2,
+    "desc_tw": "選擇一枚我方士兵，下回合對方無法選擇該士兵與其周圍8格的士兵為攻擊對象",
+    "desc_en": "Selected pawn and surrounding pawns become untargetable next turn."
+  },
+  {
+    "id": 32,
+    "name_tw": "正面突破",
+    "name_en": "Frontal Breakthrough",
+    "cost": 2,
+    "desc_tw": "這回合我方士兵可攻擊正前方棋子",
+    "desc_en": "Pawns can attack the square directly in front this turn."
+  },
+  {
+    "id": 33,
+    "name_tw": "猛撞",
+    "name_en": "Ramming",
+    "cost": 1,
+    "desc_tw": "這回合我方士兵移動後，該士兵正前方敵方旗子擊退一格",
+    "desc_en": "After pawn moves, knock back enemy in front 1 square."
+  },
+  {
+    "id": 34,
+    "name_tw": "踐踏",
+    "name_en": "Trample",
+    "cost": 3,
+    "desc_tw": "這回合我方騎士移動時移除跨過的敵方棋子",
+    "desc_en": "Knight removes any enemy pieces it jumps over while moving."
+  },
+  {
+    "id": 35,
+    "name_tw": "回馬槍",
+    "name_en": "Parting Shot",
+    "cost": 2,
+    "desc_tw": "這回合我方騎士攻擊後回到原本位置",
+    "desc_en": "Knight returns to original position after attacking."
+  },
+  {
+    "id": 36,
+    "name_tw": "招降",
+    "name_en": "Conversion",
+    "cost": 4,
+    "desc_tw": "這回合我方主教若成功吃子，我方手牌加入一張與該棋子同種類的棋子卡(Cost變為0)",
+    "desc_en": "If Bishop captures a piece, add a matching piece card (Cost 0) to hand."
+  },
+  {
+    "id": 37,
+    "name_tw": "宗教改革",
+    "name_en": "Reformation",
+    "cost": 1,
+    "desc_tw": "選擇一枚我方主教，向周圍四格移動一步(無須消耗)",
+    "desc_en": "Move a Bishop 1 square orthogonally (0 AP)."
+  },
+  {
+    "id": 38,
+    "name_tw": "異端審判",
+    "name_en": "Inquisition",
+    "cost": 3,
+    "desc_tw": "選擇一枚我方主教，下回合所有所在位置與該主教顏色相異棋子移動消耗+1",
+    "desc_en": "Move cost +1 on opposite colored squares of a selected Bishop next turn."
+  },
+  {
+    "id": 39,
+    "name_tw": "堅固壁壘",
+    "name_en": "Sturdy Bastion",
+    "cost": 2,
+    "desc_tw": "下回合對方無法選擇我方城堡周圍8格棋子為攻擊目標(可選擇城堡)",
+    "desc_en": "Pieces around a Rook become untargetable next turn (excluding Rook)."
+  },
+  {
+    "id": 40,
+    "name_tw": "割讓土地",
+    "name_en": "Territory Cession",
+    "cost": 0,
+    "desc_tw": "選擇我方一枚城堡，移動回初始位置，這回合該城堡無法移動，我方AP+2",
+    "desc_en": "Move a Rook to start; it cannot move this turn, AP +2."
+  },
+  {
+    "id": 41,
+    "name_tw": "威壓",
+    "name_en": "Intimidation",
+    "cost": 2,
+    "desc_tw": "下回合，我方皇后周圍24格(2格距離內)所有敵方棋子移動消耗+1",
+    "desc_en": "Enemy move cost +1 within 2 squares of Queen next turn."
+  },
+  {
+    "id": 42,
+    "name_tw": "護駕",
+    "name_en": "Royal Escort",
+    "cost": 2,
+    "desc_tw": "我方皇后向周圍四格移動一步(無須消耗)，若我方士兵數量<8，在該皇后原位置召喚一枚士兵",
+    "desc_en": "Queen moves 1 square (0 AP). If pawns < 8, summon a pawn at her old spot."
+  }
+]
