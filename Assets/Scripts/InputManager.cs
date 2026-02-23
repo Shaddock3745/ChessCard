@@ -43,7 +43,7 @@ public class InputManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
@@ -51,7 +51,7 @@ public class InputManager : MonoBehaviour
     {
         if (isHeldingChess)
         {
-            movePieceWithMouse();           
+            movePieceWithMouse();
         }
     }
 
@@ -76,7 +76,7 @@ public class InputManager : MonoBehaviour
 
                     if (lastTile.isAttackableTile())
                         lastTile.showAttackable();
-                    else if(lastTile.isMoveableTile())
+                    else if (lastTile.isMoveableTile())
                         lastTile.showMoveable();
                 }
             }
@@ -85,7 +85,12 @@ public class InputManager : MonoBehaviour
 
     private void onMouseHeldStarted(InputAction.CallbackContext context)
     {
-        tryToCatchChess();
+        //tryToCatchChess();
+
+        if (DeckManager.getDeck().Count + DeckManager.getWaitingList().Count > 0)
+            DeckManager.drawCard();
+        else
+            DeckManager.flush();
     }
 
     private void onMouseHeldEnded(InputAction.CallbackContext context)
@@ -104,9 +109,13 @@ public class InputManager : MonoBehaviour
         if (Physics.Raycast(ray, out RaycastHit hit, 100f, LayerMask.GetMask("Board")))
             if (hit.collider.TryGetComponent<BoardTile>(out BoardTile tile))
             {
+                selectedChess = BoardManager.getChessPieceAtTile(tile);
+
+                if (selectedChess == null)
+                    return;
+
                 firstTile = currentTile = tile;
                 isHeldingChess = true;
-                selectedChess = BoardManager.getChessPieceAtTile(tile);
                 selectedChess.gameObject.layer = LayerMask.NameToLayer("Ignore Raycast");
 
                 showHint(selectedChess);
@@ -115,9 +124,9 @@ public class InputManager : MonoBehaviour
 
     private void showHint(ChessPiece piece)
     {
-        var tempList = piece.getAvailableMoves(new Vector2Int(firstTile.getX(),firstTile.getY()));
+        var tempList = piece.getAvailableMoves(new Vector2Int(firstTile.getX(), firstTile.getY()));
 
-        foreach(var move in tempList)
+        foreach (var move in tempList)
             switch (move.actionType)
             {
                 case ActionType.Move:
@@ -138,12 +147,12 @@ public class InputManager : MonoBehaviour
     {
         if (currentTile.isMoveableTile())
             BoardManager.movePiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-        else if(currentTile.isAttackableTile())
+        else if (currentTile.isAttackableTile())
             BoardManager.attackPiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
         else
             BoardManager.moveCanceled(selectedChess, new Vector2Int(firstTile.getX(), firstTile.getY()));
 
         isHeldingChess = false;
-    } 
+    }
 
 }

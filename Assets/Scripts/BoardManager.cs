@@ -8,8 +8,8 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private GameObject tilePrefab;
     [SerializeField] PieceData[] pieceDatas;
 
-    private static readonly float tileSize = 0.96f;
-    private static readonly float startOffeset = -3.36f;
+    private static readonly float tileSize = 0.64f;
+    private static readonly float startOffeset = -2.24f;
     private ChessPiece[,] chessPieces = new ChessPiece[8, 8];
     private BoardTile[,] boardTiles = new BoardTile[8, 8];
 
@@ -73,6 +73,7 @@ public class BoardManager : MonoBehaviour
 
         GameObject gameObject = GameObject.Instantiate(tilePrefab, new Vector3(x, y, 0), Quaternion.identity);
         gameObject.transform.SetParent(this.transform);
+        gameObject.GetComponent<BoxCollider>().size = new Vector2(tileSize, tileSize);
 
         BoardTile tile = gameObject.GetComponent<BoardTile>();
         boardTiles[indexX, indexY] = tile;
@@ -134,6 +135,7 @@ public class BoardManager : MonoBehaviour
 
         GameObject gameObject = Instantiate(piecePrefab, new Vector3(x, y, 0), Quaternion.identity);
         gameObject.transform.SetParent(this.transform);
+        gameObject.GetComponent<BoxCollider>().size = new Vector2(tileSize, tileSize);
 
         ChessPiece chessPiece = gameObject.GetComponent<ChessPiece>();
         chessPiece.SetPieceData(data);

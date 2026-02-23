@@ -142,10 +142,10 @@ TextureImporter:
       name: Q_W_0
       rect:
         serializedVersion: 2
-        x: 3
-        y: 7
-        width: 90
-        height: 82
+        x: 2
+        y: 4
+        width: 60
+        height: 56
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
