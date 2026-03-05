@@ -1,13 +1,20 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class CardUi : MonoBehaviour
 {
     private Card card;
+    private RectTransform rectTransform;
 
     [SerializeField] private TMPro.TextMeshProUGUI nameText;
     [SerializeField] private TMPro.TextMeshProUGUI costText;
     [SerializeField] private Image illusory;
+
+    private void Awake()
+    {
+        rectTransform = GetComponent<RectTransform>();
+    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -29,4 +36,14 @@ public class CardUi : MonoBehaviour
     }
 
     public Card getCard() => card;
+
+    public void moveToPosition(Vector2 localPosition)
+    {
+        rectTransform.localPosition = localPosition;
+    }
+
+    public int DOKill()
+    {
+        return rectTransform.DOKill();
+    }
 }

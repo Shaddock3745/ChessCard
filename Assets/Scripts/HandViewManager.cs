@@ -9,11 +9,12 @@ public class HandViewManager : MonoBehaviour
     [SerializeField] private GameObject cardPrefab;
 
     private static HandViewManager instance;
-    private static readonly float OFFSET_Y = 30f;
+    private static readonly float SHIFT_X = 60f, LIFT_Y = 50f, OFFSET_Y = 30f;
     private static readonly float CARD_WIDTH = 240f;
     private static readonly float MAX_SPACING = CARD_WIDTH * 1.125f;
 
-    private List<GameObject> cardUiList = new List<GameObject>();
+    private List<CardUi> cardUiList = new List<CardUi>();
+    private int hoveredCardIndex = -1;
 
     private void Awake()
     {
@@ -37,7 +38,7 @@ public class HandViewManager : MonoBehaviour
 
     public static void drawCard(Card card)
     {
-        GameObject cardUi = Instantiate(instance.cardPrefab, instance.handCardCanvas.transform);
+        CardUi cardUi = Instantiate(instance.cardPrefab, instance.handCardCanvas.transform).GetComponent<CardUi>();
         cardUi.GetComponent<CardUi>().setCard(card);
         instance.cardUiList.Add(cardUi);
 
@@ -73,10 +74,36 @@ public class HandViewManager : MonoBehaviour
         for (int i = 0; i < n; i++)
         {
             float targetX = startX + spacing * i;
+            float targetY = OFFSET_Y;
 
-            cardUiList[i].GetComponent<RectTransform>().DOLocalMoveX(targetX, 0.3f).SetEase(Ease.OutCubic);
-            cardUiList[i].transform.SetSiblingIndex(i);
+            if (hoveredCardIndex != -1)
+                if (i < hoveredCardIndex)
+                    targetX-= SHIFT_X;
+                else if (i > hoveredCardIndex)
+                    targetX+= SHIFT_X;
+                else
+                {
+                    targetY+= LIFT_Y;
+                    cardUiList[i].transform.SetAsLastSibling();
+                }
+            else
+                cardUiList[i].transform.SetSiblingIndex(i);
+
+            cardUiList[i].DOKill();
+            cardUiList[i].GetComponent<RectTransform>().DOAnchorPos(new Vector2(targetX, targetY), 0.5f).SetEase(Ease.OutCubic);
         }
+    }
+
+    public static void hoverCard(CardUi cardUi)
+    {
+        instance.hoveredCardIndex = instance.cardUiList.IndexOf(cardUi);
+        instance.sort();
+    }
+
+    public static void rearrange()
+    {
+        instance.hoveredCardIndex = -1;
+        instance.sort();
     }
 
     public static void flush()

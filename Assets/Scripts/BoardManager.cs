@@ -73,7 +73,7 @@ public class BoardManager : MonoBehaviour
 
         GameObject gameObject = GameObject.Instantiate(tilePrefab, new Vector3(x, y, 0), Quaternion.identity);
         gameObject.transform.SetParent(this.transform);
-        gameObject.GetComponent<BoxCollider>().size = new Vector2(tileSize, tileSize);
+        gameObject.GetComponent<BoxCollider2D>().size = new Vector2(tileSize, tileSize);
 
         BoardTile tile = gameObject.GetComponent<BoardTile>();
         boardTiles[indexX, indexY] = tile;
@@ -135,7 +135,7 @@ public class BoardManager : MonoBehaviour
 
         GameObject gameObject = Instantiate(piecePrefab, new Vector3(x, y, 0), Quaternion.identity);
         gameObject.transform.SetParent(this.transform);
-        gameObject.GetComponent<BoxCollider>().size = new Vector2(tileSize, tileSize);
+        gameObject.GetComponent<BoxCollider2D>().size = new Vector2(tileSize, tileSize);
 
         ChessPiece chessPiece = gameObject.GetComponent<ChessPiece>();
         chessPiece.SetPieceData(data);
@@ -176,7 +176,7 @@ public class BoardManager : MonoBehaviour
     {
         float x = startOffeset + (tileSize * firstPos.x);
         float y = startOffeset + (tileSize * firstPos.y);
-        movingPiece.transform.position = new Vector3(x, y, 0);
+        movingPiece.moveToPoint(new Vector3(x, y, 0));
     }
 
     public static void movePiece(Vector2Int from, Vector2Int to)
@@ -186,7 +186,7 @@ public class BoardManager : MonoBehaviour
         instance.chessPieces[from.x, from.y] = null;
         float x = startOffeset + (tileSize * to.x);
         float y = startOffeset + (tileSize * to.y);
-        movingPiece.transform.position = new Vector3(x, y, 0);
+        movingPiece.moveToPoint(new Vector3(x, y, 0));
     }
 
     public static void attackPiece(Vector2Int from, Vector2Int to)
@@ -199,7 +199,7 @@ public class BoardManager : MonoBehaviour
         instance.chessPieces[from.x, from.y] = null;
         float x = startOffeset + (tileSize * to.x);
         float y = startOffeset + (tileSize * to.y);
-        movingPiece.transform.position = new Vector3(x, y, 0);
+        movingPiece.moveToPoint(new Vector3(x, y, 0));
         Destroy(targetPiece.gameObject);
     }
 

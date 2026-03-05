@@ -42,6 +42,11 @@ public class ChessPiece : MonoBehaviour
         };        
     }
 
+    public string getName()
+    {
+        return pieceBasicData.getChessType().ToString();
+    }
+
     public bool isWhite()
     {
         return pieceBasicData.isWhite();
@@ -50,5 +55,15 @@ public class ChessPiece : MonoBehaviour
     public List<MoveAction> getAvailableMoves(Vector2Int currentPos)
     {
         return movementType.getAvailableMoves(currentPos, pieceBasicData.isWhite());
+    }
+
+    public void moveToPoint(Vector3 point)
+    {
+        transform.position = point;
+    }
+
+    public void moveToTile(BoardTile tile)
+    {
+
     }
 }
