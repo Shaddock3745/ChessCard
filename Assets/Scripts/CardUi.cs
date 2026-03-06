@@ -37,8 +37,9 @@ public class CardUi : MonoBehaviour
 
     public Card getCard() => card;
 
-    public void moveToPosition(Vector2 localPosition)
+    public void moveToLocalPosition(Vector2 localPosition)
     {
+        DOKill();
         rectTransform.localPosition = localPosition;
     }
 

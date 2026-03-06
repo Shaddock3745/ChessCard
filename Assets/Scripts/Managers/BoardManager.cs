@@ -4,12 +4,15 @@ public class BoardManager : MonoBehaviour
 {
     private static BoardManager instance;
 
+    [SerializeField] private GameObject chessBoard;
+    [SerializeField] private GameObject boardOuter;
     [SerializeField] private GameObject piecePrefab;
     [SerializeField] private GameObject tilePrefab;
     [SerializeField] PieceData[] pieceDatas;
 
-    private static readonly float tileSize = 0.64f;
-    private static readonly float startOffeset = -2.24f;
+    private static readonly float OUTER_ALPHA_WHEN_MOUSE_INNER = 1f, OUTER_ALPHA_WHEN_MOUSE_NOT_INNER = 0.3f;
+    private static readonly float TILE_SIZE = 0.64f;
+    private static readonly float START_OFFSET = -2.24f;
     private ChessPiece[,] chessPieces = new ChessPiece[8, 8];
     private BoardTile[,] boardTiles = new BoardTile[8, 8];
 
@@ -68,12 +71,12 @@ public class BoardManager : MonoBehaviour
 
     private void setTile(int indexX, int indexY)
     {
-        float x = startOffeset + (tileSize * indexX);
-        float y = startOffeset + (tileSize * indexY);
+        float x = START_OFFSET + (TILE_SIZE * indexX);
+        float y = START_OFFSET + (TILE_SIZE * indexY);
 
         GameObject gameObject = GameObject.Instantiate(tilePrefab, new Vector3(x, y, 0), Quaternion.identity);
-        gameObject.transform.SetParent(this.transform);
-        gameObject.GetComponent<BoxCollider2D>().size = new Vector2(tileSize, tileSize);
+        gameObject.transform.SetParent(chessBoard.transform);
+        gameObject.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
 
         BoardTile tile = gameObject.GetComponent<BoardTile>();
         boardTiles[indexX, indexY] = tile;
@@ -130,12 +133,12 @@ public class BoardManager : MonoBehaviour
 
     private void spawnPiece(PieceData data, int indexX, int indexY)
     {
-        float x = startOffeset + (tileSize * indexX);
-        float y = startOffeset + (tileSize * indexY);
+        float x = START_OFFSET + (TILE_SIZE * indexX);
+        float y = START_OFFSET + (TILE_SIZE * indexY);
 
         GameObject gameObject = Instantiate(piecePrefab, new Vector3(x, y, 0), Quaternion.identity);
-        gameObject.transform.SetParent(this.transform);
-        gameObject.GetComponent<BoxCollider2D>().size = new Vector2(tileSize, tileSize);
+        gameObject.transform.SetParent(chessBoard.transform);
+        gameObject.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
 
         ChessPiece chessPiece = gameObject.GetComponent<ChessPiece>();
         chessPiece.SetPieceData(data);
@@ -172,10 +175,10 @@ public class BoardManager : MonoBehaviour
         return isEmpty(position) ? false : getChessPieceAtPosition(position.x, position.y).isWhite();
     }
 
-    public static void moveCanceled(ChessPiece movingPiece , Vector2Int firstPos)
+    public static void moveCanceled(ChessPiece movingPiece, Vector2Int firstPos)
     {
-        float x = startOffeset + (tileSize * firstPos.x);
-        float y = startOffeset + (tileSize * firstPos.y);
+        float x = START_OFFSET + (TILE_SIZE * firstPos.x);
+        float y = START_OFFSET + (TILE_SIZE * firstPos.y);
         movingPiece.moveToPoint(new Vector3(x, y, 0));
     }
 
@@ -184,8 +187,8 @@ public class BoardManager : MonoBehaviour
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         instance.chessPieces[to.x, to.y] = movingPiece;
         instance.chessPieces[from.x, from.y] = null;
-        float x = startOffeset + (tileSize * to.x);
-        float y = startOffeset + (tileSize * to.y);
+        float x = START_OFFSET + (TILE_SIZE * to.x);
+        float y = START_OFFSET + (TILE_SIZE * to.y);
         movingPiece.moveToPoint(new Vector3(x, y, 0));
     }
 
@@ -197,8 +200,8 @@ public class BoardManager : MonoBehaviour
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         instance.chessPieces[to.x, to.y] = movingPiece;
         instance.chessPieces[from.x, from.y] = null;
-        float x = startOffeset + (tileSize * to.x);
-        float y = startOffeset + (tileSize * to.y);
+        float x = START_OFFSET + (TILE_SIZE * to.x);
+        float y = START_OFFSET + (TILE_SIZE * to.y);
         movingPiece.moveToPoint(new Vector3(x, y, 0));
         Destroy(targetPiece.gameObject);
     }
@@ -225,8 +228,23 @@ public class BoardManager : MonoBehaviour
 
     public static void removeAllHint()
     {
-        for(int i = 0;i<8;i++)
-            for(int j = 0;j<8;j++)
-                instance.boardTiles[i,j].removeHint();
+        for (int i = 0; i < 8; i++)
+            for (int j = 0; j < 8; j++)
+                instance.boardTiles[i, j].removeHint();
+    }
+
+    public static void showOuter(bool isMouseInner)
+    {
+        instance.boardOuter.SetActive(true);
+
+        if (isMouseInner)
+            instance.boardOuter.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, OUTER_ALPHA_WHEN_MOUSE_INNER);
+        else
+            instance.boardOuter.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, OUTER_ALPHA_WHEN_MOUSE_NOT_INNER);
+    }
+
+    public static void hideOuter()
+    {
+        instance.boardOuter.SetActive(false);
     }
 }

@@ -10,19 +10,22 @@ public class InputManager : MonoBehaviour
     [SerializeField] private InputActionReference positionReference;
     [SerializeField] private TMPro.TextMeshProUGUI hoveredObjectName;
     [SerializeField] private LayerMask boardLayer;
+    [SerializeField] private RectTransform handcardCanvaseRectTramsform;
 
     private static InputManager instance;
     private static readonly float MOVING_RELIEF = 10f;
 
     private GameObject lastHovered = null;
     private ChessPiece selectedChess = null;
-    private Card selectedCard = null;
+    private CardUi selectedCard = null;
     private BoardTile currentTile = null, lastTile = null, firstTile = null;
     private bool isSelectingChess = false, isSelectingCard = false;
-    private bool isMouseHolding = false;
+    private bool isMouseHolding = false, isMouseInner = false;
 
     void Awake()
     {
+        transform.SetParent(null);
+
         if (instance == null)
             instance = this;
         else
@@ -50,6 +53,12 @@ public class InputManager : MonoBehaviour
     private Vector2 getMousePosition()
     {
         return positionReference.action.ReadValue<Vector2>();
+    }
+
+    private Vector2 getLocalMousePosition()
+    {
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(handcardCanvaseRectTramsform, getMousePosition(), Camera.main, out Vector2 localPoint);
+        return localPoint;
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -91,6 +100,9 @@ public class InputManager : MonoBehaviour
 
         if (isSelectingChess)
             showHint(selectedChess);
+
+        if (isSelectingCard)
+            BoardManager.showOuter(false);
     }
 
     private void onMouseHeldEnded(InputAction.CallbackContext context)
@@ -98,18 +110,44 @@ public class InputManager : MonoBehaviour
         isMouseHolding = false;
 
         if (isSelectingChess)
-        {
             releaseChess();
-            clearHint();
-        }
 
         if (isSelectingCard)
-        {
             releaseCard();
-        }
     }
 
-    private void updateTileWhenMovingChess()
+    private void updateWhenMovingChess()
+    {
+        BoardTile tile = getHoveredTile();
+
+        if (tile != null)
+            if (currentTile != tile)
+            {
+                if (currentTile != null)
+                {
+                    lastTile = currentTile;
+                }
+
+                if (lastTile != null)
+                    if (lastTile.isMoveableTile())
+                        lastTile.showMoveable();
+                    else if (lastTile.isAttackableTile())
+                        lastTile.showAttackable();
+
+                if (tile.isMoveableTile() || tile.isAttackableTile())
+                    tile.showTarget();
+
+                currentTile = tile;
+            }
+    }
+
+    private void updateWhenMovingCard()
+    {
+        isMouseInner = getHoveredTile() != null;
+        BoardManager.showOuter(isMouseInner);
+    }
+
+    public BoardTile getHoveredTile()
     {
         Collider2D boardHit = Physics2D.OverlapPoint(Camera.main.ScreenToWorldPoint(getMousePosition()), boardLayer);
 
@@ -118,25 +156,9 @@ public class InputManager : MonoBehaviour
             BoardTile tile = boardHit.GetComponent<BoardTile>();
 
             if (tile != null)
-                if (currentTile != tile)
-                {
-                    if (currentTile != null)
-                    {
-                        lastTile = currentTile;
-                    }
-
-                    if (lastTile != null)
-                        if (lastTile.isMoveableTile())
-                            lastTile.showMoveable();
-                        else if (lastTile.isAttackableTile())
-                            lastTile.showAttackable();
-
-                    if (tile.isMoveableTile() || tile.isAttackableTile())
-                        tile.showTarget();
-
-                    currentTile = tile;
-                }
+                return tile;
         }
+        return null;
     }
 
     private GameObject detectHover()
@@ -182,7 +204,7 @@ public class InputManager : MonoBehaviour
         {
             isSelectingChess = false;
             isSelectingCard = true;
-            selectedCard = cardUi.getCard();
+            selectedCard = cardUi;
             hoveredObjectName.text = cardUi.getCard().getName();
             HandViewManager.hoverCard(cardUi);
         }
@@ -209,17 +231,26 @@ public class InputManager : MonoBehaviour
 
         selectedChess.moveToPoint(Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, MOVING_RELIEF)));
 
-        updateTileWhenMovingChess();
+        updateWhenMovingChess();
     }
 
     private void moveCardWithMouse()
     {
-        
+        Vector2 localMousePos = getLocalMousePosition();
+
+        selectedCard.moveToLocalPosition(localMousePos);
+
+        updateWhenMovingCard();
     }
 
     private void releaseCard()
     {
         HandViewManager.rearrange();
+
+        if (isMouseInner)
+               CardEffectManager.processCardEffect(selectedCard.getCard());
+
+        BoardManager.hideOuter();
     }
 
 
@@ -239,11 +270,6 @@ public class InputManager : MonoBehaviour
             }
     }
 
-    private void clearHint()
-    {
-        BoardManager.removeAllHint();
-    }
-
     private void releaseChess()
     {
         if (currentTile == null)
@@ -261,6 +287,8 @@ public class InputManager : MonoBehaviour
             BoardManager.moveCanceled(selectedChess, new Vector2Int(firstTile.getX(), firstTile.getY()));
 
         currentTile = lastTile = null;
+
+        BoardManager.removeAllHint();
     }
 
 }
