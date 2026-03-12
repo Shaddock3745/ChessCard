@@ -1,11 +1,10 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 
 public enum ActionType
 {
     Move = 0,
-    Attack = 1
+    Attack = 1,
 }
 
 public struct MoveAction
@@ -18,6 +17,8 @@ public struct MoveAction
 public interface MovementType
 {
     public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite);
+
+    public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite);
 }
 
 public class PawnMovement : MovementType
@@ -46,14 +47,31 @@ public class PawnMovement : MovementType
 
         // Attack diagonally
         temp = new Vector2Int(currentPos.x + 1, currentPos.y + direction);
-        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
-            moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp)&&(isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+                moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
         temp = new Vector2Int(currentPos.x - 1, currentPos.y + direction);
-        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
-            moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp)&& (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+                moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
         return moves;
+    }
+
+    public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite)
+    {
+        List<ChessPiece> protectablePieces = new List<ChessPiece>();
+
+        // Pawns can protect pieces diagonally in front of them
+        int direction = isWhite ? 1 : -1;
+        Vector2Int leftProtectPos = new Vector2Int(targetPos.x - 1, targetPos.y + direction);
+        Vector2Int rightProtectPos = new Vector2Int(targetPos.x + 1, targetPos.y + direction);
+
+        if (BoardManager.isPositionOnBoard(leftProtectPos) && !BoardManager.isEmpty(leftProtectPos) && BoardManager.isWhiteAtPosition(leftProtectPos) == isWhite)
+            protectablePieces.Add(BoardManager.getChessPieceAtPosition(leftProtectPos));
+        if (BoardManager.isPositionOnBoard(rightProtectPos) && !BoardManager.isEmpty(rightProtectPos) && BoardManager.isWhiteAtPosition(rightProtectPos) == isWhite)
+            protectablePieces.Add(BoardManager.getChessPieceAtPosition(rightProtectPos));
+
+        return protectablePieces;
     }
 }
 
@@ -94,6 +112,40 @@ public class RookMovement : MovementType
 
         return moves;
     }
+
+    public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite)
+    {
+        List<ChessPiece> protectablePieces = new List<ChessPiece>();
+
+        // Rooks can protect pieces in straight lines
+        Vector2Int[] directions = new Vector2Int[]
+        {
+                Vector2Int.right,
+                Vector2Int.left,
+                Vector2Int.up,
+                Vector2Int.down
+        };
+
+        foreach (var dir in directions)
+        {
+            Vector2Int temp = targetPos;
+            while (true)
+            {
+                temp += dir;
+                if (!BoardManager.isPositionOnBoard(temp))
+                    break;
+
+                if (!BoardManager.isEmpty(temp))
+                {
+                    if (BoardManager.isWhiteAtPosition(temp) == isWhite)
+                        protectablePieces.Add(BoardManager.getChessPieceAtPosition(temp));
+                    break;
+                }
+            }
+        }
+
+        return protectablePieces;
+    }
 }
 
 public class KnightMovement : MovementType
@@ -126,6 +178,30 @@ public class KnightMovement : MovementType
             }
         }
         return moves;
+    }
+
+    public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite)
+    {
+        List<ChessPiece> protectablePieces = new List<ChessPiece>();
+        // Knights can protect pieces in an L shape
+        Vector2Int[] knightMoves = new Vector2Int[]
+        {
+                new Vector2Int(1, 2),
+                new Vector2Int(1, -2),
+                new Vector2Int(-1, 2),
+                new Vector2Int(-1, -2),
+                new Vector2Int(2, 1),
+                new Vector2Int(2, -1),
+                new Vector2Int(-2, 1),
+                new Vector2Int(-2, -1)
+        };
+        foreach (var move in knightMoves)
+        {
+            Vector2Int temp = targetPos + move;
+            if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && BoardManager.isWhiteAtPosition(temp) == isWhite)
+                protectablePieces.Add(BoardManager.getChessPieceAtPosition(temp));
+        }
+        return protectablePieces;
     }
 }
 
@@ -163,6 +239,36 @@ public class BishopMovement : MovementType
             }
         }
         return moves;
+    }
+
+    public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite)
+    {
+        List<ChessPiece> protectablePieces = new List<ChessPiece>();
+        // Bishops can protect pieces diagonally
+        Vector2Int[] directions = new Vector2Int[]
+        {
+                new Vector2Int(1, 1),
+                new Vector2Int(1, -1),
+                new Vector2Int(-1, 1),
+                new Vector2Int(-1, -1)
+        };
+        foreach (var dir in directions)
+        {
+            Vector2Int temp = targetPos;
+            while (true)
+            {
+                temp += dir;
+                if (!BoardManager.isPositionOnBoard(temp))
+                    break;
+                if (!BoardManager.isEmpty(temp))
+                {
+                    if (BoardManager.isWhiteAtPosition(temp) == isWhite)
+                        protectablePieces.Add(BoardManager.getChessPieceAtPosition(temp));
+                    break;
+                }
+            }
+        }
+        return protectablePieces;
     }
 }
 
@@ -204,6 +310,40 @@ public class QueenMovement : MovementType
         }
         return moves;
     }
+
+    public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite)
+    {
+        List<ChessPiece> protectablePieces = new List<ChessPiece>();
+        // Queens can protect pieces in straight lines and diagonals
+        Vector2Int[] directions = new Vector2Int[]
+        {
+                Vector2Int.right,
+                Vector2Int.left,
+                Vector2Int.up,
+                Vector2Int.down,
+                new Vector2Int(1, 1),
+                new Vector2Int(1, -1),
+                new Vector2Int(-1, 1),
+                new Vector2Int(-1, -1)
+        };
+        foreach (var dir in directions)
+        {
+            Vector2Int temp = targetPos;
+            while (true)
+            {
+                temp += dir;
+                if (!BoardManager.isPositionOnBoard(temp))
+                    break;
+                if (!BoardManager.isEmpty(temp))
+                {
+                    if (BoardManager.isWhiteAtPosition(temp) == isWhite)
+                        protectablePieces.Add(BoardManager.getChessPieceAtPosition(temp));
+                    break;
+                }
+            }
+        }
+        return protectablePieces;
+    }
 }
 
 public class KingMovement : MovementType
@@ -234,5 +374,29 @@ public class KingMovement : MovementType
             }
         }
         return moves;
+    }
+
+    public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite)
+    {
+        List<ChessPiece> protectablePieces = new List<ChessPiece>();
+        // Kings can protect pieces in adjacent squares
+        Vector2Int[] kingMoves = new Vector2Int[]
+        {
+                Vector2Int.right,
+                Vector2Int.left,
+                Vector2Int.up,
+                Vector2Int.down,
+                new Vector2Int(1, 1),
+                new Vector2Int(1, -1),
+                new Vector2Int(-1, 1),
+                new Vector2Int(-1, -1)
+        };
+        foreach (var move in kingMoves)
+        {
+            Vector2Int temp = targetPos + move;
+            if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && BoardManager.isWhiteAtPosition(temp) == isWhite)
+                protectablePieces.Add(BoardManager.getChessPieceAtPosition(temp));
+        }
+        return protectablePieces;
     }
 }

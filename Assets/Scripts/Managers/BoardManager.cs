@@ -1,3 +1,5 @@
+using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BoardManager : MonoBehaviour
@@ -150,9 +152,26 @@ public class BoardManager : MonoBehaviour
         return instance.chessPieces[x, y];
     }
 
+    public static ChessPiece getChessPieceAtPosition(Vector2Int position)
+    {
+        return instance.chessPieces[position.x, position.y];
+    }
+
     public static ChessPiece getChessPieceAtTile(BoardTile tile)
     {
         return instance.chessPieces[tile.getX(), tile.getY()];
+    }
+
+    public static List<(ChessPiece, Vector2Int)> getAllChessPieces(bool isWhite)
+    {
+        List<(ChessPiece, Vector2Int)> pieces = new List<(ChessPiece, Vector2Int)>();
+
+        for (int i = 0; i < 8; i++)
+            for (int j = 0; j < 8; j++)
+                if (instance.chessPieces[i, j] != null && instance.chessPieces[i, j].isWhite() == isWhite)
+                    pieces.Add((instance.chessPieces[i, j], new Vector2Int(i, j)));
+
+        return pieces;
     }
 
     public static bool isChessPieceHere(int x, int y)

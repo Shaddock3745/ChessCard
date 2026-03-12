@@ -3,9 +3,12 @@ using UnityEngine.InputSystem;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField] private TMPro.TextMeshProUGUI nowTurn;
+
     private static GameManager instance;
 
     private bool isWhiteTurn = true;
+    private bool isPlayerWhite = true; // This should be set based on player selection
 
     void Awake()
     {
@@ -25,5 +28,17 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         
+    }
+
+    public static void ChangeTurn()
+    {
+        instance.isWhiteTurn = !instance.isWhiteTurn;
+        instance.nowTurn.text = instance.isWhiteTurn ? "White": "Black"; 
+        Debug.Log("Turn changed. It is now " + (instance.isWhiteTurn ? "White's" : "Black") + " turn.");
+    }
+
+    public static bool IsPlayerTurn()
+    {
+        return instance.isWhiteTurn == instance.isPlayerWhite;
     }
 }
