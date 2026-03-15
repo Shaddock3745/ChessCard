@@ -14,6 +14,7 @@ public class InputManager : MonoBehaviour
 
     private static InputManager instance;
     private static readonly float MOVING_RELIEF = 10f;
+    private static readonly int MOVING_SORTING_ORDER = 100;
 
     private GameObject lastHovered = null;
     private ChessPiece selectedChess = null;
@@ -21,6 +22,7 @@ public class InputManager : MonoBehaviour
     private BoardTile currentTile = null, lastTile = null, firstTile = null;
     private bool isSelectingChess = false, isSelectingCard = false;
     private bool isMouseHolding = false, isMouseInner = false;
+    private int originalSortingOrder;
 
     void Awake()
     {
@@ -70,14 +72,16 @@ public class InputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (isMouseHolding)
+        if (GameManager.IsPlayerTurn())
         {
-            if (isSelectingChess)
-                movePieceWithMouse();
-            else if (isSelectingCard)
-                moveCardWithMouse();
+            if (isMouseHolding)
+                if (isSelectingChess)
+                    movePieceWithMouse();
+                else if (isSelectingCard)
+                    moveCardWithMouse();
         }
-        else
+        
+        if(!isMouseHolding)
         {
             GameObject hoveredObject = detectHover();
 
@@ -98,11 +102,14 @@ public class InputManager : MonoBehaviour
     {
         isMouseHolding = true;
 
-        if (isSelectingChess)
-            showHint(selectedChess);
+        if (GameManager.IsPlayerTurn())
+        {
+            if (isSelectingChess)
+                raiseChess();
 
-        if (isSelectingCard)
-            BoardManager.showOuter(false);
+            if (isSelectingCard)
+                raiseCard();
+        }
     }
 
     private void onMouseHeldEnded(InputAction.CallbackContext context)
@@ -114,6 +121,18 @@ public class InputManager : MonoBehaviour
 
         if (isSelectingCard)
             releaseCard();
+    }
+
+    private void raiseChess()
+    {
+        originalSortingOrder = selectedChess.GetComponent<SpriteRenderer>().sortingOrder;
+        selectedChess.GetComponent<SpriteRenderer>().sortingOrder = MOVING_SORTING_ORDER;
+        showHint(selectedChess);
+    }
+
+    private void raiseCard()
+    {
+        BoardManager.showOuter(false);
     }
 
     private void updateWhenMovingChess()
@@ -289,6 +308,7 @@ public class InputManager : MonoBehaviour
         currentTile = lastTile = null;
 
         BoardManager.removeAllHint();
+        selectedChess.GetComponent<SpriteRenderer>().sortingOrder = originalSortingOrder;
     }
 
 }

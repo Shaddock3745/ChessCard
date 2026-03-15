@@ -1,5 +1,6 @@
-using NUnit.Framework;
+using DG.Tweening;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class BoardManager : MonoBehaviour
@@ -15,6 +16,7 @@ public class BoardManager : MonoBehaviour
     private static readonly float OUTER_ALPHA_WHEN_MOUSE_INNER = 1f, OUTER_ALPHA_WHEN_MOUSE_NOT_INNER = 0.3f;
     private static readonly float TILE_SIZE = 0.64f;
     private static readonly float START_OFFSET = -2.24f;
+    private static readonly float ANIMATION_DURATION = 0.5f;
     private ChessPiece[,] chessPieces = new ChessPiece[8, 8];
     private BoardTile[,] boardTiles = new BoardTile[8, 8];
 
@@ -201,6 +203,7 @@ public class BoardManager : MonoBehaviour
         movingPiece.moveToPoint(new Vector3(x, y, 0));
     }
 
+
     public static void movePiece(Vector2Int from, Vector2Int to)
     {
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
@@ -209,6 +212,22 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
         movingPiece.moveToPoint(new Vector3(x, y, 0));
+    }
+
+    public static async Task movePieceWithAnimation(Vector2Int from, Vector2Int to)
+    {
+        ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
+        float x = START_OFFSET + (TILE_SIZE * to.x);
+        float y = START_OFFSET + (TILE_SIZE * to.y);
+
+        await movingPiece.transform.DOMove(new Vector3(x, y, 0), ANIMATION_DURATION)
+            .SetEase(Ease.InOutQuad)
+            .OnComplete(() =>
+            {
+                instance.chessPieces[to.x, to.y] = movingPiece;
+                instance.chessPieces[from.x, from.y] = null;
+            })
+            .AsyncWaitForCompletion();
     }
 
     public static void attackPiece(Vector2Int from, Vector2Int to)
@@ -223,6 +242,36 @@ public class BoardManager : MonoBehaviour
         float y = START_OFFSET + (TILE_SIZE * to.y);
         movingPiece.moveToPoint(new Vector3(x, y, 0));
         Destroy(targetPiece.gameObject);
+    }
+
+    public static async Task attackPieceWithAnimation(Vector2Int from, Vector2Int to)
+    {
+        ChessPiece targetPiece = getChessPieceAtPosition(to.x, to.y);
+        ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
+        float x = START_OFFSET + (TILE_SIZE * to.x);
+        float y = START_OFFSET + (TILE_SIZE * to.y);
+
+        SpriteRenderer movingSR = movingPiece.GetComponent<SpriteRenderer>();
+        SpriteRenderer targetSR = targetPiece.GetComponent<SpriteRenderer>();
+
+        if (movingSR.sortingOrder < targetSR.sortingOrder)
+        {
+            int temp = movingSR.sortingOrder;
+            movingSR.sortingOrder = targetSR.sortingOrder;
+            targetSR.sortingOrder = temp;
+        }
+
+        Sequence seq = DOTween.Sequence();
+
+        seq.Append(movingPiece.transform.DOMove(new Vector3(x, y, 0), ANIMATION_DURATION).SetEase(Ease.InOutQuad));
+        seq.Join(targetSR.DOFade(0, ANIMATION_DURATION));
+
+        await seq.OnComplete(() =>
+        {
+            Destroy(targetPiece.gameObject);
+            instance.chessPieces[to.x, to.y] = movingPiece;
+            instance.chessPieces[from.x, from.y] = null;
+        }).AsyncWaitForCompletion();
     }
 
     public static void showMoveable(Vector2Int position)

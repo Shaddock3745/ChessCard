@@ -1,7 +1,6 @@
 using DG.Tweening;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class HandViewManager : MonoBehaviour
 {
@@ -114,7 +113,9 @@ public class HandViewManager : MonoBehaviour
 
         for (int i = 0; i < instance.cardUiList.Count; i++)
         {
-            seq.Join(instance.cardUiList[i].GetComponent<RectTransform>().DOAnchorPos(new Vector2(targetX, OFFSET_Y), 0.5f).SetEase(Ease.OutBack).SetDelay(0.02f * i));
+            RectTransform rect = instance.cardUiList[i].GetComponent<RectTransform>();
+            seq.Join(rect.DOAnchorPos(new Vector2(targetX, OFFSET_Y), 0.5f).SetEase(Ease.OutBack).SetDelay(0.02f * i));
+            seq.Join(rect.DOScale(Vector3.zero, 0.5f).SetEase(Ease.InBack).SetDelay(0.02f * i));
         }
 
         instance.cardUiList.Clear();

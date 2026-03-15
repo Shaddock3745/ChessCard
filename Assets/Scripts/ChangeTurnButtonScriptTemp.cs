@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class ChangeTurnButtonScriptTemp : MonoBehaviour
@@ -16,12 +17,6 @@ public class ChangeTurnButtonScriptTemp : MonoBehaviour
 
     public void onClick()
     {
-        //GameManager.ChangeTurn();
-
-        MoveOption bestMove = AIManager.getBestMove(false);
-        if (bestMove != null)
-        {
-            Debug.Log("Best move: " + bestMove.piece.name + " to " + bestMove.targetPos);
-        }
+        GameManager.ChangeTurn();
     }
 }

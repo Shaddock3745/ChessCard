@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class AIManager : MonoBehaviour
@@ -44,4 +45,16 @@ public class AIManager : MonoBehaviour
         return bestMove;
     }
 
+    public static async Task doBestMove(bool isWhite)
+    {
+        MoveOption bestMove = getBestMove(isWhite);
+
+        if (bestMove != null)
+        {
+            if(BoardManager.isEmpty(bestMove.targetPos))
+                await BoardManager.movePieceWithAnimation(bestMove.currentPos, bestMove.targetPos);
+            else
+                await BoardManager.attackPieceWithAnimation(bestMove.currentPos, bestMove.targetPos);
+        }
+    }
 }

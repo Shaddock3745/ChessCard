@@ -30,11 +30,14 @@ public class GameManager : MonoBehaviour
         
     }
 
-    public static void ChangeTurn()
+    public static async void ChangeTurn()
     {
         instance.isWhiteTurn = !instance.isWhiteTurn;
         instance.nowTurn.text = instance.isWhiteTurn ? "White": "Black"; 
         Debug.Log("Turn changed. It is now " + (instance.isWhiteTurn ? "White's" : "Black") + " turn.");
+
+        if (!IsPlayerTurn())
+            await AIManager.doBestMove(instance.isWhiteTurn);
     }
 
     public static bool IsPlayerTurn()

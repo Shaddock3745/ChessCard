@@ -40,7 +40,7 @@ public class AIEvaluator
         List<MoveOption> moveOptions = new List<MoveOption>();
 
         foreach (MoveAction moveAction in moveActions)
-            moveOptions.Add(new MoveOption(piece, moveAction.targetPos, evaluateMove(piece, moveAction)));
+            moveOptions.Add(new MoveOption(piece, piecePos, moveAction.targetPos, evaluateMove(piece, moveAction)));
 
         return moveOptions;
     }
