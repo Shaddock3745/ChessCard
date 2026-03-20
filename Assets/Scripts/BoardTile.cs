@@ -5,10 +5,12 @@ public class BoardTile : MonoBehaviour
     [SerializeField] private Sprite targetSprite;
     [SerializeField] private Sprite moveableSprite;
     [SerializeField] private Sprite attackableSprite;
+    [SerializeField] private Sprite summonableSprite;
 
     private SpriteRenderer spriteRenderer;
     private bool isMoveable = false;
     private bool isAttackable = false;
+    private bool isSummonable = false;
     private int indexX = -1;
     private int indexY = -1;
 
@@ -48,6 +50,12 @@ public class BoardTile : MonoBehaviour
         spriteRenderer.sprite = attackableSprite;
     }
 
+    public void showSummonable()
+    {
+        isSummonable = true;
+        spriteRenderer.sprite = summonableSprite;
+    }
+
     public void showTarget()
     {
         spriteRenderer.sprite = targetSprite;
@@ -57,12 +65,15 @@ public class BoardTile : MonoBehaviour
     {
         isMoveable = false;
         isAttackable = false;
+        isSummonable = false;
         spriteRenderer.sprite = null;
     }
 
     public bool isMoveableTile() => isMoveable;
 
     public bool isAttackableTile() => isAttackable;
+
+    public bool isSummonableTile() => isSummonable;
 
     public int getX() => indexX;
     public int getY() => indexY;

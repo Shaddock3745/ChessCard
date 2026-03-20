@@ -44,29 +44,21 @@ public class BoardManager : MonoBehaviour
     {
         for (int i = 0; i < 8; i++)
         {
-            spawnPawn(i, 1, true); // White Pawns
             spawnPawn(i, 6, false); // Black Pawns
 
             for (int j = 0; j < 8; j++)
                 setTile(i, j);
         }
 
-        spawnRooK(0, 0, true); // White Rook
-        spawnRooK(7, 0, true); // White Rook
         spawnRooK(0, 7, false); // Black Rook
         spawnRooK(7, 7, false); // Black Rook
 
-        spawnKnight(1, 0, true); // White Knight
-        spawnKnight(6, 0, true); // White Knight
         spawnKnight(1, 7, false); // Black Knight
         spawnKnight(6, 7, false); // Black Knight
 
-        spawnBishop(2, 0, true); // White Bishop
-        spawnBishop(5, 0, true); // White Bishop
         spawnBishop(2, 7, false); // Black Bishop
         spawnBishop(5, 7, false); // Black Bishop
 
-        spawnQueen(3, 0, true); // White Queen
         spawnQueen(3, 7, false); // Black Queen
 
         spawnKing(4, 0, true); // White King
@@ -149,6 +141,98 @@ public class BoardManager : MonoBehaviour
         chessPieces[indexX, indexY] = chessPiece;
     }
 
+    public static List<BoardTile> getSummonableTiles(ChessType type, bool isWhite)
+    {
+        List<BoardTile> summonableTiles = new List<BoardTile>();
+
+        if (isWhite)
+            switch (type)
+            {
+                case ChessType.Pawn:
+                    for (int i = 0; i < 8; i++)
+                        if (isEmpty(new Vector2Int(i, 1)))
+                            summonableTiles.Add(getTileAtPosition(i, 1));
+                    break;
+                case ChessType.Rook:
+                    if (isEmpty(new Vector2Int(0, 0)))
+                        summonableTiles.Add(getTileAtPosition(0, 0));
+                    if (isEmpty(new Vector2Int(7, 0)))
+                        summonableTiles.Add(getTileAtPosition(7, 0));
+                    break;
+                case ChessType.Knight:
+                    if (isEmpty(new Vector2Int(1, 0)))
+                        summonableTiles.Add(getTileAtPosition(1, 0));
+                    if (isEmpty(new Vector2Int(6, 0)))
+                        summonableTiles.Add(getTileAtPosition(6, 0));
+                    break;
+                case ChessType.Bishop:
+                    if (isEmpty(new Vector2Int(2, 0)))
+                        summonableTiles.Add(getTileAtPosition(2, 0));
+                    if (isEmpty(new Vector2Int(5, 0)))
+                        summonableTiles.Add(getTileAtPosition(5, 0));
+                    break;
+                case ChessType.Queen:
+                    if (isEmpty(new Vector2Int(3, 0)))
+                        summonableTiles.Add(getTileAtPosition(3, 0));
+                    break;
+            }
+        else
+            switch (type)
+            {
+                case ChessType.Pawn:
+                    for (int i = 0; i < 8; i++)
+                        if (isEmpty(new Vector2Int(i, 6)))
+                            summonableTiles.Add(getTileAtPosition(i, 6));
+                    break;
+                case ChessType.Rook:
+                    if (isEmpty(new Vector2Int(0, 7)))
+                        summonableTiles.Add(getTileAtPosition(0, 7));
+                    if (isEmpty(new Vector2Int(7, 7)))
+                        summonableTiles.Add(getTileAtPosition(7, 7));
+                    break;
+                case ChessType.Knight:
+                    if (isEmpty(new Vector2Int(1, 7)))
+                        summonableTiles.Add(getTileAtPosition(1, 7));
+                    if (isEmpty(new Vector2Int(6, 7)))
+                        summonableTiles.Add(getTileAtPosition(6, 7));
+                    break;
+                case ChessType.Bishop:
+                    if (isEmpty(new Vector2Int(2, 7)))
+                        summonableTiles.Add(getTileAtPosition(2, 7));
+                    if (isEmpty(new Vector2Int(5, 7)))
+                        summonableTiles.Add(getTileAtPosition(5, 7));
+                    break;
+                case ChessType.Queen:
+                    if (isEmpty(new Vector2Int(3, 7)))
+                        summonableTiles.Add(getTileAtPosition(3, 7));
+                    break;
+            }
+
+        return summonableTiles;
+    }
+
+    public static void summonChessPiece(ChessType chessType, bool isWhite, Vector2Int position)
+    {
+        switch (chessType)
+        {
+            case ChessType.Pawn:
+                instance.spawnPawn(position.x, position.y, isWhite);
+                break;
+            case ChessType.Rook:
+                instance.spawnRooK(position.x, position.y, isWhite);
+                break;
+            case ChessType.Knight:
+                instance.spawnKnight(position.x, position.y, isWhite);
+                break;
+            case ChessType.Bishop:
+                instance.spawnBishop(position.x, position.y, isWhite);
+                break;
+            case ChessType.Queen:
+                instance.spawnQueen(position.x, position.y, isWhite);
+                break;
+        }
+    }
+
     public static ChessPiece getChessPieceAtPosition(int x, int y)
     {
         return instance.chessPieces[x, y];
@@ -162,6 +246,16 @@ public class BoardManager : MonoBehaviour
     public static ChessPiece getChessPieceAtTile(BoardTile tile)
     {
         return instance.chessPieces[tile.getX(), tile.getY()];
+    }
+
+    public static BoardTile getTileAtPosition(Vector2Int position)
+    {
+        return instance.boardTiles[position.x, position.y];
+    }
+
+    public static BoardTile getTileAtPosition(int x, int y)
+    {
+        return instance.boardTiles[x, y];
     }
 
     public static List<(ChessPiece, Vector2Int)> getAllChessPieces(bool isWhite)
@@ -202,7 +296,6 @@ public class BoardManager : MonoBehaviour
         float y = START_OFFSET + (TILE_SIZE * firstPos.y);
         movingPiece.moveToPoint(new Vector3(x, y, 0));
     }
-
 
     public static void movePiece(Vector2Int from, Vector2Int to)
     {
@@ -282,6 +375,11 @@ public class BoardManager : MonoBehaviour
     public static void showAttackable(Vector2Int position)
     {
         instance.boardTiles[position.x, position.y].showAttackable();
+    }
+
+    public static void showSummonable(Vector2Int position)
+    {
+        instance.boardTiles[position.x, position.y].showSummonable();
     }
 
     public static void showTarget(Vector2Int position)

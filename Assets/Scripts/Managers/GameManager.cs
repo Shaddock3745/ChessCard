@@ -44,4 +44,9 @@ public class GameManager : MonoBehaviour
     {
         return instance.isWhiteTurn == instance.isPlayerWhite;
     }
+
+    public static bool IsPlayerWhite()
+    {
+        return instance.isPlayerWhite;
+    }
 }

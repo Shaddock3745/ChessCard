@@ -42,6 +42,11 @@ public class ChessPiece : MonoBehaviour
         };        
     }
 
+    public ChessType getChessType()
+    {
+        return pieceBasicData.getChessType();
+    }
+
     public string getName()
     {
         return pieceBasicData.getChessType().ToString();

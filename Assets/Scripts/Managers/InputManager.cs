@@ -19,9 +19,12 @@ public class InputManager : MonoBehaviour
     private GameObject lastHovered = null;
     private ChessPiece selectedChess = null;
     private CardUi selectedCard = null;
+    private ChessType summoningChessType;
+    private bool summoningChessIsWhite = false;
     private BoardTile currentTile = null, lastTile = null, firstTile = null;
     private bool isSelectingChess = false, isSelectingCard = false;
     private bool isMouseHolding = false, isMouseInner = false;
+    private bool isSummoning = false;
     private int originalSortingOrder;
 
     void Awake()
@@ -74,14 +77,16 @@ public class InputManager : MonoBehaviour
     {
         if (GameManager.IsPlayerTurn())
         {
-            if (isMouseHolding)
+            if (isSummoning)
+                updateWhenSummoning();
+            else if (isMouseHolding)
                 if (isSelectingChess)
                     movePieceWithMouse();
                 else if (isSelectingCard)
                     moveCardWithMouse();
         }
-        
-        if(!isMouseHolding)
+
+        if (!isMouseHolding)
         {
             GameObject hoveredObject = detectHover();
 
@@ -100,15 +105,30 @@ public class InputManager : MonoBehaviour
 
     private void onMouseHeldStarted(InputAction.CallbackContext context)
     {
-        isMouseHolding = true;
-
-        if (GameManager.IsPlayerTurn())
+        if (isSummoning)
         {
-            if (isSelectingChess)
-                raiseChess();
+            BoardTile tile = getHoveredTile();
 
-            if (isSelectingCard)
-                raiseCard();
+            if (tile != null)
+            {
+                if (tile.isSummonableTile())
+                    summonChess();
+                else
+                    summonCanceled();
+            }
+        }
+        else
+        {
+            isMouseHolding = true;
+
+            if (GameManager.IsPlayerTurn())
+            {
+                if (isSelectingChess)
+                    raiseChess();
+
+                if (isSelectingCard)
+                    raiseCard();
+            }
         }
     }
 
@@ -133,6 +153,29 @@ public class InputManager : MonoBehaviour
     private void raiseCard()
     {
         BoardManager.showOuter(false);
+    }
+
+    private void updateWhenSummoning()
+    {
+        BoardTile tile = getHoveredTile();
+
+        if (tile != null)
+            if (currentTile != tile)
+            {
+                if (currentTile != null)
+                {
+                    lastTile = currentTile;
+                }
+
+                if (lastTile != null)
+                    if (lastTile.isSummonableTile())
+                        lastTile.showSummonable();
+
+                if (tile.isSummonableTile())
+                    tile.showTarget();
+
+                currentTile = tile;
+            }
     }
 
     private void updateWhenMovingChess()
@@ -267,7 +310,7 @@ public class InputManager : MonoBehaviour
         HandViewManager.rearrange();
 
         if (isMouseInner)
-               CardEffectManager.processCardEffect(selectedCard.getCard());
+            CardEffectManager.processCardEffect(selectedCard.getCard());
 
         BoardManager.hideOuter();
     }
@@ -311,4 +354,32 @@ public class InputManager : MonoBehaviour
         selectedChess.GetComponent<SpriteRenderer>().sortingOrder = originalSortingOrder;
     }
 
+    public static void readyToSummonChess(ChessType chessType, bool isWhite)
+    {
+        instance.isSummoning = true;
+        instance.summoningChessType = chessType;
+        instance.summoningChessIsWhite = isWhite;
+        List<BoardTile> summonableTiles = BoardManager.getSummonableTiles(chessType, isWhite);
+
+        foreach (BoardTile tile in summonableTiles)
+            tile.showSummonable();
+
+        BoardTile hoveredTile = instance.getHoveredTile();
+        if (hoveredTile != null && hoveredTile.isSummonableTile())
+            hoveredTile.showTarget();
+    }
+
+    public static void summonChess()
+    {
+        instance.isSummoning = false;
+        BoardManager.removeAllHint();
+        BoardManager.summonChessPiece(instance.summoningChessType, instance.summoningChessIsWhite, new Vector2Int(instance.currentTile.getX(), instance.currentTile.getY()));
+        instance.lastHovered = null;
+    }
+
+    public static void summonCanceled()
+    {
+        instance.isSummoning = false;
+        BoardManager.removeAllHint();
+    }
 }

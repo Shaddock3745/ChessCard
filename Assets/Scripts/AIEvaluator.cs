@@ -10,14 +10,14 @@ public class AIEvaluator
 
     private static float getPieceValue(ChessPiece piece)
     {
-        return piece.getName() switch
+        return piece.getChessType() switch
         {
-            "Pawn" => 1f,
-            "Knight" => 3f,
-            "Bishop" => 3f,
-            "Rook" => 5f,
-            "Queen" => 9f,
-            "King" => 20f,
+            ChessType.Pawn => 1f,
+            ChessType.Knight => 3f,
+            ChessType.Bishop => 3f,
+            ChessType.Rook => 5f,
+            ChessType.Queen => 9f,
+            ChessType.King => 20f,
             _ => 0f
         };
     }

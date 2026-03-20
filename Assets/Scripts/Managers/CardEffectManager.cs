@@ -26,6 +26,27 @@ public class CardEffectManager : MonoBehaviour
 
     public static void processCardEffect(Card card)
     {
-        Debug.Log("Processing card effect: " + card.getName());
+        int cost = card.getCost();
+
+        // To do : check if player has enough mana to use the card, if not, return
+
+        switch (card.getId())
+        {
+            case 1: // Summon Pawn
+                InputManager.readyToSummonChess(ChessType.Pawn, GameManager.IsPlayerWhite());
+                break;
+            case 2: // Summon Bishop
+                InputManager.readyToSummonChess(ChessType.Bishop, GameManager.IsPlayerWhite());
+                break;
+            case 3: // Summon Knight
+                InputManager.readyToSummonChess(ChessType.Knight, GameManager.IsPlayerWhite());
+                break;
+            case 4: // Summon Rook
+                InputManager.readyToSummonChess(ChessType.Rook, GameManager.IsPlayerWhite());
+                break;
+            case 5: // Summon Queen
+                InputManager.readyToSummonChess(ChessType.Queen, GameManager.IsPlayerWhite());
+                break;
+        }
     }
 }
