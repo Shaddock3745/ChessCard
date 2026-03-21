@@ -13,7 +13,10 @@ public class GameManager : MonoBehaviour
     void Awake()
     {
         if (instance == null)
+        {
             instance = this;
+            QualitySettings.vSyncCount = 1;
+        }
         else
             Destroy(gameObject);
     }
@@ -34,10 +37,14 @@ public class GameManager : MonoBehaviour
     {
         instance.isWhiteTurn = !instance.isWhiteTurn;
         instance.nowTurn.text = instance.isWhiteTurn ? "White": "Black"; 
-        Debug.Log("Turn changed. It is now " + (instance.isWhiteTurn ? "White's" : "Black") + " turn.");
 
         if (!IsPlayerTurn())
+        {
+            MatchDataManager.turnEnd();
             await AIManager.doBestMove(instance.isWhiteTurn);
+        }
+        else
+            MatchDataManager.turnStart();
     }
 
     public static bool IsPlayerTurn()

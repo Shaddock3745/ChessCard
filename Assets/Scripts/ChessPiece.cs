@@ -6,6 +6,7 @@ public class ChessPiece : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private PieceData pieceBasicData;
     private MovementType movementType;
+    private int extraMoveCost = 0;
 
     void Awake()
     {
@@ -67,8 +68,13 @@ public class ChessPiece : MonoBehaviour
         transform.position = point;
     }
 
-    public void moveToTile(BoardTile tile)
+    public int getExtraMoveCost()
     {
+        return extraMoveCost;
+    }
 
+    public void setExtraMoveCost(int cost)
+    {
+        extraMoveCost = cost;
     }
 }

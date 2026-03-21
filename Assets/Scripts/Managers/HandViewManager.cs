@@ -11,14 +11,19 @@ public class HandViewManager : MonoBehaviour
     private static readonly float SHIFT_X = 60f, LIFT_Y = 50f, OFFSET_Y = 30f;
     private static readonly float CARD_WIDTH = 240f;
     private static readonly float MAX_SPACING = CARD_WIDTH * 1.125f;
+    private static readonly float DRAW_ANIMATION_DURATION = 0.5f, SORT_ANIMATION_DURATION = 0.5f, FLUSH_ANIMATION_DURATION = 0.5f;
 
+    private Sequence drawCardAnimationSequence;
     private List<CardUi> cardUiList = new List<CardUi>();
     private int hoveredCardIndex = -1;
+    private bool isAnimating = false;
 
     private void Awake()
     {
         if (instance == null)
+        {
             instance = this;
+        }
         else
             Destroy(gameObject);
     }
@@ -42,17 +47,21 @@ public class HandViewManager : MonoBehaviour
         instance.cardUiList.Add(cardUi);
 
         RectTransform rect = cardUi.GetComponent<RectTransform>();
-
-        float startX = -Screen.width / 2f, startY = 0f;
-
-        rect.anchoredPosition = new Vector2(startX, startY);
+        rect.anchoredPosition = new Vector2(-Screen.width / 2f, 0f);
         rect.localScale = Vector3.zero;
 
-        Sequence seq = DOTween.Sequence();
-        seq.Append(rect.DOAnchorPos(new Vector2(0, OFFSET_Y), 0.5f).SetEase(Ease.OutBack));
-        seq.Join(rect.DOScale(Vector3.one, 0.5f));
+        if (instance.drawCardAnimationSequence == null || !instance.drawCardAnimationSequence.IsActive() || instance.drawCardAnimationSequence.IsComplete())
+        {
+            instance.isAnimating = true;
+            instance.drawCardAnimationSequence = DOTween.Sequence().OnComplete(() =>
+            {
+                instance.sort();
+                instance.isAnimating = false;
+            });
+        }
 
-        seq.OnComplete(() => instance.sort());
+        instance.drawCardAnimationSequence.Append(rect.DOAnchorPos(new Vector2(0, OFFSET_Y), DRAW_ANIMATION_DURATION).SetEase(Ease.OutBack));
+        instance.drawCardAnimationSequence.Join(rect.DOScale(Vector3.one, DRAW_ANIMATION_DURATION));
     }
 
     private void sort()
@@ -77,45 +86,61 @@ public class HandViewManager : MonoBehaviour
 
             if (hoveredCardIndex != -1)
                 if (i < hoveredCardIndex)
-                    targetX-= SHIFT_X;
+                    targetX -= SHIFT_X;
                 else if (i > hoveredCardIndex)
-                    targetX+= SHIFT_X;
+                    targetX += SHIFT_X;
                 else
                 {
-                    targetY+= LIFT_Y;
+                    targetY += LIFT_Y;
                     cardUiList[i].transform.SetAsLastSibling();
                 }
             else
                 cardUiList[i].transform.SetSiblingIndex(i);
 
             cardUiList[i].DOKill();
-            cardUiList[i].GetComponent<RectTransform>().DOAnchorPos(new Vector2(targetX, targetY), 0.5f).SetEase(Ease.OutCubic);
+            cardUiList[i].GetComponent<RectTransform>().DOAnchorPos(new Vector2(targetX, targetY), SORT_ANIMATION_DURATION).SetEase(Ease.OutCubic);
         }
     }
 
     public static void hoverCard(CardUi cardUi)
     {
-        instance.hoveredCardIndex = instance.cardUiList.IndexOf(cardUi);
-        instance.sort();
+        if (!instance.isAnimating)
+        {
+            instance.hoveredCardIndex = instance.cardUiList.IndexOf(cardUi);
+            instance.sort();
+        }
+    }
+
+    public static void useCard(CardUi cardUi)
+    {
+        if (!instance.isAnimating)
+        {
+            instance.cardUiList.Remove(cardUi);
+            Destroy(cardUi.gameObject);
+            instance.hoveredCardIndex = -1;
+            instance.sort();
+        }
     }
 
     public static void rearrange()
     {
-        instance.hoveredCardIndex = -1;
-        instance.sort();
+        if (!instance.isAnimating)
+        {
+            instance.hoveredCardIndex = -1;
+            instance.sort();
+        }
     }
 
     public static void flush()
     {
-        float targetX = -Screen.width / 2f;
-
+        instance.isAnimating = true;
         Sequence seq = DOTween.Sequence();
 
         for (int i = 0; i < instance.cardUiList.Count; i++)
         {
             RectTransform rect = instance.cardUiList[i].GetComponent<RectTransform>();
-            seq.Join(rect.DOAnchorPos(new Vector2(targetX, OFFSET_Y), 0.5f).SetEase(Ease.OutBack).SetDelay(0.02f * i));
-            seq.Join(rect.DOScale(Vector3.zero, 0.5f).SetEase(Ease.InBack).SetDelay(0.02f * i));
+            seq.Join(rect.DOAnchorPos(new Vector2(-Screen.width / 2f, OFFSET_Y), FLUSH_ANIMATION_DURATION).SetEase(Ease.OutBack).SetDelay(0.02f * i));
+            seq.Join(rect.DOScale(Vector3.zero, FLUSH_ANIMATION_DURATION).SetDelay(0.02f * i));
         }
 
         instance.cardUiList.Clear();
@@ -124,6 +149,8 @@ public class HandViewManager : MonoBehaviour
         {
             foreach (Transform child in instance.handCardCanvas.transform)
                 Destroy(child.gameObject);
+
+            instance.isAnimating = false;
         });
     }
 }

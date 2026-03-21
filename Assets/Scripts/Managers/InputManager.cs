@@ -23,6 +23,7 @@ public class InputManager : MonoBehaviour
     private bool summoningChessIsWhite = false;
     private BoardTile currentTile = null, lastTile = null, firstTile = null;
     private bool isSelectingChess = false, isSelectingCard = false;
+    private bool isRaisingChess = false, isRaisingCard = false;
     private bool isMouseHolding = false, isMouseInner = false;
     private bool isSummoning = false;
     private int originalSortingOrder;
@@ -80,9 +81,9 @@ public class InputManager : MonoBehaviour
             if (isSummoning)
                 updateWhenSummoning();
             else if (isMouseHolding)
-                if (isSelectingChess)
+                if (isRaisingChess)
                     movePieceWithMouse();
-                else if (isSelectingCard)
+                else if (isRaisingCard)
                     moveCardWithMouse();
         }
 
@@ -123,7 +124,7 @@ public class InputManager : MonoBehaviour
 
             if (GameManager.IsPlayerTurn())
             {
-                if (isSelectingChess)
+                if (isSelectingChess && MatchDataManager.canMoveChess(selectedChess))
                     raiseChess();
 
                 if (isSelectingCard)
@@ -148,11 +149,13 @@ public class InputManager : MonoBehaviour
         originalSortingOrder = selectedChess.GetComponent<SpriteRenderer>().sortingOrder;
         selectedChess.GetComponent<SpriteRenderer>().sortingOrder = MOVING_SORTING_ORDER;
         showHint(selectedChess);
+        isRaisingChess = true;
     }
 
     private void raiseCard()
     {
         BoardManager.showOuter(false);
+        isRaisingCard = true;
     }
 
     private void updateWhenSummoning()
@@ -307,11 +310,11 @@ public class InputManager : MonoBehaviour
 
     private void releaseCard()
     {
+        if (isMouseInner && MatchDataManager.useCard(selectedCard.getCard()))
+            HandViewManager.useCard(selectedCard);
+
+        isRaisingCard = false;
         HandViewManager.rearrange();
-
-        if (isMouseInner)
-            CardEffectManager.processCardEffect(selectedCard.getCard());
-
         BoardManager.hideOuter();
     }
 
@@ -342,12 +345,19 @@ public class InputManager : MonoBehaviour
         }
 
         if (currentTile.isMoveableTile())
+        {
             BoardManager.movePiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
+            MatchDataManager.setChessMoved(selectedChess);
+        }
         else if (currentTile.isAttackableTile())
+        {
             BoardManager.attackPiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
+            MatchDataManager.setChessMoved(selectedChess);
+        }
         else
             BoardManager.moveCanceled(selectedChess, new Vector2Int(firstTile.getX(), firstTile.getY()));
 
+        isRaisingChess = false;
         currentTile = lastTile = null;
 
         BoardManager.removeAllHint();

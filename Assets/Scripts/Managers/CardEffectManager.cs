@@ -47,6 +47,9 @@ public class CardEffectManager : MonoBehaviour
             case 5: // Summon Queen
                 InputManager.readyToSummonChess(ChessType.Queen, GameManager.IsPlayerWhite());
                 break;
+            default:
+                Debug.LogWarning("Card effect not implemented for card id: " + card.getId());
+                break;
         }
     }
 }
