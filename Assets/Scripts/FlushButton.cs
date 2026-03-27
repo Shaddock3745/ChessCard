@@ -16,6 +16,6 @@ public class FlushButton : MonoBehaviour
 
     public void onClick()
     {
-        MatchDataManager.flushHandCards();
+        MatchDataManager.flushHandCards(true);
     }
 }

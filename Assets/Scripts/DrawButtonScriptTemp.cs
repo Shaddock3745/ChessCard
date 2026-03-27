@@ -17,6 +17,6 @@ public class DrawButton : MonoBehaviour
     public void onClick()
     {
         for(int i=0;i<5;i++)
-        MatchDataManager.drawCard();
+        MatchDataManager.drawCard(true);
     }
 }

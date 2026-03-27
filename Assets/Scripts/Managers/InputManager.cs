@@ -124,7 +124,7 @@ public class InputManager : MonoBehaviour
 
             if (GameManager.IsPlayerTurn())
             {
-                if (isSelectingChess && MatchDataManager.canMoveChess(selectedChess))
+                if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess))
                     raiseChess();
 
                 if (isSelectingCard)
@@ -310,7 +310,7 @@ public class InputManager : MonoBehaviour
 
     private void releaseCard()
     {
-        if (isMouseInner && MatchDataManager.useCard(selectedCard.getCard()))
+        if (isMouseInner && MatchDataManager.useCard(true, selectedCard.getCard()))
             HandViewManager.useCard(selectedCard);
 
         isRaisingCard = false;
@@ -347,12 +347,12 @@ public class InputManager : MonoBehaviour
         if (currentTile.isMoveableTile())
         {
             BoardManager.movePiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-            MatchDataManager.setChessMoved(selectedChess);
+            MatchDataManager.doChessMoved(true, selectedChess);
         }
         else if (currentTile.isAttackableTile())
         {
             BoardManager.attackPiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-            MatchDataManager.setChessMoved(selectedChess);
+            MatchDataManager.doChessMoved(true, selectedChess);
         }
         else
             BoardManager.moveCanceled(selectedChess, new Vector2Int(firstTile.getX(), firstTile.getY()));

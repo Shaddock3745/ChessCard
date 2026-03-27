@@ -36,15 +36,21 @@ public class GameManager : MonoBehaviour
     public static async void ChangeTurn()
     {
         instance.isWhiteTurn = !instance.isWhiteTurn;
-        instance.nowTurn.text = instance.isWhiteTurn ? "White": "Black"; 
+        instance.nowTurn.text = instance.isWhiteTurn ? "White" : "Black";
 
-        if (!IsPlayerTurn())
+        if (IsPlayerTurn())
         {
-            MatchDataManager.turnEnd();
-            await AIManager.doBestMove(instance.isWhiteTurn);
+            MatchDataManager.turnEnd(false);
+            MatchDataManager.turnStart(true);
         }
         else
-            MatchDataManager.turnStart();
+        {
+            MatchDataManager.turnEnd(true);
+            MatchDataManager.turnStart(false);
+
+            if(MatchDataManager.isEnemyAI())
+                await AIManager.doBestMove(instance.isWhiteTurn);
+        }
     }
 
     public static bool IsPlayerTurn()

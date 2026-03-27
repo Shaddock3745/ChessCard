@@ -9,21 +9,15 @@ public class MatchDataManager : MonoBehaviour
 
     [SerializeField] private TMPro.TextMeshProUGUI deckCount, waitingCount, discardCount, manaCount;
 
-    private List<Card> deck, handList, waitingList, discardList;
-    private int mana = DEFAULT_MANA;
-    private bool chessMoved = false;
-    private bool couldntMoveChessThisTurn = false;
-    private int bonusMana = 0, bonusHandCardCount = 0;
-
-    private static readonly int DEFAULT_MANA = 5, DEFAULT_HAND_CARD_COUNT = 5;
+    private PlayerData player, enemy;
 
     void Awake()
     {
         if (instance == null)
         {
             instance = this;
-            loadDeck(PlayerDataManager.getPlayerDeck());
-            updateManaUi();
+            initPlayer();
+            initEnemy(AIManager.initAIPlayerData());
         }
         else
             Destroy(gameObject);
@@ -41,201 +35,159 @@ public class MatchDataManager : MonoBehaviour
 
     }
 
-    public static void shuffleDeck()
+    public static void shuffleDeck(bool isPlayer)
     {
-        for (int i = 0; i < instance.deck.Count; i++)
-        {
-            int randomIndex = Random.Range(i, instance.deck.Count);
-            Card temp = instance.deck[i];
-            instance.deck[i] = instance.deck[randomIndex];
-            instance.deck[randomIndex] = temp;
-        }
+        if (isPlayer)
+            instance.player.shuffleDeck();
+        else
+            instance.enemy.shuffleDeck();
     }
 
-    private static void replenish()
+    public static void replenish(bool isPlayer)
     {
-        instance.deck.AddRange(instance.waitingList);
-        instance.waitingList.Clear();
-        shuffleDeck();
+        if (isPlayer)
+            instance.player.replenish();
+        else
+            instance.enemy.replenish();
     }
 
-    public static Card drawCard()
+    public static Card drawCard(bool isPlayer)
     {
-        Card result = null;
-
-        if (instance.deck.Count > 0)
-            result = instance.deck[instance.deck.Count - 1];
-        else if (instance.waitingList.Count > 0)
+        if (isPlayer)
         {
-            replenish();
-            result = instance.deck[instance.deck.Count - 1];
-        }
+            Card result = instance.player.drawCard();
 
-        if (result != null)
-        {
-            instance.deck.RemoveAt(instance.deck.Count - 1);
-            instance.handList.Add(result);
-            HandViewManager.drawCard(result);
+            if (result != null)
+                HandViewManager.drawCard(result);
             instance.updateCardCountUi();
-        }
 
-        return result;
+            return result;
+        }
+        else
+        {
+            Card result = instance.enemy.drawCard();
+
+            return result;
+        }
     }
 
-    public static bool useCard(Card card)
+    public static bool useCard(bool isPlayer, Card card)
     {
-        if (isManaEnough(card.getCost()))
+        if (isPlayer)
         {
-            consumeMana(card.getCost());
-            instance.handList.Remove(card);
-            CardEffectManager.processCardEffect(card);
+            bool result = instance.player.useCard(card);
 
-            if (card.isExileOnUseCard())
-                instance.discardList.Add(card);
+            if (result)
+                CardEffectManager.processCardEffect(true, card);
 
             instance.updateCardCountUi();
-            return true;
+            instance.updateManaUi();
+            return result;
         }
-
-        return false;
+        else
+        {
+            return instance.enemy.useCard(card);
+        }
     }
 
-    public static void flushHandCards()
+    public static void flushHandCards(bool isPlayer)
     {
-        foreach (Card card in instance.handList)
-            instance.waitingList.Add(card);
-
-        instance.handList.Clear();
-        HandViewManager.flush();
-
-        instance.updateCardCountUi();
+        if (isPlayer)
+        {
+            instance.player.flushHandCards();
+            HandViewManager.flush();
+            instance.updateCardCountUi();
+        }
+        else
+        {
+            instance.enemy.flushHandCards();
+        }
     }
 
     private void updateCardCountUi()
     {
-        deckCount.text = instance.deck.Count.ToString();
-        waitingCount.text = instance.waitingList.Count.ToString();
-        discardCount.text = instance.discardList.Count.ToString();
+        deckCount.text = instance.player.getDeckCardCount().ToString();
+        waitingCount.text = instance.player.getWaitingCardCount().ToString();
+        discardCount.text = instance.player.getDiscardCardCount().ToString();
     }
 
     private void updateManaUi()
     {
-        manaCount.text = instance.mana.ToString();
+        manaCount.text = instance.player.getMana().ToString();
     }
 
-    public static void loadDeck(List<int> cardIds)
+    public static void initPlayer()
     {
-        instance.deck = new List<Card>();
-        instance.handList = new List<Card>();
-        instance.waitingList = new List<Card>();
-        instance.discardList = new List<Card>();
-
-        foreach (int id in cardIds)
-            instance.deck.Add(new Card(id));
-
-        shuffleDeck();
-        instance.updateCardCountUi();
-    }
-
-    public static List<Card> getDeck()
-    {
-        return instance.deck;
-    }
-
-    public static List<Card> getHandList()
-    {
-        return instance.handList;
-    }
-
-    public static List<Card> getWaitingList()
-    {
-        return instance.waitingList;
-    }
-
-    public static List<Card> getDiscardList()
-    {
-        return instance.discardList;
-    }
-
-    public static int getMana()
-    {
-        return instance.mana;
-    }
-
-    public static bool isManaEnough(int cost)
-    {
-        return instance.mana >= cost;
-    }
-
-    public static void consumeMana(int cost)
-    {
-        instance.mana -= cost;
-
-        instance.updateManaUi();
-    }
-
-    public static bool canMoveChess(ChessPiece chess)
-    {
-        return !instance.couldntMoveChessThisTurn && !instance.chessMoved && instance.mana >= (1 + chess.getExtraMoveCost());
-    }
-
-    public static bool isCouldntMoveChessThisTurn()
-    {
-        return instance.couldntMoveChessThisTurn;
-    }
-
-    public static void resetBonusMana()
-    {
-        instance.bonusMana = 0;
-    }
-
-    public static void resetBonusHandCardCount()
-    {
-        instance.bonusHandCardCount = 0;
-    }
-
-    public static void addBonusMana(int amount)
-    {
-        instance.bonusMana += amount;
-    }
-
-    public static void addBonusHandCardCount(int amount)
-    {
-        instance.bonusHandCardCount += amount;
-    }
-
-    public static void setCouldntMoveChessThisTurn(bool value)
-    {
-        instance.couldntMoveChessThisTurn = value;
-    }
-
-    public static void turnStart()
-    {
-        instance.mana = DEFAULT_MANA + instance.bonusMana;
-        instance.chessMoved = false;
-
-        int handCardCount = DEFAULT_HAND_CARD_COUNT + instance.bonusHandCardCount;
-        
-        for (int i = 0; i < handCardCount; i++)
-            drawCard();
-
+        instance.player = new PlayerData(false, true, PlayerDataManager.getPlayerDeck());
         instance.updateCardCountUi();
         instance.updateManaUi();
     }
 
-    public static void turnEnd()
+    public static void initEnemy(PlayerData playerData)
     {
-        resetBonusHandCardCount();
-        resetBonusMana();
-        flushHandCards();
-        instance.updateCardCountUi();
-        instance.updateManaUi();
+        instance.enemy = playerData;
     }
 
-    public static void setChessMoved(ChessPiece chess)
+    public static bool isEnemyAI()
     {
-        instance.chessMoved = true;
-        instance.mana -= 1 + chess.getExtraMoveCost();
+        return instance.enemy.isAI();
+    }
+
+    public static void turnStart(bool isPlayerTurn)
+    {
+        if (isPlayerTurn)
+        {
+            instance.player.resetForNewTurn();
+            int handCardCount = PlayerData.getDefaultHandCardCount() + instance.player.getBonusHandCardCount();
+
+            for (int i = 0; i < handCardCount; i++)
+                drawCard(true);
+
+            instance.updateCardCountUi();
+            instance.updateManaUi();
+        }
+        else
+        {
+            instance.enemy.resetForNewTurn();
+            int handCardCount = PlayerData.getDefaultHandCardCount() + instance.enemy.getBonusHandCardCount();
+
+            for (int i = 0; i < handCardCount; i++)
+                drawCard(false);
+        }
+    }
+
+    public static void turnEnd(bool isPlayer)
+    {
+        if (isPlayer)
+        {
+            instance.player.resetForEndTurn();
+            instance.player.flushHandCards();
+            HandViewManager.flush();
+            instance.updateCardCountUi();
+            instance.updateManaUi();
+        }
+        else
+        {
+            instance.enemy.resetForEndTurn();
+            instance.enemy.flushHandCards();
+        }
+    }
+
+    public static bool canMoveChess(bool isPlayer, ChessPiece chess)
+    {
+        if (isPlayer)
+            return instance.player.canMoveChess(chess);
+        else
+            return instance.enemy.canMoveChess(chess);
+    }
+
+    public static void doChessMoved(bool isPlayer, ChessPiece chess)
+    {
+        if (isPlayer)
+            instance.player.doChessMoved(chess);
+        else
+            instance.enemy.doChessMoved(chess);
+
         instance.updateManaUi();
     }
 }

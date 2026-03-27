@@ -1,0 +1,238 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+enum PlayerType
+{
+    Human,
+    AI
+}
+
+public class PlayerData
+{
+    private static readonly int DEFAULT_MANA = 5, DEFAULT_HAND_CARD_COUNT = 5;
+
+    private readonly PlayerType playerType;
+    private readonly bool isWhite;
+    private List<Card> deck, handList, waitingList, discardList;
+    private int mana = DEFAULT_MANA;
+    private bool chessMoved = false;
+    private bool couldntMoveChessThisTurn = false;
+    private int bonusMana = 0, bonusHandCardCount = 0;
+
+    public static int getDefaultMana()
+    {
+        return DEFAULT_MANA;
+    }
+
+    public static int getDefaultHandCardCount()
+    {
+        return DEFAULT_HAND_CARD_COUNT;
+    }
+
+    public PlayerData(bool isAI, bool isWhite, List<int> cardIds)
+    {
+        playerType = isAI ? PlayerType.AI : PlayerType.Human;
+        this.isWhite = isWhite;
+        loadDeck(cardIds);
+    }
+
+    public bool isAI()
+    {
+        return playerType == PlayerType.AI;
+    }
+
+    public bool IsWhite()
+    {
+        return isWhite;
+    }
+
+    public int getMana()
+    {
+        return mana;
+    }
+
+    public void addMana(int amount)
+    {
+        mana += amount;
+    }
+
+    public int getBonusMana()
+    {
+        return bonusMana;
+    }
+
+    public int getBonusHandCardCount()
+    {
+        return bonusHandCardCount;
+    }
+
+    public int getHandCardCount()
+    {
+        return handList.Count;
+    }
+
+    public int getDeckCardCount()
+    {
+        return deck.Count;
+    }
+
+    public int getWaitingCardCount()
+    {
+        return waitingList.Count;
+    }
+
+    public int getDiscardCardCount()
+    {
+        return discardList.Count;
+    }
+
+    public List<Card> getDeck()
+    {
+        return deck;
+    }
+
+    public List<Card> getHandList()
+    {
+        return handList;
+    }
+
+    public List<Card> getWaitingList()
+    {
+        return waitingList;
+    }
+
+    public List<Card> getDiscardList()
+    {
+        return discardList;
+    }
+
+    private bool isManaEnough(int cost)
+    {
+        return mana >= cost;
+    }
+
+    private void consumeMana(int cost)
+    {
+        mana -= cost;
+    }
+
+    public bool canMoveChess(ChessPiece chess)
+    {
+        return !couldntMoveChessThisTurn && !chessMoved && mana >= (1 + chess.getExtraMoveCost());
+    }
+
+    public bool isCouldntMoveChessThisTurn()
+    {
+        return couldntMoveChessThisTurn;
+    }
+
+    public void addBonusMana(int amount)
+    {
+        bonusMana += amount;
+    }
+
+    public void addBonusHandCardCount(int amount)
+    {
+        bonusHandCardCount += amount;
+    }
+
+    public void setCouldntMoveChessThisTurn(bool value)
+    {
+        couldntMoveChessThisTurn = value;
+    }
+
+    public void doChessMoved(ChessPiece chess)
+    {
+        chessMoved = true;
+        mana -= 1 + chess.getExtraMoveCost();
+    }
+
+    public void resetForNewTurn()
+    {
+        mana = DEFAULT_MANA + bonusMana;
+        chessMoved = false;
+        couldntMoveChessThisTurn = false;
+    }
+
+    public void resetForEndTurn()
+    {
+        bonusHandCardCount = 0;
+        bonusMana = 0;
+    }
+
+    private void loadDeck(List<int> cardIds)
+    {
+        deck = new List<Card>();
+        handList = new List<Card>();
+        waitingList = new List<Card>();
+        discardList = new List<Card>();
+
+        foreach (int id in cardIds)
+            deck.Add(new Card(id));
+
+        shuffleDeck();
+    }
+
+    public void shuffleDeck()
+    {
+        for (int i = 0; i < deck.Count; i++)
+        {
+            int randomIndex = Random.Range(i, deck.Count);
+            Card temp = deck[i];
+            deck[i] = deck[randomIndex];
+            deck[randomIndex] = temp;
+        }
+    }
+
+    public void replenish()
+    {
+        deck.AddRange(waitingList);
+        waitingList.Clear();
+        shuffleDeck();
+    }
+
+    public Card drawCard()
+    {
+        Card result = null;
+
+        if (deck.Count > 0)
+            result = deck[deck.Count - 1];
+        else if (waitingList.Count > 0)
+        {
+            replenish();
+            result = deck[deck.Count - 1];
+        }
+
+        if (result != null)
+        {
+            deck.RemoveAt(deck.Count - 1);
+            handList.Add(result);
+        }
+
+        return result;
+    }
+
+    public bool useCard(Card card)
+    {
+        if (isManaEnough(card.getCost()))
+        {
+            consumeMana(card.getCost());
+            handList.Remove(card);
+
+            if (!card.isExileOnUseCard())
+                discardList.Add(card);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public void flushHandCards()
+    {
+        foreach (Card card in handList)
+            waitingList.Add(card);
+
+        handList.Clear();
+    }
+}

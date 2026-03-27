@@ -6,6 +6,10 @@ public class AIManager : MonoBehaviour
 {
     private static AIManager instance;
 
+    private PlayerData playerData;
+
+    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5 }) ;
+
     void Awake()
     {
         if (instance == null)
@@ -26,10 +30,30 @@ public class AIManager : MonoBehaviour
         
     }
 
-
-    public static MoveOption getBestMove(bool isWhite)
+    public static List<int> getAIDeckList()
     {
-        List<(ChessPiece,Vector2Int)> pieceList = BoardManager.getAllChessPieces(isWhite);
+        return new List<int>(DEFAULT_AI_DECK_LIST);
+    }
+
+    public static PlayerData initAIPlayerData()
+    {
+        instance.playerData = new PlayerData(true, false, DEFAULT_AI_DECK_LIST);
+        return instance.playerData;
+    }
+
+    public static PlayerData getAIPlayerData()
+    {
+        return instance.playerData;
+    }
+
+    public static bool isWhite()
+    {
+        return instance.playerData.IsWhite();
+    }
+
+    public static MoveOption getBestMove()
+    {
+        List<(ChessPiece,Vector2Int)> pieceList = BoardManager.getAllChessPieces(isWhite());
 
         List<MoveOption> moveOptions = new List<MoveOption>();
 
@@ -45,9 +69,9 @@ public class AIManager : MonoBehaviour
         return bestMove;
     }
 
-    public static async Task doBestMove(bool isWhite)
+    public static async Task doBestMove()
     {
-        MoveOption bestMove = getBestMove(isWhite);
+        MoveOption bestMove = getBestMove();
 
         if (bestMove != null)
         {
