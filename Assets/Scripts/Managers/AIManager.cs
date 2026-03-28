@@ -30,11 +30,6 @@ public class AIManager : MonoBehaviour
         
     }
 
-    public static List<int> getAIDeckList()
-    {
-        return new List<int>(DEFAULT_AI_DECK_LIST);
-    }
-
     public static PlayerData initAIPlayerData()
     {
         instance.playerData = new PlayerData(true, false, DEFAULT_AI_DECK_LIST);

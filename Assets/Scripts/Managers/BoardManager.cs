@@ -377,9 +377,9 @@ public class BoardManager : MonoBehaviour
         instance.boardTiles[position.x, position.y].showAttackable();
     }
 
-    public static void showSummonable(Vector2Int position)
+    public static void showSelectable(Vector2Int position)
     {
-        instance.boardTiles[position.x, position.y].showSummonable();
+        instance.boardTiles[position.x, position.y].showSelectable();
     }
 
     public static void showTarget(Vector2Int position)

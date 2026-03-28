@@ -17,6 +17,7 @@ public class PlayerData
     private int mana = DEFAULT_MANA;
     private bool chessMoved = false;
     private bool couldntMoveChessThisTurn = false;
+    private bool couldntUseCardThisTurn = false;
     private int bonusMana = 0, bonusHandCardCount = 0;
 
     public static int getDefaultMana()
@@ -106,11 +107,6 @@ public class PlayerData
         return discardList;
     }
 
-    private bool isManaEnough(int cost)
-    {
-        return mana >= cost;
-    }
-
     private void consumeMana(int cost)
     {
         mana -= cost;
@@ -119,6 +115,11 @@ public class PlayerData
     public bool canMoveChess(ChessPiece chess)
     {
         return !couldntMoveChessThisTurn && !chessMoved && mana >= (1 + chess.getExtraMoveCost());
+    }
+
+    public bool canUseCard(Card card)
+    {
+        return !couldntUseCardThisTurn && mana >= card.getCost();
     }
 
     public bool isCouldntMoveChessThisTurn()
@@ -212,20 +213,13 @@ public class PlayerData
         return result;
     }
 
-    public bool useCard(Card card)
+    public void useCard(Card card)
     {
-        if (isManaEnough(card.getCost()))
-        {
-            consumeMana(card.getCost());
-            handList.Remove(card);
+        consumeMana(card.getCost());
+        handList.Remove(card);
 
-            if (!card.isExileOnUseCard())
-                discardList.Add(card);
-
-            return true;
-        }
-
-        return false;
+        if (!card.isExileOnUseCard())
+            discardList.Add(card);
     }
 
     public void flushHandCards()

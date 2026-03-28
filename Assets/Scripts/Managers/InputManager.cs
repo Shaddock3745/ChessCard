@@ -1,4 +1,4 @@
-using NUnit.Framework;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -16,17 +16,16 @@ public class InputManager : MonoBehaviour
     private static readonly float MOVING_RELIEF = 10f;
     private static readonly int MOVING_SORTING_ORDER = 100;
 
+    private TaskCompletionSource<BoardTile> targetTileSelectionTcs;
     private GameObject lastHovered = null;
     private ChessPiece selectedChess = null;
     private CardUi selectedCard = null;
-    private ChessType summoningChessType;
-    private bool summoningChessIsWhite = false;
     private BoardTile currentTile = null, lastTile = null, firstTile = null;
     private bool isSelectingChess = false, isSelectingCard = false;
     private bool isRaisingChess = false, isRaisingCard = false;
     private bool isMouseHolding = false, isMouseInner = false;
-    private bool isSummoning = false;
     private int originalSortingOrder;
+    private bool isAwaitingTarget = false;
 
     void Awake()
     {
@@ -56,6 +55,31 @@ public class InputManager : MonoBehaviour
         positionReference.action.Disable();
     }
 
+    public static async Task<BoardTile> waitForTargetSelection(List<BoardTile> validTiles)
+    {
+        instance.isAwaitingTarget = true;
+        instance.targetTileSelectionTcs = new TaskCompletionSource<BoardTile>();
+
+        foreach (BoardTile tile in validTiles)
+            tile.showSelectable();
+
+        return await instance.targetTileSelectionTcs.Task;
+    }
+
+    private void selectBoardTile()
+    {
+        instance.isAwaitingTarget = false;
+        BoardManager.removeAllHint();
+        instance.targetTileSelectionTcs?.TrySetResult(currentTile);
+    }
+
+    private void cancelTargetSelection()
+    {
+        instance.isAwaitingTarget = false;
+        BoardManager.removeAllHint();
+        instance.targetTileSelectionTcs?.TrySetResult(null);
+    }
+
     private Vector2 getMousePosition()
     {
         return positionReference.action.ReadValue<Vector2>();
@@ -78,8 +102,8 @@ public class InputManager : MonoBehaviour
     {
         if (GameManager.IsPlayerTurn())
         {
-            if (isSummoning)
-                updateWhenSummoning();
+            if (isAwaitingTarget)
+                updateWhenSelecting();
             else if (isMouseHolding)
                 if (isRaisingChess)
                     movePieceWithMouse();
@@ -106,16 +130,16 @@ public class InputManager : MonoBehaviour
 
     private void onMouseHeldStarted(InputAction.CallbackContext context)
     {
-        if (isSummoning)
+        if (isAwaitingTarget)
         {
             BoardTile tile = getHoveredTile();
 
             if (tile != null)
             {
-                if (tile.isSummonableTile())
-                    summonChess();
+                if (tile.isSelectableTile())
+                    selectBoardTile();
                 else
-                    summonCanceled();
+                    cancelTargetSelection();
             }
         }
         else
@@ -127,7 +151,7 @@ public class InputManager : MonoBehaviour
                 if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess))
                     raiseChess();
 
-                if (isSelectingCard)
+                if (isSelectingCard && MatchDataManager.canUseCard(true, selectedCard.getCard()))
                     raiseCard();
             }
         }
@@ -137,10 +161,10 @@ public class InputManager : MonoBehaviour
     {
         isMouseHolding = false;
 
-        if (isSelectingChess)
+        if (isRaisingChess)
             releaseChess();
 
-        if (isSelectingCard)
+        if (isRaisingCard)
             releaseCard();
     }
 
@@ -158,7 +182,7 @@ public class InputManager : MonoBehaviour
         isRaisingCard = true;
     }
 
-    private void updateWhenSummoning()
+    private void updateWhenSelecting()
     {
         BoardTile tile = getHoveredTile();
 
@@ -171,10 +195,10 @@ public class InputManager : MonoBehaviour
                 }
 
                 if (lastTile != null)
-                    if (lastTile.isSummonableTile())
-                        lastTile.showSummonable();
+                    if (lastTile.isSelectableTile())
+                        lastTile.showSelectable();
 
-                if (tile.isSummonableTile())
+                if (tile.isSelectableTile())
                     tile.showTarget();
 
                 currentTile = tile;
@@ -284,7 +308,7 @@ public class InputManager : MonoBehaviour
     private void handleExit(GameObject obj)
     {
         if (isSelectingCard)
-            HandViewManager.rearrange();
+            HandViewManager.rearrangeHover();
 
         isSelectingChess = isSelectingCard = false;
         hoveredObjectName.text = "Nothing";
@@ -308,17 +332,6 @@ public class InputManager : MonoBehaviour
         updateWhenMovingCard();
     }
 
-    private void releaseCard()
-    {
-        if (isMouseInner && MatchDataManager.useCard(true, selectedCard.getCard()))
-            HandViewManager.useCard(selectedCard);
-
-        isRaisingCard = false;
-        HandViewManager.rearrange();
-        BoardManager.hideOuter();
-    }
-
-
     private void showHint(ChessPiece piece)
     {
         var tempList = piece.getAvailableMoves(new Vector2Int(firstTile.getX(), firstTile.getY()));
@@ -341,10 +354,8 @@ public class InputManager : MonoBehaviour
         {
             if (selectedChess != null && firstTile != null)
                 BoardManager.moveCanceled(selectedChess, new Vector2Int(firstTile.getX(), firstTile.getY()));
-            return;
         }
-
-        if (currentTile.isMoveableTile())
+        else if (currentTile.isMoveableTile())
         {
             BoardManager.movePiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
             MatchDataManager.doChessMoved(true, selectedChess);
@@ -364,32 +375,17 @@ public class InputManager : MonoBehaviour
         selectedChess.GetComponent<SpriteRenderer>().sortingOrder = originalSortingOrder;
     }
 
-    public static void readyToSummonChess(ChessType chessType, bool isWhite)
+    private void releaseCard()
     {
-        instance.isSummoning = true;
-        instance.summoningChessType = chessType;
-        instance.summoningChessIsWhite = isWhite;
-        List<BoardTile> summonableTiles = BoardManager.getSummonableTiles(chessType, isWhite);
+        isRaisingCard = false;
+        BoardManager.hideOuter();
 
-        foreach (BoardTile tile in summonableTiles)
-            tile.showSummonable();
-
-        BoardTile hoveredTile = instance.getHoveredTile();
-        if (hoveredTile != null && hoveredTile.isSummonableTile())
-            hoveredTile.showTarget();
-    }
-
-    public static void summonChess()
-    {
-        instance.isSummoning = false;
-        BoardManager.removeAllHint();
-        BoardManager.summonChessPiece(instance.summoningChessType, instance.summoningChessIsWhite, new Vector2Int(instance.currentTile.getX(), instance.currentTile.getY()));
-        instance.lastHovered = null;
-    }
-
-    public static void summonCanceled()
-    {
-        instance.isSummoning = false;
-        BoardManager.removeAllHint();
+        if (isMouseInner)
+        {
+            _ = CardEffectManager.readyToProcess(true, selectedCard.getCard());
+            HandViewManager.playerUseCard(selectedCard);
+        }
+        else
+            HandViewManager.rearrangeHover();
     }
 }

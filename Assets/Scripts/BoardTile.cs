@@ -1,18 +1,19 @@
 using UnityEngine;
 
-public class BoardTile : MonoBehaviour 
+public class BoardTile : MonoBehaviour
 {
     [SerializeField] private Sprite targetSprite;
     [SerializeField] private Sprite moveableSprite;
     [SerializeField] private Sprite attackableSprite;
-    [SerializeField] private Sprite summonableSprite;
+    [SerializeField] private Sprite selectableSprite;
 
     private SpriteRenderer spriteRenderer;
     private bool isMoveable = false;
     private bool isAttackable = false;
-    private bool isSummonable = false;
+    private bool isSelectable = false;
     private int indexX = -1;
     private int indexY = -1;
+    private Vector2Int pos;
 
     void Awake()
     {
@@ -36,6 +37,7 @@ public class BoardTile : MonoBehaviour
     {
         indexX = x;
         indexY = y;
+        pos = new Vector2Int(x, y);
     }
 
     public void showMoveable()
@@ -50,10 +52,10 @@ public class BoardTile : MonoBehaviour
         spriteRenderer.sprite = attackableSprite;
     }
 
-    public void showSummonable()
+    public void showSelectable()
     {
-        isSummonable = true;
-        spriteRenderer.sprite = summonableSprite;
+        isSelectable = true;
+        spriteRenderer.sprite = selectableSprite;
     }
 
     public void showTarget()
@@ -65,7 +67,7 @@ public class BoardTile : MonoBehaviour
     {
         isMoveable = false;
         isAttackable = false;
-        isSummonable = false;
+        isSelectable = false;
         spriteRenderer.sprite = null;
     }
 
@@ -73,8 +75,10 @@ public class BoardTile : MonoBehaviour
 
     public bool isAttackableTile() => isAttackable;
 
-    public bool isSummonableTile() => isSummonable;
+    public bool isSelectableTile() => isSelectable;
 
     public int getX() => indexX;
     public int getY() => indexY;
+
+    public Vector2Int getPos() => pos;
 }

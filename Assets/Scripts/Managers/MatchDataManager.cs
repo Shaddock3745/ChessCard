@@ -16,8 +16,6 @@ public class MatchDataManager : MonoBehaviour
         if (instance == null)
         {
             instance = this;
-            initPlayer();
-            initEnemy(AIManager.initAIPlayerData());
         }
         else
             Destroy(gameObject);
@@ -26,13 +24,24 @@ public class MatchDataManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-
+        initPlayer();
+        initEnemy(AIManager.initAIPlayerData());
     }
 
     // Update is called once per frame
     void Update()
     {
 
+    }
+
+    public static void addMana(bool isPlayer, int amount)
+    {
+        if (isPlayer)
+            instance.player.addMana(amount);
+        else
+            instance.enemy.addMana(amount);
+
+        instance.updateManaUi();
     }
 
     public static void shuffleDeck(bool isPlayer)
@@ -58,7 +67,7 @@ public class MatchDataManager : MonoBehaviour
             Card result = instance.player.drawCard();
 
             if (result != null)
-                HandViewManager.drawCard(result);
+                HandViewManager.playerDrawCard(result);
             instance.updateCardCountUi();
 
             return result;
@@ -67,26 +76,25 @@ public class MatchDataManager : MonoBehaviour
         {
             Card result = instance.enemy.drawCard();
 
+            if (result != null)
+                HandViewManager.enemyDrawCard();
+
             return result;
         }
     }
 
-    public static bool useCard(bool isPlayer, Card card)
+    public static void useCard(bool isPlayer, Card card)
     {
         if (isPlayer)
         {
-            bool result = instance.player.useCard(card);
-
-            if (result)
-                CardEffectManager.processCardEffect(true, card);
-
+            instance.player.useCard(card);
             instance.updateCardCountUi();
             instance.updateManaUi();
-            return result;
         }
         else
         {
-            return instance.enemy.useCard(card);
+            instance.enemy.useCard(card);
+            HandViewManager.enemyUseCard(card);
         }
     }
 
@@ -95,12 +103,13 @@ public class MatchDataManager : MonoBehaviour
         if (isPlayer)
         {
             instance.player.flushHandCards();
-            HandViewManager.flush();
+            HandViewManager.flush(true);
             instance.updateCardCountUi();
         }
         else
         {
             instance.enemy.flushHandCards();
+            HandViewManager.flush(false);
         }
     }
 
@@ -162,7 +171,7 @@ public class MatchDataManager : MonoBehaviour
         {
             instance.player.resetForEndTurn();
             instance.player.flushHandCards();
-            HandViewManager.flush();
+            HandViewManager.flush(true);
             instance.updateCardCountUi();
             instance.updateManaUi();
         }
@@ -170,6 +179,7 @@ public class MatchDataManager : MonoBehaviour
         {
             instance.enemy.resetForEndTurn();
             instance.enemy.flushHandCards();
+            HandViewManager.flush(false);
         }
     }
 
@@ -180,6 +190,16 @@ public class MatchDataManager : MonoBehaviour
         else
             return instance.enemy.canMoveChess(chess);
     }
+
+
+    public static bool canUseCard(bool isPlayer, Card card)
+    {
+        if (isPlayer)
+            return instance.player.canUseCard(card);
+        else
+            return instance.enemy.canUseCard(card);
+    }
+
 
     public static void doChessMoved(bool isPlayer, ChessPiece chess)
     {
