@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AIEvaluator
+public class AiEvaluator
 {
     private static readonly float ATTACK_COEFFICIENT = 10f;
     private static readonly float DISTANCE_COEFFICIENT = 1.5f;
@@ -22,7 +22,7 @@ public class AIEvaluator
         };
     }
 
-    public static float evaluateMove(ChessPiece piece, MoveAction action)
+    private static float evaluateChessMove(MoveAction action)
     {
         float score = 0f;
 
@@ -34,14 +34,22 @@ public class AIEvaluator
         return score;
     }
 
-    public static List<MoveOption> getMoveByChessPiece(ChessPiece piece, Vector2Int piecePos)
+    public static List<ChessMoveOption> getMoveOptionsByChessPiece(Vector2Int piecePos)
     {
-        List<MoveAction> moveActions = piece.getAvailableMoves(piecePos);
-        List<MoveOption> moveOptions = new List<MoveOption>();
+        List<MoveAction> moveActions = BoardManager.getChessPieceAtPosition(piecePos).getAvailableMoves(piecePos);
+        List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
 
         foreach (MoveAction moveAction in moveActions)
-            moveOptions.Add(new MoveOption(piece, piecePos, moveAction.targetPos, evaluateMove(piece, moveAction)));
+            moveOptions.Add(new ChessMoveOption(piecePos, moveAction.targetPos, evaluateChessMove(moveAction)));
 
         return moveOptions;
+    }
+
+    public static List<CardUseOption> getCardUseOptionsByCard(Card card)
+    {
+        List<CardUseOption> useOptions = new List<CardUseOption>();
+
+
+        return useOptions;
     }
 }

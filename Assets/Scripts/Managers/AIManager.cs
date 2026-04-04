@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class AIManager : MonoBehaviour
+public class AiManager : MonoBehaviour
 {
-    private static AIManager instance;
+    private static AiManager instance;
 
     private PlayerData playerData;
 
-    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5 }) ;
+    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5 });
 
     void Awake()
     {
@@ -21,13 +21,13 @@ public class AIManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public static PlayerData initAIPlayerData()
@@ -46,19 +46,19 @@ public class AIManager : MonoBehaviour
         return instance.playerData.IsWhite();
     }
 
-    public static MoveOption getBestMove()
+    public static AiOption getBestMove()
     {
-        List<(ChessPiece,Vector2Int)> pieceList = BoardManager.getAllChessPieces(isWhite());
+        List<Vector2Int> pieceList = BoardManager.getAllChessPiecesPos(isWhite());
 
-        List<MoveOption> moveOptions = new List<MoveOption>();
+        List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
 
-        foreach ((ChessPiece piece, Vector2Int pos) in pieceList)
-            moveOptions.AddRange(AIEvaluator.getMoveByChessPiece(piece, pos));
+        foreach (Vector2Int pos in pieceList)
+            moveOptions.AddRange(AiEvaluator.getMoveOptionsByChessPiece(pos));
 
-        MoveOption bestMove = null;
+        AiOption bestMove = null;
 
-        foreach (MoveOption moveOption in moveOptions)
-            if (bestMove == null || moveOption.score > bestMove.score)
+        foreach (ChessMoveOption moveOption in moveOptions)
+            if (bestMove == null || moveOption.getScore() > bestMove.getScore())
                 bestMove = moveOption;
 
         return bestMove;
@@ -66,14 +66,11 @@ public class AIManager : MonoBehaviour
 
     public static async Task doBestMove()
     {
-        MoveOption bestMove = getBestMove();
+        AiOption bestMove = getBestMove();
 
         if (bestMove != null)
         {
-            if(BoardManager.isEmpty(bestMove.targetPos))
-                await BoardManager.movePieceWithAnimation(bestMove.currentPos, bestMove.targetPos);
-            else
-                await BoardManager.attackPieceWithAnimation(bestMove.currentPos, bestMove.targetPos);
+            await bestMove.execute();
         }
     }
 }

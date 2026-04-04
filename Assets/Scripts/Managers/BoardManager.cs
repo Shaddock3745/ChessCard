@@ -258,16 +258,16 @@ public class BoardManager : MonoBehaviour
         return instance.boardTiles[x, y];
     }
 
-    public static List<(ChessPiece, Vector2Int)> getAllChessPieces(bool isWhite)
+    public static List<Vector2Int> getAllChessPiecesPos(bool isWhite)
     {
-        List<(ChessPiece, Vector2Int)> pieces = new List<(ChessPiece, Vector2Int)>();
+        List<Vector2Int> piecesPos = new List<Vector2Int>();
 
         for (int i = 0; i < 8; i++)
             for (int j = 0; j < 8; j++)
                 if (instance.chessPieces[i, j] != null && instance.chessPieces[i, j].isWhite() == isWhite)
-                    pieces.Add((instance.chessPieces[i, j], new Vector2Int(i, j)));
+                    piecesPos.Add( new Vector2Int(i, j));
 
-        return pieces;
+        return piecesPos;
     }
 
     public static bool isChessPieceHere(int x, int y)

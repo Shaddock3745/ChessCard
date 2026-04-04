@@ -25,7 +25,7 @@ public class MatchDataManager : MonoBehaviour
     void Start()
     {
         initPlayer();
-        initEnemy(AIManager.initAIPlayerData());
+        initEnemy(AiManager.initAIPlayerData());
     }
 
     // Update is called once per frame

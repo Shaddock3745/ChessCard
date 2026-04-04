@@ -49,7 +49,7 @@ public class GameManager : MonoBehaviour
             MatchDataManager.turnStart(false);
 
             if(MatchDataManager.isEnemyAI())
-                await AIManager.doBestMove();
+                await AiManager.doBestMove();
         }
     }
 
