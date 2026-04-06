@@ -19,9 +19,10 @@ public class CardUseOption : AiOption
     }
 
     public float getScore() => scroe;
-    public Task execute()
+    public async Task execute()
     {
-        throw new System.NotImplementedException();
+        await CardEffectManager.processAiCard(card,targetPositions,targetCards);
     }
 
+    public string getCardname() => card.getName();
 }

@@ -8,18 +8,23 @@ public class AiEvaluator
     private static readonly float BOARD_WIDTH = 8f;
     private static readonly Vector2 CENTER_POSITION = new Vector2(3.5f, 3.5f);
 
-    private static float getPieceValue(ChessPiece piece)
+    private static float getPieceValue(ChessType pieceType)
     {
-        return piece.getChessType() switch
+        return pieceType switch
         {
             ChessType.Pawn => 1f,
             ChessType.Knight => 3f,
             ChessType.Bishop => 3f,
             ChessType.Rook => 5f,
-            ChessType.Queen => 9f,
+            ChessType.Queen => 10f,
             ChessType.King => 20f,
             _ => 0f
         };
+    }
+
+    private static float getPositionValue(Vector2Int position)
+    {
+        return (BOARD_WIDTH - Vector2.Distance(position, CENTER_POSITION)) * DISTANCE_COEFFICIENT;
     }
 
     private static float evaluateChessMove(MoveAction action)
@@ -27,29 +32,66 @@ public class AiEvaluator
         float score = 0f;
 
         if (action.actionType == ActionType.Attack)
-            score += getPieceValue(BoardManager.getChessPieceAtPosition(action.targetPos)) * ATTACK_COEFFICIENT;
+            score += getPieceValue(BoardManager.getChessPieceAtPosition(action.targetPos).getChessType()) * ATTACK_COEFFICIENT;
 
-        score += (BOARD_WIDTH - Vector2.Distance(action.targetPos, CENTER_POSITION)) * DISTANCE_COEFFICIENT;
+        score += getPositionValue(action.targetPos);
 
         return score;
     }
 
-    public static List<ChessMoveOption> getMoveOptionsByChessPiece(Vector2Int piecePos)
+    public static List<ChessMoveOption> getMoveOptionsByChessPiece(ChessPiece piece, Vector2Int position)
     {
-        List<MoveAction> moveActions = BoardManager.getChessPieceAtPosition(piecePos).getAvailableMoves(piecePos);
+
+        List<MoveAction> moveActions = piece.getAvailableMoves(position);
         List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
 
         foreach (MoveAction moveAction in moveActions)
-            moveOptions.Add(new ChessMoveOption(piecePos, moveAction.targetPos, evaluateChessMove(moveAction)));
+            moveOptions.Add(new ChessMoveOption(piece, position, moveAction.targetPos, evaluateChessMove(moveAction)));
 
         return moveOptions;
     }
 
-    public static List<CardUseOption> getCardUseOptionsByCard(Card card)
+    private static List<CardUseOption> getSummonChessOptions(Card card, int currentMana)
     {
-        List<CardUseOption> useOptions = new List<CardUseOption>();
+        if (currentMana < card.getCost())
+            return new List<CardUseOption>();
 
+        ChessType type = card.getId() switch
+        {
+            1 => ChessType.Pawn,
+            2 => ChessType.Bishop,
+            3 => ChessType.Knight,
+            4 => ChessType.Rook,
+            5 => ChessType.Queen,
+            _ => ChessType.Pawn
+        };
+
+        List<CardUseOption> useOptions = new List<CardUseOption>();
+        List<BoardTile> summonableTiles = BoardManager.getSummonableTiles(type, AiManager.isWhite());
+        float manaEfficiency = card.getCost() == 0 ? 2.0f : (float)currentMana / card.getCost();
+
+        foreach (BoardTile tile in summonableTiles)
+        {
+            Vector2Int position = tile.getPos();
+            float score = getPieceValue(type) * manaEfficiency + getPositionValue(position); 
+            useOptions.Add(new CardUseOption(card, score, new List<Vector2Int> { position }));
+        }
 
         return useOptions;
+    }
+
+    public static List<CardUseOption> getCardUseOptionsByCard(Card card, int currentMana)
+    {
+        switch (card.getId())
+        {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+                return getSummonChessOptions(card, currentMana);
+            default:
+                return new List<CardUseOption>();
+        }
     }
 }

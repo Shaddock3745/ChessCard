@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
+using DG.Tweening;
 
 public class ChessPiece : MonoBehaviour
 {
@@ -7,6 +9,8 @@ public class ChessPiece : MonoBehaviour
     private PieceData pieceBasicData;
     private MovementType movementType;
     private int extraMoveCost = 0;
+
+    private static readonly float FADE_DURATION = 0.3f;
 
     void Awake()
     {
@@ -41,6 +45,15 @@ public class ChessPiece : MonoBehaviour
             ChessType.King => new KingMovement(),
             _ => null
         };        
+    }
+
+    public async Task fadeIn()
+    {
+        spriteRenderer.DOKill();
+        Color color = spriteRenderer.color;
+        color.a = 0f;
+        spriteRenderer.color = color;
+        await spriteRenderer.DOFade(1f, FADE_DURATION).AsyncWaitForCompletion();
     }
 
     public ChessType getChessType()

@@ -382,7 +382,7 @@ public class InputManager : MonoBehaviour
 
         if (isMouseInner)
         {
-            _ = CardEffectManager.readyToProcess(true, selectedCard.getCard());
+            _ = CardEffectManager.processPlayerCard(selectedCard.getCard());
             HandViewManager.playerUseCard(selectedCard);
         }
         else

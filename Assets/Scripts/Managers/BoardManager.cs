@@ -16,7 +16,7 @@ public class BoardManager : MonoBehaviour
     private static readonly float OUTER_ALPHA_WHEN_MOUSE_INNER = 1f, OUTER_ALPHA_WHEN_MOUSE_NOT_INNER = 0.3f;
     private static readonly float TILE_SIZE = 0.64f;
     private static readonly float START_OFFSET = -2.24f;
-    private static readonly float ANIMATION_DURATION = 0.5f;
+    private static readonly float MOVING_ANIMATION_DURATION = 0.5f;
     private ChessPiece[,] chessPieces = new ChessPiece[8, 8];
     private BoardTile[,] boardTiles = new BoardTile[8, 8];
 
@@ -43,23 +43,8 @@ public class BoardManager : MonoBehaviour
     private void setBoard()
     {
         for (int i = 0; i < 8; i++)
-        {
-            spawnPawn(i, 6, false); // Black Pawns
-
             for (int j = 0; j < 8; j++)
                 setTile(i, j);
-        }
-
-        spawnRooK(0, 7, false); // Black Rook
-        spawnRooK(7, 7, false); // Black Rook
-
-        spawnKnight(1, 7, false); // Black Knight
-        spawnKnight(6, 7, false); // Black Knight
-
-        spawnBishop(2, 7, false); // Black Bishop
-        spawnBishop(5, 7, false); // Black Bishop
-
-        spawnQueen(3, 7, false); // Black Queen
 
         spawnKing(4, 0, true); // White King
         spawnKing(4, 7, false); // Black King
@@ -233,6 +218,30 @@ public class BoardManager : MonoBehaviour
         }
     }
 
+    public static async Task summonChessPieceWithAnimation(ChessType chessType, bool isWhite, Vector2Int position)
+    {
+        switch (chessType)
+        {
+            case ChessType.Pawn:
+                instance.spawnPawn(position.x, position.y, isWhite);
+                break;
+            case ChessType.Rook:
+                instance.spawnRooK(position.x, position.y, isWhite);
+                break;
+            case ChessType.Knight:
+                instance.spawnKnight(position.x, position.y, isWhite);
+                break;
+            case ChessType.Bishop:
+                instance.spawnBishop(position.x, position.y, isWhite);
+                break;
+            case ChessType.Queen:
+                instance.spawnQueen(position.x, position.y, isWhite);
+                break;
+        }
+
+        await getChessPieceAtPosition(position).fadeIn();
+    }
+
     public static ChessPiece getChessPieceAtPosition(int x, int y)
     {
         return instance.chessPieces[x, y];
@@ -258,16 +267,16 @@ public class BoardManager : MonoBehaviour
         return instance.boardTiles[x, y];
     }
 
-    public static List<Vector2Int> getAllChessPiecesPos(bool isWhite)
+    public static List<(ChessPiece, Vector2Int)> getAllChessPieces(bool isWhite)
     {
-        List<Vector2Int> piecesPos = new List<Vector2Int>();
+        List<(ChessPiece, Vector2Int)> pieces = new List<(ChessPiece, Vector2Int)>();
 
         for (int i = 0; i < 8; i++)
             for (int j = 0; j < 8; j++)
                 if (instance.chessPieces[i, j] != null && instance.chessPieces[i, j].isWhite() == isWhite)
-                    piecesPos.Add( new Vector2Int(i, j));
+                    pieces.Add((getChessPieceAtPosition(i, j), new Vector2Int(i, j)));
 
-        return piecesPos;
+        return pieces;
     }
 
     public static bool isChessPieceHere(int x, int y)
@@ -313,7 +322,7 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
-        await movingPiece.transform.DOMove(new Vector3(x, y, 0), ANIMATION_DURATION)
+        await movingPiece.transform.DOMove(new Vector3(x, y, 0), MOVING_ANIMATION_DURATION)
             .SetEase(Ease.InOutQuad)
             .OnComplete(() =>
             {
@@ -322,6 +331,7 @@ public class BoardManager : MonoBehaviour
             })
             .AsyncWaitForCompletion();
     }
+
 
     public static void attackPiece(Vector2Int from, Vector2Int to)
     {
@@ -356,8 +366,8 @@ public class BoardManager : MonoBehaviour
 
         Sequence seq = DOTween.Sequence();
 
-        seq.Append(movingPiece.transform.DOMove(new Vector3(x, y, 0), ANIMATION_DURATION).SetEase(Ease.InOutQuad));
-        seq.Join(targetSR.DOFade(0, ANIMATION_DURATION));
+        seq.Append(movingPiece.transform.DOMove(new Vector3(x, y, 0), MOVING_ANIMATION_DURATION).SetEase(Ease.InOutQuad));
+        seq.Join(targetSR.DOFade(0, MOVING_ANIMATION_DURATION));
 
         await seq.OnComplete(() =>
         {
@@ -372,19 +382,51 @@ public class BoardManager : MonoBehaviour
         instance.boardTiles[position.x, position.y].showMoveable();
     }
 
+    public static void showMoveable(List<Vector2Int> positions)
+    {
+        foreach (Vector2Int position in positions)
+            showMoveable(position);
+    }
+
     public static void showAttackable(Vector2Int position)
     {
         instance.boardTiles[position.x, position.y].showAttackable();
+    }
+
+    public static void showAttackable(List<Vector2Int> positions)
+    {
+        foreach (Vector2Int position in positions)
+            showAttackable(position);
     }
 
     public static void showSelectable(Vector2Int position)
     {
         instance.boardTiles[position.x, position.y].showSelectable();
     }
+    public static void showSelectable(List<Vector2Int> positions)
+    {
+        foreach (Vector2Int position in positions)
+            showSelectable(position);
+    }
 
     public static void showTarget(Vector2Int position)
     {
         instance.boardTiles[position.x, position.y].showTarget();
+    }
+
+    public static void showTarget(List<Vector2Int> positions)
+    {
+        foreach (Vector2Int position in positions)
+            showTarget(position);
+    }
+    public static async Task showTargetWithAnimation(List<Vector2Int> positions)
+    {
+        List<Task> tasks = new List<Task>();
+
+        foreach (Vector2Int position in positions)
+            tasks.Add(getTileAtPosition(position).showTargetWithAnimation());
+
+        await Task.WhenAll(tasks);
     }
 
     public static void removeHint(Vector2Int position)

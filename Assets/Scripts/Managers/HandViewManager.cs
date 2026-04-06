@@ -22,7 +22,7 @@ public class HandViewManager : MonoBehaviour
     private List<CardUi> playerCardUiList = new List<CardUi>();
     private List<GameObject> enemyCardBackList = new List<GameObject>();
     private int hoveredCardIndex = -1;
-    private bool isAnimating = false;
+    private bool isPlayerAnimating = false, isEnemyAnimating = false;
     private float currentDrawDelay = 0f;
 
     private void Awake()
@@ -46,6 +46,9 @@ public class HandViewManager : MonoBehaviour
     {
 
     }
+
+    public static bool isPlayingAnimation() => instance.isPlayerAnimating || instance.isEnemyAnimating;
+
     public static void playerDrawCard(Card card)
     {
         CardUi cardUi = Instantiate(instance.cardPrefab, instance.playerHandCardCanvas.transform).GetComponent<CardUi>();
@@ -58,12 +61,12 @@ public class HandViewManager : MonoBehaviour
 
         if (instance.playerDrawCardAnimationSequence == null || !instance.playerDrawCardAnimationSequence.IsActive() || instance.playerDrawCardAnimationSequence.IsComplete())
         {
-            instance.isAnimating = true;
+            instance.isPlayerAnimating = true;
             instance.currentDrawDelay = 0f;
             instance.playerDrawCardAnimationSequence = DOTween.Sequence().OnComplete(() =>
             {
                 instance.sortPlayerHand();
-                instance.isAnimating = false;
+                DOVirtual.DelayedCall(SORT_ANIMATION_DURATION, () => instance.isPlayerAnimating = false);
             });
         }
 
@@ -86,10 +89,12 @@ public class HandViewManager : MonoBehaviour
 
         if (instance.enemyDrawCardAnimationSequence == null || !instance.enemyDrawCardAnimationSequence.IsActive() || instance.enemyDrawCardAnimationSequence.IsComplete())
         {
+            instance.isEnemyAnimating = true;
             instance.currentDrawDelay = 0f;
             instance.enemyDrawCardAnimationSequence = DOTween.Sequence().OnComplete(() =>
             {
                 instance.sortEnemyHand();
+                DOVirtual.DelayedCall(SORT_ANIMATION_DURATION, () => instance.isEnemyAnimating = false);
             });
         }
 
@@ -166,7 +171,7 @@ public class HandViewManager : MonoBehaviour
 
     public static void hoverCard(CardUi cardUi)
     {
-        if (!instance.isAnimating)
+        if (!instance.isPlayerAnimating)
         {
             instance.hoveredCardIndex = instance.playerCardUiList.IndexOf(cardUi);
             instance.sortPlayerHand();
@@ -175,7 +180,7 @@ public class HandViewManager : MonoBehaviour
 
     public static void playerUseCard(CardUi cardUi)
     {
-        if (!instance.isAnimating)
+        if (!instance.isPlayerAnimating)
         {
             instance.usingCard = cardUi;
             instance.usingCardIndex = instance.playerCardUiList.IndexOf(cardUi);
@@ -205,12 +210,13 @@ public class HandViewManager : MonoBehaviour
 
         GameObject cardBackToConsume = instance.enemyCardBackList[0];
         instance.enemyCardBackList.RemoveAt(0);
+        cardBackToConsume.GetComponent<RectTransform>().DOKill();
 
         cardBackToConsume.GetComponent<RectTransform>().DOScale(Vector3.zero, USE_ANIMATION_DURATION).OnComplete(() => Destroy(cardBackToConsume));
         instance.sortEnemyHand();
     }
 
-    public static void destoryUsingCard()
+    public static void destroyUsingCard()
     {
         if (instance.usingCard != null)
         {
@@ -235,7 +241,7 @@ public class HandViewManager : MonoBehaviour
 
     public static void rearrangeHover()
     {
-        if (!instance.isAnimating)
+        if (!instance.isPlayerAnimating)
         {
             instance.hoveredCardIndex = -1;
             instance.sortPlayerHand();
@@ -252,7 +258,7 @@ public class HandViewManager : MonoBehaviour
 
     private void flushPlayerHand()
     {
-        isAnimating = true;
+        isPlayerAnimating = true;
         instance.playerDrawCardAnimationSequence?.Kill();
         Sequence seq = DOTween.Sequence();
 
@@ -274,13 +280,13 @@ public class HandViewManager : MonoBehaviour
                 Destroy(child.gameObject);
             }
 
-            isAnimating = false;
+            isPlayerAnimating = false;
         });
     }
 
     private void flushEnemyHand()
     {
-        isAnimating = true;
+        isEnemyAnimating = true;
         instance.enemyDrawCardAnimationSequence?.Kill();
         Sequence seq = DOTween.Sequence();
 
@@ -302,7 +308,7 @@ public class HandViewManager : MonoBehaviour
                 Destroy(child.gameObject);
             }
 
-            isAnimating = false;
+            isEnemyAnimating = false;
         });
     }
 }

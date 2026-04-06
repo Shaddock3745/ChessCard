@@ -1,4 +1,6 @@
 using UnityEngine;
+using DG.Tweening;
+using System.Threading.Tasks;
 
 public class BoardTile : MonoBehaviour
 {
@@ -6,6 +8,8 @@ public class BoardTile : MonoBehaviour
     [SerializeField] private Sprite moveableSprite;
     [SerializeField] private Sprite attackableSprite;
     [SerializeField] private Sprite selectableSprite;
+
+    private static readonly float FADE_DURATION = 0.3f;
 
     private SpriteRenderer spriteRenderer;
     private bool isMoveable = false;
@@ -40,6 +44,10 @@ public class BoardTile : MonoBehaviour
         pos = new Vector2Int(x, y);
     }
 
+    private void resetVisual()
+    {
+    }
+
     public void showMoveable()
     {
         isMoveable = true;
@@ -63,11 +71,22 @@ public class BoardTile : MonoBehaviour
         spriteRenderer.sprite = targetSprite;
     }
 
+    public async Task showTargetWithAnimation()
+    {
+        spriteRenderer.DOKill();
+        spriteRenderer.sprite = targetSprite;
+        Color color = spriteRenderer.color;
+        color.a = 0f;
+        spriteRenderer.color = color;
+        await spriteRenderer.DOFade(1f, FADE_DURATION).AsyncWaitForCompletion();
+    }
+
     public void removeHint()
     {
         isMoveable = false;
         isAttackable = false;
         isSelectable = false;
+        spriteRenderer.DOKill();
         spriteRenderer.sprite = null;
     }
 

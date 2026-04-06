@@ -114,8 +114,10 @@ public class PlayerData
 
     public bool canMoveChess(ChessPiece chess)
     {
-        return !couldntMoveChessThisTurn && !chessMoved && mana >= (1 + chess.getExtraMoveCost());
+        return !couldntMoveChessThisTurn && mana >= (1 + chess.getExtraMoveCost());
     }
+
+    public bool chessMovedThisTurn() => chessMoved;
 
     public bool canUseCard(Card card)
     {

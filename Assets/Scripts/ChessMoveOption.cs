@@ -3,11 +3,13 @@ using UnityEngine;
 
 public class ChessMoveOption : AiOption
 {
+    private ChessPiece piece;
     private Vector2Int currentPos, targetPos;
     private float score;
 
-    public ChessMoveOption(Vector2Int currentPos, Vector2Int targetPos, float score)
+    public ChessMoveOption(ChessPiece piece, Vector2Int currentPos, Vector2Int targetPos, float score)
     {
+        this.piece = piece;
         this.currentPos = currentPos;
         this.targetPos = targetPos;
         this.score = score;
@@ -16,10 +18,13 @@ public class ChessMoveOption : AiOption
 
     public async Task execute()
     {
+        AiManager.getAIPlayerData().doChessMoved(piece);
+
         if (BoardManager.isEmpty(targetPos))
             await BoardManager.movePieceWithAnimation(currentPos, targetPos);
         else
             await BoardManager.attackPieceWithAnimation(currentPos, targetPos);
     }
 
+    public string getChessName() => piece.getName();
 }

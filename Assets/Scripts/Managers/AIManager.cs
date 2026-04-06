@@ -6,7 +6,7 @@ public class AiManager : MonoBehaviour
 {
     private static AiManager instance;
 
-    private PlayerData playerData;
+    private PlayerData aiPlayerData;
 
     private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5 });
 
@@ -32,32 +32,42 @@ public class AiManager : MonoBehaviour
 
     public static PlayerData initAIPlayerData()
     {
-        instance.playerData = new PlayerData(true, false, DEFAULT_AI_DECK_LIST);
-        return instance.playerData;
+        instance.aiPlayerData = new PlayerData(true, false, DEFAULT_AI_DECK_LIST);
+        return instance.aiPlayerData;
     }
 
     public static PlayerData getAIPlayerData()
     {
-        return instance.playerData;
+        return instance.aiPlayerData;
     }
 
     public static bool isWhite()
     {
-        return instance.playerData.IsWhite();
+        return instance.aiPlayerData.IsWhite();
     }
 
     public static AiOption getBestMove()
     {
-        List<Vector2Int> pieceList = BoardManager.getAllChessPiecesPos(isWhite());
+        List<AiOption> options = new List<AiOption>();
 
-        List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
+        if (!instance.aiPlayerData.chessMovedThisTurn())
+        {
+            List<(ChessPiece, Vector2Int)> pieceList = BoardManager.getAllChessPieces(isWhite());
 
-        foreach (Vector2Int pos in pieceList)
-            moveOptions.AddRange(AiEvaluator.getMoveOptionsByChessPiece(pos));
+            foreach (var (piece, pos) in pieceList)
+                if (instance.aiPlayerData.canMoveChess(piece))
+                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, pos));
+        }
+
+        List<Card> handCardList = instance.aiPlayerData.getHandList();
+        int currentMana = instance.aiPlayerData.getMana();
+
+        foreach (Card card in handCardList)
+            options.AddRange(AiEvaluator.getCardUseOptionsByCard(card, currentMana));
 
         AiOption bestMove = null;
 
-        foreach (ChessMoveOption moveOption in moveOptions)
+        foreach (AiOption moveOption in options)
             if (bestMove == null || moveOption.getScore() > bestMove.getScore())
                 bestMove = moveOption;
 
@@ -66,10 +76,24 @@ public class AiManager : MonoBehaviour
 
     public static async Task doBestMove()
     {
-        AiOption bestMove = getBestMove();
+        AiOption bestMove;
 
-        if (bestMove != null)
+        while ((bestMove = getBestMove()) != null)
         {
+            while (HandViewManager.isPlayingAnimation())
+                await Task.Delay(100);
+
+            await Task.Delay(300);
+
+            string result = "AI ";
+
+            if (bestMove is CardUseOption cardUseOption)
+                result += string.Format("use card : {0}", cardUseOption.getCardname());
+            else if (bestMove is ChessMoveOption chessMoveOption)
+                result += string.Format("move {0}", chessMoveOption.getChessName());
+
+            Debug.Log(result);
+
             await bestMove.execute();
         }
     }
