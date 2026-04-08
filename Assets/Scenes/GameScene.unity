@@ -792,13 +792,13 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1119224412}
-  - {fileID: 970283286}
   - {fileID: 1895040108}
   - {fileID: 1187595409}
+  - {fileID: 970283286}
   - {fileID: 1981118288}
-  - {fileID: 448292423}
   - {fileID: 1799423184}
   - {fileID: 2139762419}
+  - {fileID: 448292423}
   - {fileID: 1922209156}
   - {fileID: 2121922711}
   - {fileID: 1614028181}
@@ -2148,6 +2148,54 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &1524354300
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1524354302}
+  - component: {fileID: 1524354301}
+  m_Layer: 0
+  m_Name: UiManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1524354301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1524354300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe5f75af0e41d104caf8527830fe19f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UiManager
+  deckCount: {fileID: 1981118289}
+  waitingCount: {fileID: 1799423185}
+  discardCount: {fileID: 2139762420}
+  manaCount: {fileID: 448292424}
+--- !u!4 &1524354302
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1524354300}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.04969, y: -2.90377, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1614028180
 GameObject:
   m_ObjectHideFlags: 0
@@ -2460,10 +2508,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d418beb9bfc4e7444a6d92fb20219e6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeckManager
-  deckCount: {fileID: 1981118289}
-  waitingCount: {fileID: 1799423185}
-  discardCount: {fileID: 2139762420}
-  manaCount: {fileID: 448292424}
 --- !u!4 &1740909127
 Transform:
   m_ObjectHideFlags: 0
@@ -3383,7 +3427,7 @@ GameObject:
   - component: {fileID: 2046945145}
   - component: {fileID: 2046945144}
   m_Layer: 0
-  m_Name: AIManager
+  m_Name: AiManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3944,6 +3988,7 @@ SceneRoots:
   - {fileID: 1740909127}
   - {fileID: 299277057}
   - {fileID: 213729418}
+  - {fileID: 1524354302}
   - {fileID: 1117591612}
   - {fileID: 1507533663}
   - {fileID: 1276851744}

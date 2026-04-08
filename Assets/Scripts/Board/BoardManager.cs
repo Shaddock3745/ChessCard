@@ -17,8 +17,7 @@ public class BoardManager : MonoBehaviour
     private static readonly float TILE_SIZE = 0.64f;
     private static readonly float START_OFFSET = -2.24f;
     private static readonly float MOVING_ANIMATION_DURATION = 0.5f;
-    private ChessPiece[,] chessPieces = new ChessPiece[8, 8];
-    private BoardTile[,] boardTiles = new BoardTile[8, 8];
+    private BoardState boardState;
 
     void Awake()
     {
@@ -42,6 +41,8 @@ public class BoardManager : MonoBehaviour
 
     private void setBoard()
     {
+        boardState = new BoardState();
+
         for (int i = 0; i < 8; i++)
             for (int j = 0; j < 8; j++)
                 setTile(i, j);
@@ -60,8 +61,7 @@ public class BoardManager : MonoBehaviour
         gameObject.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
 
         BoardTile tile = gameObject.GetComponent<BoardTile>();
-        boardTiles[indexX, indexY] = tile;
-        tile.initPos(indexX, indexY);
+        boardState.setBoardTileAtPosition(indexX, indexY, tile);
     }
 
     private void spawnPawn(int indexX, int indexY, bool isWhite)
@@ -123,7 +123,7 @@ public class BoardManager : MonoBehaviour
 
         ChessPiece chessPiece = gameObject.GetComponent<ChessPiece>();
         chessPiece.SetPieceData(data);
-        chessPieces[indexX, indexY] = chessPiece;
+        boardState.setChessPieceAtPosition(indexX, indexY, chessPiece);
     }
 
     public static List<BoardTile> getSummonableTiles(ChessType type, bool isWhite)
@@ -244,27 +244,27 @@ public class BoardManager : MonoBehaviour
 
     public static ChessPiece getChessPieceAtPosition(int x, int y)
     {
-        return instance.chessPieces[x, y];
+        return instance.boardState.getChessPieceAtPosition(x, y);
     }
 
     public static ChessPiece getChessPieceAtPosition(Vector2Int position)
     {
-        return instance.chessPieces[position.x, position.y];
+        return instance.boardState.getChessPieceAtPosition(position);
     }
 
     public static ChessPiece getChessPieceAtTile(BoardTile tile)
     {
-        return instance.chessPieces[tile.getX(), tile.getY()];
+        return instance.boardState.getChessPieceAtPosition(tile.getX(), tile.getY());
     }
 
     public static BoardTile getTileAtPosition(Vector2Int position)
     {
-        return instance.boardTiles[position.x, position.y];
+        return instance.boardState.getBoardTileAtPosition(position);
     }
 
     public static BoardTile getTileAtPosition(int x, int y)
     {
-        return instance.boardTiles[x, y];
+        return instance.boardState.getBoardTileAtPosition(x, y);
     }
 
     public static List<(ChessPiece, Vector2Int)> getAllChessPieces(bool isWhite)
@@ -273,20 +273,15 @@ public class BoardManager : MonoBehaviour
 
         for (int i = 0; i < 8; i++)
             for (int j = 0; j < 8; j++)
-                if (instance.chessPieces[i, j] != null && instance.chessPieces[i, j].isWhite() == isWhite)
+                if (getChessPieceAtPosition(i, j) != null && getChessPieceAtPosition(i, j).isWhite() == isWhite)
                     pieces.Add((getChessPieceAtPosition(i, j), new Vector2Int(i, j)));
 
         return pieces;
     }
 
-    public static bool isChessPieceHere(int x, int y)
-    {
-        return instance.chessPieces[x, y] != null;
-    }
-
     public static bool isEmpty(Vector2Int position)
     {
-        return instance.chessPieces[position.x, position.y] == null;
+        return getChessPieceAtPosition(position) == null;
     }
 
     public static bool isPositionOnBoard(Vector2Int position)
@@ -309,8 +304,7 @@ public class BoardManager : MonoBehaviour
     public static void movePiece(Vector2Int from, Vector2Int to)
     {
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
-        instance.chessPieces[to.x, to.y] = movingPiece;
-        instance.chessPieces[from.x, from.y] = null;
+        instance.boardState.moveChessPiece(from, to);
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
         movingPiece.moveToPoint(new Vector3(x, y, 0));
@@ -326,8 +320,7 @@ public class BoardManager : MonoBehaviour
             .SetEase(Ease.InOutQuad)
             .OnComplete(() =>
             {
-                instance.chessPieces[to.x, to.y] = movingPiece;
-                instance.chessPieces[from.x, from.y] = null;
+                instance.boardState.moveChessPiece(from, to);
             })
             .AsyncWaitForCompletion();
     }
@@ -339,8 +332,7 @@ public class BoardManager : MonoBehaviour
 
         ChessPiece targetPiece = getChessPieceAtPosition(to.x, to.y);
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
-        instance.chessPieces[to.x, to.y] = movingPiece;
-        instance.chessPieces[from.x, from.y] = null;
+        instance.boardState.moveChessPiece(from, to);
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
         movingPiece.moveToPoint(new Vector3(x, y, 0));
@@ -372,14 +364,13 @@ public class BoardManager : MonoBehaviour
         await seq.OnComplete(() =>
         {
             Destroy(targetPiece.gameObject);
-            instance.chessPieces[to.x, to.y] = movingPiece;
-            instance.chessPieces[from.x, from.y] = null;
+            instance.boardState.moveChessPiece(from, to);
         }).AsyncWaitForCompletion();
     }
 
     public static void showMoveable(Vector2Int position)
     {
-        instance.boardTiles[position.x, position.y].showMoveable();
+        getTileAtPosition(position).showMoveable();
     }
 
     public static void showMoveable(List<Vector2Int> positions)
@@ -390,7 +381,7 @@ public class BoardManager : MonoBehaviour
 
     public static void showAttackable(Vector2Int position)
     {
-        instance.boardTiles[position.x, position.y].showAttackable();
+        getTileAtPosition(position).showAttackable();
     }
 
     public static void showAttackable(List<Vector2Int> positions)
@@ -401,7 +392,7 @@ public class BoardManager : MonoBehaviour
 
     public static void showSelectable(Vector2Int position)
     {
-        instance.boardTiles[position.x, position.y].showSelectable();
+        getTileAtPosition(position).showSelectable();
     }
     public static void showSelectable(List<Vector2Int> positions)
     {
@@ -411,7 +402,7 @@ public class BoardManager : MonoBehaviour
 
     public static void showTarget(Vector2Int position)
     {
-        instance.boardTiles[position.x, position.y].showTarget();
+        getTileAtPosition(position).showTarget();
     }
 
     public static void showTarget(List<Vector2Int> positions)
@@ -431,14 +422,14 @@ public class BoardManager : MonoBehaviour
 
     public static void removeHint(Vector2Int position)
     {
-        instance.boardTiles[position.x, position.y].removeHint();
+        getTileAtPosition(position).removeHint();
     }
 
     public static void removeAllHint()
     {
         for (int i = 0; i < 8; i++)
             for (int j = 0; j < 8; j++)
-                instance.boardTiles[i, j].removeHint();
+                getTileAtPosition(i, j).removeHint();
     }
 
     public static void showOuter(bool isMouseInner)

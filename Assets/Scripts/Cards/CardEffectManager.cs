@@ -6,10 +6,15 @@ public class CardEffectManager : MonoBehaviour
 {
     private static CardEffectManager instance;
 
+    private static Dictionary<int, CardEffect> cardRegistry = new Dictionary<int, CardEffect>();
+
     void Awake()
     {
         if (instance == null)
+        {
             instance = this;
+            initDictionary();
+        }
         else
             Destroy(gameObject);
     }
@@ -20,6 +25,20 @@ public class CardEffectManager : MonoBehaviour
 
     void Update()
     {
+    }
+
+    private static void initDictionary()
+    {
+        cardRegistry[1] = new SummonEffect(ChessType.Pawn);
+        cardRegistry[2] = new SummonEffect(ChessType.Bishop);
+        cardRegistry[3] = new SummonEffect(ChessType.Knight);
+        cardRegistry[4] = new SummonEffect(ChessType.Rook);
+        cardRegistry[5] = new SummonEffect(ChessType.Queen);
+    }
+
+    public static CardEffect getCardEffect(Card card)
+    {
+        return cardRegistry.TryGetValue(card.getId(), out CardEffect effect) ? effect : null;
     }
 
     private static ChessType getChessTypeByCard(Card card) => card.getId() switch
@@ -72,37 +91,9 @@ public class CardEffectManager : MonoBehaviour
 
     private static async Task executeCardEffect(bool isPlayer, Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
     {
-        bool isWhite = isPlayer ? GameManager.IsPlayerWhite() : !GameManager.IsPlayerWhite();
-
-        switch (card.getId())
-        {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-                if (isPlayer)
-                    processSummonWithoutAnimation(getChessTypeByCard(card), isWhite, targetPositions[0]);
-                else
-                {
-                    await BoardManager.showTargetWithAnimation(targetPositions);
-                    await processSummonWithAnimation(getChessTypeByCard(card), isWhite, targetPositions[0]);
-                    BoardManager.removeAllHint();
-                }
-                break;
-            default:
-                Debug.LogWarning("Card effect not implemented for card id: " + card.getId());
-                break;
-        }
-    }
-
-    private static void processSummonWithoutAnimation(ChessType type, bool isWhite, Vector2Int position)
-    {
-        BoardManager.summonChessPiece(type, isWhite, position);
-    }
-
-    private static async Task processSummonWithAnimation(ChessType type, bool isWhite, Vector2Int position)
-    {
-        await BoardManager.summonChessPieceWithAnimation(type, isWhite, position);
+        if (cardRegistry.TryGetValue(card.getId(), out CardEffect effect))
+            await effect.executeEffect(isPlayer, card, targetPositions);
+        else
+            Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
     }
 }

@@ -8,7 +8,7 @@ public class AiEvaluator
     private static readonly float BOARD_WIDTH = 8f;
     private static readonly Vector2 CENTER_POSITION = new Vector2(3.5f, 3.5f);
 
-    private static float getPieceValue(ChessType pieceType)
+    public static float getPieceValue(ChessType pieceType)
     {
         return pieceType switch
         {
@@ -22,7 +22,7 @@ public class AiEvaluator
         };
     }
 
-    private static float getPositionValue(Vector2Int position)
+    public static float getPositionValue(Vector2Int position)
     {
         return (BOARD_WIDTH - Vector2.Distance(position, CENTER_POSITION)) * DISTANCE_COEFFICIENT;
     }
@@ -51,47 +51,13 @@ public class AiEvaluator
         return moveOptions;
     }
 
-    private static List<CardUseOption> getSummonChessOptions(Card card, int currentMana)
-    {
-        if (currentMana < card.getCost())
-            return new List<CardUseOption>();
-
-        ChessType type = card.getId() switch
-        {
-            1 => ChessType.Pawn,
-            2 => ChessType.Bishop,
-            3 => ChessType.Knight,
-            4 => ChessType.Rook,
-            5 => ChessType.Queen,
-            _ => ChessType.Pawn
-        };
-
-        List<CardUseOption> useOptions = new List<CardUseOption>();
-        List<BoardTile> summonableTiles = BoardManager.getSummonableTiles(type, AiManager.isWhite());
-        float manaEfficiency = card.getCost() == 0 ? 2.0f : (float)currentMana / card.getCost();
-
-        foreach (BoardTile tile in summonableTiles)
-        {
-            Vector2Int position = tile.getPos();
-            float score = getPieceValue(type) * manaEfficiency + getPositionValue(position); 
-            useOptions.Add(new CardUseOption(card, score, new List<Vector2Int> { position }));
-        }
-
-        return useOptions;
-    }
-
     public static List<CardUseOption> getCardUseOptionsByCard(Card card, int currentMana)
     {
-        switch (card.getId())
-        {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-                return getSummonChessOptions(card, currentMana);
-            default:
-                return new List<CardUseOption>();
-        }
+        CardEffect cardEffect = CardEffectManager.getCardEffect(card);
+
+        if (cardEffect != null)
+            return cardEffect.getUseOptions(card, currentMana);
+        else
+            return new List<CardUseOption>();
     }
 }

@@ -7,8 +7,6 @@ public class MatchDataManager : MonoBehaviour
 {
     private static MatchDataManager instance;
 
-    [SerializeField] private TMPro.TextMeshProUGUI deckCount, waitingCount, discardCount, manaCount;
-
     private PlayerData player, enemy;
 
     void Awake()
@@ -115,14 +113,14 @@ public class MatchDataManager : MonoBehaviour
 
     private void updateCardCountUi()
     {
-        deckCount.text = instance.player.getDeckCardCount().ToString();
-        waitingCount.text = instance.player.getWaitingCardCount().ToString();
-        discardCount.text = instance.player.getDiscardCardCount().ToString();
+        UiManager.updateDeckCount(instance.player.getDeckCardCount());
+        UiManager.updateWaitingCount(instance.player.getWaitingCardCount());
+        UiManager.updateDiscardCount(instance.player.getDiscardCardCount());
     }
 
     private void updateManaUi()
     {
-        manaCount.text = instance.player.getMana().ToString();
+        UiManager.updateManaCount(instance.player.getMana());
     }
 
     public static void initPlayer()
