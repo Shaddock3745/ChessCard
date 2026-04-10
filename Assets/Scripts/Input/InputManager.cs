@@ -100,7 +100,7 @@ public class InputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (GameManager.IsPlayerTurn())
+        if (GameManager.IsLocalTurn())
         {
             if (isAwaitingTarget)
                 updateWhenSelecting();
@@ -146,7 +146,7 @@ public class InputManager : MonoBehaviour
         {
             isMouseHolding = true;
 
-            if (GameManager.IsPlayerTurn())
+            if (GameManager.IsLocalTurn())
             {
                 if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess))
                     raiseChess();
@@ -382,7 +382,7 @@ public class InputManager : MonoBehaviour
 
         if (isMouseInner)
         {
-            _ = CardEffectManager.processPlayerCard(selectedCard.getCard());
+            _ = CardEffectManager.processLocalPlayerCard(selectedCard.getCard());
             HandViewManager.playerUseCard(selectedCard);
         }
         else

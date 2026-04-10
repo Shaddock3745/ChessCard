@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
     private static GameManager instance;
 
     private bool isWhiteTurn = true;
-    private bool isPlayerWhite = true; // This should be set based on player selection
+    private bool isLocalWhite = true; // This should be set based on local selection
 
     void Awake()
     {
@@ -38,28 +38,31 @@ public class GameManager : MonoBehaviour
         instance.isWhiteTurn = !instance.isWhiteTurn;
         instance.nowTurn.text = instance.isWhiteTurn ? "White" : "Black";
 
-        if (IsPlayerTurn())
+        if (IsLocalTurn())
         {
             MatchDataManager.turnEnd(false);
             MatchDataManager.turnStart(true);
+
+            if(MatchDataManager.isAI(true))
+                await AiManager.doBestMove(MatchDataManager.getPlayerData(true));
         }
         else
         {
             MatchDataManager.turnEnd(true);
             MatchDataManager.turnStart(false);
 
-            if(MatchDataManager.isEnemyAI())
-                await AiManager.doBestMove();
+            if(MatchDataManager.isAI(false))
+                await AiManager.doBestMove(MatchDataManager.getPlayerData(false));
         }
     }
 
-    public static bool IsPlayerTurn()
+    public static bool IsLocalTurn()
     {
-        return instance.isWhiteTurn == instance.isPlayerWhite;
+        return instance.isWhiteTurn == instance.isLocalWhite;
     }
 
-    public static bool IsPlayerWhite()
+    public static bool IsLocalWhite()
     {
-        return instance.isPlayerWhite;
+        return instance.isLocalWhite;
     }
 }

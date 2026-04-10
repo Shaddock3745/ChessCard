@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -5,8 +6,6 @@ using UnityEngine;
 public class AiManager : MonoBehaviour
 {
     private static AiManager instance;
-
-    private PlayerData aiPlayerData;
 
     private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5 });
 
@@ -30,40 +29,24 @@ public class AiManager : MonoBehaviour
 
     }
 
-    public static PlayerData initAIPlayerData()
-    {
-        instance.aiPlayerData = new PlayerData(true, false, DEFAULT_AI_DECK_LIST);
-        return instance.aiPlayerData;
-    }
-
-    public static PlayerData getAIPlayerData()
-    {
-        return instance.aiPlayerData;
-    }
-
-    public static bool isWhite()
-    {
-        return instance.aiPlayerData.IsWhite();
-    }
-
-    public static AiOption getBestMove()
+    public static AiOption getBestMove(PlayerData playerData)
     {
         List<AiOption> options = new List<AiOption>();
 
-        if (!instance.aiPlayerData.chessMovedThisTurn())
+        if (!playerData.chessMovedThisTurn())
         {
-            List<(ChessPiece, Vector2Int)> pieceList = BoardManager.getAllChessPieces(isWhite());
+            List<(ChessPiece, Vector2Int)> pieceList = BoardManager.getAllChessPieces(playerData.IsWhite());
 
             foreach (var (piece, pos) in pieceList)
-                if (instance.aiPlayerData.canMoveChess(piece))
+                if (playerData.canMoveChess(piece))
                     options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, pos));
         }
 
-        List<Card> handCardList = instance.aiPlayerData.getHandList();
-        int currentMana = instance.aiPlayerData.getMana();
+        List<Card> handCardList = playerData.getHandList();
+        int currentMana = playerData.getMana();
 
         foreach (Card card in handCardList)
-            options.AddRange(AiEvaluator.getCardUseOptionsByCard(card, currentMana));
+            options.AddRange(AiEvaluator.getCardUseOptionsByCard(playerData, card, currentMana));
 
         AiOption bestMove = null;
 
@@ -74,11 +57,11 @@ public class AiManager : MonoBehaviour
         return bestMove;
     }
 
-    public static async Task doBestMove()
+    public static async Task doBestMove(PlayerData playerData)
     {
         AiOption bestMove;
 
-        while ((bestMove = getBestMove()) != null)
+        while ((bestMove = getBestMove(playerData)) != null)
         {
             while (HandViewManager.isPlayingAnimation())
                 await Task.Delay(100);
@@ -94,7 +77,10 @@ public class AiManager : MonoBehaviour
 
             Debug.Log(result);
 
-            await bestMove.execute();
+            await bestMove.execute(playerData);
         }
     }
+
+    public static PlayerData initAIPlayerData(bool isLocal, bool isWhite) => new PlayerData(true, isLocal, isWhite, DEFAULT_AI_DECK_LIST);
+
 }

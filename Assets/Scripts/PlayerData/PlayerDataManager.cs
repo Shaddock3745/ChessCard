@@ -6,7 +6,7 @@ public class PlayerDataManager : MonoBehaviour
 {
     private static PlayerDataManager instance;
 
-    private List<int> playerDeck = new List<int>(new int[] {1,1,1,1,1,2,2,3,3,4,4,5});
+    private List<int> playerDeck = new List<int>(new int[] { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5 });
 
     private void Awake()
     {
@@ -19,17 +19,19 @@ public class PlayerDataManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public static List<int> getPlayerDeck()
     {
         return instance.playerDeck;
     }
+
+    public static PlayerData initLocalPlayerData(bool isAI, bool isWhite) => new PlayerData(isAI, true, isWhite, getPlayerDeck());
 }

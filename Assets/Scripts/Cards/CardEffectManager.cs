@@ -51,11 +51,11 @@ public class CardEffectManager : MonoBehaviour
         _ => ChessType.Pawn
     };
 
-    public static async Task processPlayerCard(Card card)
+    public static async Task processLocalPlayerCard(Card card)
     {
         List<Vector2Int> targetPositions = new List<Vector2Int>();
         List<Card> targetCards = new List<Card>();
-        bool isWhite = GameManager.IsPlayerWhite();
+        bool isWhite = GameManager.IsLocalWhite();
 
         switch (card.getId())
         {
@@ -82,17 +82,22 @@ public class CardEffectManager : MonoBehaviour
         await executeCardEffect(true, card, targetPositions, targetCards);
     }
 
-    public static async Task processAiCard(Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
+    public static async Task processLocalAiCard(Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
+    {
+        MatchDataManager.useCard(true, card);
+        await executeCardEffect(true, card, targetPositions, targetCards);
+    }
+
+    public static async Task processEnemyAiCard(Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
     {
         MatchDataManager.useCard(false, card);
-
         await executeCardEffect(false, card, targetPositions, targetCards);
     }
 
-    private static async Task executeCardEffect(bool isPlayer, Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
+    private static async Task executeCardEffect(bool isLocal, Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
     {
         if (cardRegistry.TryGetValue(card.getId(), out CardEffect effect))
-            await effect.executeEffect(isPlayer, card, targetPositions);
+            await effect.executeEffect(isLocal, card, targetPositions);
         else
             Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
     }

@@ -7,7 +7,7 @@ public class MatchDataManager : MonoBehaviour
 {
     private static MatchDataManager instance;
 
-    private PlayerData player, enemy;
+    private PlayerData local, enemy;
 
     void Awake()
     {
@@ -22,8 +22,8 @@ public class MatchDataManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        initPlayer();
-        initEnemy(AiManager.initAIPlayerData());
+        initLocal(PlayerDataManager.initLocalPlayerData(false, true));
+        initEnemy(AiManager.initAIPlayerData(false, false));
     }
 
     // Update is called once per frame
@@ -32,37 +32,37 @@ public class MatchDataManager : MonoBehaviour
 
     }
 
-    public static void addMana(bool isPlayer, int amount)
+    public static void addMana(bool isLoal, int amount)
     {
-        if (isPlayer)
-            instance.player.addMana(amount);
+        if (isLoal)
+            instance.local.addMana(amount);
         else
             instance.enemy.addMana(amount);
 
         instance.updateManaUi();
     }
 
-    public static void shuffleDeck(bool isPlayer)
+    public static void shuffleDeck(bool isLocal)
     {
-        if (isPlayer)
-            instance.player.shuffleDeck();
+        if (isLocal)
+            instance.local.shuffleDeck();
         else
             instance.enemy.shuffleDeck();
     }
 
-    public static void replenish(bool isPlayer)
+    public static void replenish(bool isLocal)
     {
-        if (isPlayer)
-            instance.player.replenish();
+        if (isLocal)
+            instance.local.replenish();
         else
             instance.enemy.replenish();
     }
 
-    public static Card drawCard(bool isPlayer)
+    public static Card drawCard(bool isLocal)
     {
-        if (isPlayer)
+        if (isLocal)
         {
-            Card result = instance.player.drawCard();
+            Card result = instance.local.drawCard();
 
             if (result != null)
                 HandViewManager.playerDrawCard(result);
@@ -81,11 +81,11 @@ public class MatchDataManager : MonoBehaviour
         }
     }
 
-    public static void useCard(bool isPlayer, Card card)
+    public static void useCard(bool isLocal, Card card)
     {
-        if (isPlayer)
+        if (isLocal)
         {
-            instance.player.useCard(card);
+            instance.local.useCard(card);
             instance.updateCardCountUi();
             instance.updateManaUi();
         }
@@ -96,11 +96,11 @@ public class MatchDataManager : MonoBehaviour
         }
     }
 
-    public static void flushHandCards(bool isPlayer)
+    public static void flushHandCards(bool isLocal)
     {
-        if (isPlayer)
+        if (isLocal)
         {
-            instance.player.flushHandCards();
+            instance.local.flushHandCards();
             HandViewManager.flush(true);
             instance.updateCardCountUi();
         }
@@ -113,19 +113,19 @@ public class MatchDataManager : MonoBehaviour
 
     private void updateCardCountUi()
     {
-        UiManager.updateDeckCount(instance.player.getDeckCardCount());
-        UiManager.updateWaitingCount(instance.player.getWaitingCardCount());
-        UiManager.updateDiscardCount(instance.player.getDiscardCardCount());
+        UiManager.updateDeckCount(instance.local.getDeckCardCount());
+        UiManager.updateWaitingCount(instance.local.getWaitingCardCount());
+        UiManager.updateDiscardCount(instance.local.getDiscardCardCount());
     }
 
     private void updateManaUi()
     {
-        UiManager.updateManaCount(instance.player.getMana());
+        UiManager.updateManaCount(instance.local.getMana());
     }
 
-    public static void initPlayer()
+    public static void initLocal(PlayerData playerData)
     {
-        instance.player = new PlayerData(false, true, PlayerDataManager.getPlayerDeck());
+        instance.local = playerData;
         instance.updateCardCountUi();
         instance.updateManaUi();
     }
@@ -135,17 +135,22 @@ public class MatchDataManager : MonoBehaviour
         instance.enemy = playerData;
     }
 
-    public static bool isEnemyAI()
+    public static bool isAI(bool isLocal)
     {
-        return instance.enemy.isAI();
+        return isLocal ? instance.local.isAI() : instance.enemy.isAI();
     }
 
-    public static void turnStart(bool isPlayerTurn)
+    public static PlayerData getPlayerData(bool isLocal)
     {
-        if (isPlayerTurn)
+        return isLocal ? instance.local : instance.enemy;
+    }
+
+    public static void turnStart(bool isLocalTurn)
+    {
+        if (isLocalTurn)
         {
-            instance.player.resetForNewTurn();
-            int handCardCount = PlayerData.getDefaultHandCardCount() + instance.player.getBonusHandCardCount();
+            instance.local.resetForNewTurn();
+            int handCardCount = PlayerData.getDefaultHandCardCount() + instance.local.getBonusHandCardCount();
 
             for (int i = 0; i < handCardCount; i++)
                 drawCard(true);
@@ -163,12 +168,12 @@ public class MatchDataManager : MonoBehaviour
         }
     }
 
-    public static void turnEnd(bool isPlayer)
+    public static void turnEnd(bool isLocalTurn)
     {
-        if (isPlayer)
+        if (isLocalTurn)
         {
-            instance.player.resetForEndTurn();
-            instance.player.flushHandCards();
+            instance.local.resetForEndTurn();
+            instance.local.flushHandCards();
             HandViewManager.flush(true);
             instance.updateCardCountUi();
             instance.updateManaUi();
@@ -181,28 +186,28 @@ public class MatchDataManager : MonoBehaviour
         }
     }
 
-    public static bool canMoveChess(bool isPlayer, ChessPiece chess)
+    public static bool canMoveChess(bool isLocal, ChessPiece chess)
     {
-        if (isPlayer)
-            return instance.player.canMoveChess(chess);
+        if (isLocal)
+            return instance.local.canMoveChess(chess);
         else
             return instance.enemy.canMoveChess(chess);
     }
 
 
-    public static bool canUseCard(bool isPlayer, Card card)
+    public static bool canUseCard(bool isLocal, Card card)
     {
-        if (isPlayer)
-            return instance.player.canUseCard(card);
+        if (isLocal)
+            return instance.local.canUseCard(card);
         else
             return instance.enemy.canUseCard(card);
     }
 
 
-    public static void doChessMoved(bool isPlayer, ChessPiece chess)
+    public static void doChessMoved(bool isLocal, ChessPiece chess)
     {
-        if (isPlayer)
-            instance.player.doChessMoved(chess);
+        if (isLocal)
+            instance.local.doChessMoved(chess);
         else
             instance.enemy.doChessMoved(chess);
 

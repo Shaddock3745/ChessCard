@@ -5,7 +5,9 @@ using UnityEngine;
 
 public interface CardEffect
 {
-    List<CardUseOption> getUseOptions(Card card, int currentMana);
+    public bool canActivate(bool isLocal, Card card);
 
-    Task executeEffect(bool isPlayer, Card card, List<Vector2Int> targetPositions);
+    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana);
+
+    public Task executeEffect(bool isLocal, Card card, List<Vector2Int> targetPositions);
 }

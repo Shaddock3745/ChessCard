@@ -13,6 +13,7 @@ public class PlayerData
 
     private readonly PlayerType playerType;
     private readonly bool isWhite;
+    private readonly bool isLocal;
     private List<Card> deck, handList, waitingList, discardList;
     private int mana = DEFAULT_MANA;
     private bool chessMoved = false;
@@ -30,9 +31,10 @@ public class PlayerData
         return DEFAULT_HAND_CARD_COUNT;
     }
 
-    public PlayerData(bool isAI, bool isWhite, List<int> cardIds)
+    public PlayerData(bool isAI, bool isLocal, bool isWhite, List<int> cardIds)
     {
         playerType = isAI ? PlayerType.AI : PlayerType.Human;
+        this.isLocal = isLocal;
         this.isWhite = isWhite;
         loadDeck(cardIds);
     }
@@ -42,92 +44,49 @@ public class PlayerData
         return playerType == PlayerType.AI;
     }
 
-    public bool IsWhite()
-    {
-        return isWhite;
-    }
+    public bool IsWhite() => isWhite;
 
-    public int getMana()
-    {
-        return mana;
-    }
+    public bool IsLocal() => isLocal;
+
+    public int getMana() => mana;
 
     public void addMana(int amount)
     {
         mana += amount;
     }
 
-    public int getBonusMana()
-    {
-        return bonusMana;
-    }
+    public int getBonusMana() => bonusMana;
 
-    public int getBonusHandCardCount()
-    {
-        return bonusHandCardCount;
-    }
+    public int getBonusHandCardCount() => bonusHandCardCount;
 
-    public int getHandCardCount()
-    {
-        return handList.Count;
-    }
+    public int getHandCardCount() => handList.Count;
 
-    public int getDeckCardCount()
-    {
-        return deck.Count;
-    }
+    public int getDeckCardCount() => deck.Count;
 
-    public int getWaitingCardCount()
-    {
-        return waitingList.Count;
-    }
+    public int getWaitingCardCount() => waitingList.Count;
 
-    public int getDiscardCardCount()
-    {
-        return discardList.Count;
-    }
+    public int getDiscardCardCount() => discardList.Count;
 
-    public List<Card> getDeck()
-    {
-        return deck;
-    }
+    public List<Card> getDeck() => deck;
 
-    public List<Card> getHandList()
-    {
-        return handList;
-    }
+    public List<Card> getHandList() => handList;
 
-    public List<Card> getWaitingList()
-    {
-        return waitingList;
-    }
+    public List<Card> getWaitingList() => waitingList;
 
-    public List<Card> getDiscardList()
-    {
-        return discardList;
-    }
+    public List<Card> getDiscardList() => discardList;
 
     private void consumeMana(int cost)
     {
         mana -= cost;
     }
 
-    public bool canMoveChess(ChessPiece chess)
-    {
-        return !couldntMoveChessThisTurn && mana >= (1 + chess.getExtraMoveCost());
-    }
+    public bool canMoveChess(ChessPiece chess) => !couldntMoveChessThisTurn && mana >= (1 + chess.getExtraMoveCost());
 
     public bool chessMovedThisTurn() => chessMoved;
 
-    public bool canUseCard(Card card)
-    {
-        return !couldntUseCardThisTurn && mana >= card.getCost();
-    }
+    public bool canUseCard(Card card) => !couldntUseCardThisTurn && mana >= card.getCost();
 
-    public bool isCouldntMoveChessThisTurn()
-    {
-        return couldntMoveChessThisTurn;
-    }
+    public bool isCouldntMoveChessThisTurn() => couldntMoveChessThisTurn;
 
     public void addBonusMana(int amount)
     {

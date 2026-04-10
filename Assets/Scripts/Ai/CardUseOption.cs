@@ -19,9 +19,12 @@ public class CardUseOption : AiOption
     }
 
     public float getScore() => scroe;
-    public async Task execute()
+    public async Task execute(PlayerData ownerData)
     {
-        await CardEffectManager.processAiCard(card,targetPositions,targetCards);
+        if (ownerData.IsLocal())
+            await CardEffectManager.processLocalAiCard(card, targetPositions, targetCards);
+        else
+            await CardEffectManager.processEnemyAiCard(card, targetPositions, targetCards);
     }
 
     public string getCardname() => card.getName();

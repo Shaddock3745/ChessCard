@@ -3,6 +3,6 @@ using System.Threading.Tasks;
 public interface AiOption
 {
     public float getScore();
-    public Task execute();
+    public Task execute(PlayerData ownerData);
 
 }

@@ -51,12 +51,12 @@ public class AiEvaluator
         return moveOptions;
     }
 
-    public static List<CardUseOption> getCardUseOptionsByCard(Card card, int currentMana)
+    public static List<CardUseOption> getCardUseOptionsByCard(PlayerData playerData, Card card, int currentMana)
     {
         CardEffect cardEffect = CardEffectManager.getCardEffect(card);
 
         if (cardEffect != null)
-            return cardEffect.getUseOptions(card, currentMana);
+            return cardEffect.getUseOptions(playerData.IsLocal(), card, currentMana);
         else
             return new List<CardUseOption>();
     }
