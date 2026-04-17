@@ -1,41 +1,31 @@
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
-using DG.Tweening;
 
-public class ChessPiece : MonoBehaviour
+public enum ChessType
 {
-    private SpriteRenderer spriteRenderer;
-    private PieceData pieceBasicData;
+    Pawn = 0,
+    Rook = 1,
+    Knight = 2,
+    Bishop = 3,
+    Queen = 4,
+    King = 5
+}
+
+public class ChessPiece
+{
+    private ChessType chessType;
+    private bool isWhiteChess;
+    private Vector2Int currentPosition;
     private MovementType movementType;
     private int extraMoveCost = 0;
 
-    private static readonly float FADE_DURATION = 0.3f;
-
-    void Awake()
+    public ChessPiece(ChessType chessType, bool isWhite, Vector2Int currentPosition)
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-    }
+        this.chessType = chessType;
+        this.isWhiteChess = isWhite;
+        this.currentPosition = currentPosition;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    public void SetPieceData(PieceData data)
-    {
-        pieceBasicData = data;
-        spriteRenderer.sprite = pieceBasicData.getPieceSprite();
-        gameObject.name = (pieceBasicData.isWhite()?"White_":"Black_") + pieceBasicData.getChessType().ToString();
-
-        movementType = data.getChessType() switch
+        movementType = chessType switch
         {
             ChessType.Pawn => new PawnMovement(),
             ChessType.Rook => new RookMovement(),
@@ -44,50 +34,34 @@ public class ChessPiece : MonoBehaviour
             ChessType.Queen => new QueenMovement(),
             ChessType.King => new KingMovement(),
             _ => null
-        };        
+        };
     }
 
-    public async Task fadeIn()
+    public ChessType getChessType() => chessType;
+
+    public bool isWhite() => isWhiteChess;
+
+    public Vector2Int getPosition() => currentPosition;
+
+    public void setPosition(Vector2Int newPosition)
     {
-        spriteRenderer.DOKill();
-        Color color = spriteRenderer.color;
-        color.a = 0f;
-        spriteRenderer.color = color;
-        await spriteRenderer.DOFade(1f, FADE_DURATION).AsyncWaitForCompletion();
+        currentPosition = newPosition;
     }
 
-    public ChessType getChessType()
-    {
-        return pieceBasicData.getChessType();
-    }
-
-    public string getName()
-    {
-        return pieceBasicData.getChessType().ToString();
-    }
-
-    public bool isWhite()
-    {
-        return pieceBasicData.isWhite();
-    }
-
-    public List<MoveAction> getAvailableMoves(Vector2Int currentPos)
-    {
-        return movementType.getAvailableMoves(currentPos, pieceBasicData.isWhite());
-    }
-
-    public void moveToPoint(Vector3 point)
-    {
-        transform.position = point;
-    }
-
-    public int getExtraMoveCost()
-    {
-        return extraMoveCost;
-    }
+    public int getExtraMoveCost() => extraMoveCost;
 
     public void setExtraMoveCost(int cost)
     {
         extraMoveCost = cost;
+    }
+
+    public string getName()
+    {
+        return (isWhiteChess ? "White " : "Black ") + chessType.ToString();
+    }
+
+    public List<MoveAction> getAvailableMoves()
+    {
+        return movementType.getAvailableMoves(currentPosition, isWhiteChess);
     }
 }

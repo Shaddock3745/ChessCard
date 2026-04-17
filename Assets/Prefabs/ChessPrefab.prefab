@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1454519413299874256}
   - component: {fileID: 8840641749028748724}
-  - component: {fileID: 5941810629510293086}
   - component: {fileID: 4408344402507425230}
+  - component: {fileID: 7715157293061482062}
   m_Layer: 6
   m_Name: ChessPrefab
   m_TagString: Untagged
@@ -93,18 +93,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &5941810629510293086
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7927473904604455407}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f811d20a47edc944be8a6c3e9ea3236, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ChessPiece
 --- !u!61 &4408344402507425230
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -151,3 +139,16 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &7715157293061482062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7927473904604455407}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df47bad97a7922d4fa6087c01e58e2b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChessPieceUi
+  spriteRenderer: {fileID: 8840641749028748724}

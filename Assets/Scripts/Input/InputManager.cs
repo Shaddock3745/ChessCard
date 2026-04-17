@@ -18,7 +18,7 @@ public class InputManager : MonoBehaviour
 
     private TaskCompletionSource<BoardTile> targetTileSelectionTcs;
     private GameObject lastHovered = null;
-    private ChessPiece selectedChess = null;
+    private ChessPieceUi selectedChess = null;
     private CardUi selectedCard = null;
     private BoardTile currentTile = null, lastTile = null, firstTile = null;
     private bool isSelectingChess = false, isSelectingCard = false;
@@ -148,7 +148,7 @@ public class InputManager : MonoBehaviour
 
             if (GameManager.IsLocalTurn())
             {
-                if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess))
+                if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess.getChess()))
                     raiseChess();
 
                 if (isSelectingCard && MatchDataManager.canUseCard(true, selectedCard.getCard()))
@@ -275,13 +275,13 @@ public class InputManager : MonoBehaviour
         if (obj.TryGetComponent<BoardTile>(out BoardTile tile))
         {
             firstTile = tile;
-            selectedChess = BoardManager.getChessPieceAtTile(tile);
+            selectedChess = BoardManager.GetChessPieceUiAtTile(tile);
 
             if (selectedChess != null)
             {
                 isSelectingChess = true;
                 isSelectingCard = false;
-                hoveredObjectName.text = selectedChess.getName();
+                hoveredObjectName.text = selectedChess.getChess().getName();
             }
             else
             {
@@ -332,9 +332,9 @@ public class InputManager : MonoBehaviour
         updateWhenMovingCard();
     }
 
-    private void showHint(ChessPiece piece)
+    private void showHint(ChessPieceUi pieceUi)
     {
-        var tempList = piece.getAvailableMoves(new Vector2Int(firstTile.getX(), firstTile.getY()));
+        var tempList = pieceUi.getChess().getAvailableMoves();
 
         foreach (var move in tempList)
             switch (move.actionType)
@@ -353,20 +353,20 @@ public class InputManager : MonoBehaviour
         if (currentTile == null)
         {
             if (selectedChess != null && firstTile != null)
-                BoardManager.moveCanceled(selectedChess, new Vector2Int(firstTile.getX(), firstTile.getY()));
+                BoardManager.moveCanceled(selectedChess.getChess(), new Vector2Int(firstTile.getX(), firstTile.getY()));
         }
         else if (currentTile.isMoveableTile())
         {
             BoardManager.movePiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-            MatchDataManager.doChessMoved(true, selectedChess);
+            MatchDataManager.doChessMoved(true, selectedChess.getChess());
         }
         else if (currentTile.isAttackableTile())
         {
             BoardManager.attackPiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-            MatchDataManager.doChessMoved(true, selectedChess);
+            MatchDataManager.doChessMoved(true, selectedChess.getChess());
         }
         else
-            BoardManager.moveCanceled(selectedChess, new Vector2Int(firstTile.getX(), firstTile.getY()));
+            BoardManager.moveCanceled(selectedChess.getChess(), new Vector2Int(firstTile.getX(), firstTile.getY()));
 
         isRaisingChess = false;
         currentTile = lastTile = null;

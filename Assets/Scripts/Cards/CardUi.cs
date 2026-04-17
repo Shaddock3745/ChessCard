@@ -15,19 +15,7 @@ public class CardUi : MonoBehaviour
     {
         rectTransform = GetComponent<RectTransform>();
     }
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-    public void setCard(Card card)
+    public void initCard(Card card)
     {
         this.card = card;
         nameText.text = card.getName();

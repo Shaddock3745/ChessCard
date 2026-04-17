@@ -52,7 +52,7 @@ public class HandViewManager : MonoBehaviour
     public static void playerDrawCard(Card card)
     {
         CardUi cardUi = Instantiate(instance.cardPrefab, instance.playerHandCardCanvas.transform).GetComponent<CardUi>();
-        cardUi.GetComponent<CardUi>().setCard(card);
+        cardUi.initCard(card);
         instance.playerCardUiList.Add(cardUi);
 
         RectTransform rect = cardUi.GetComponent<RectTransform>();
@@ -201,7 +201,7 @@ public class HandViewManager : MonoBehaviour
             return;
 
         CardUi cardUi = Instantiate(instance.cardPrefab, instance.enemyHandCardCanvas.transform).GetComponent<CardUi>();
-        cardUi.GetComponent<CardUi>().setCard(card);
+        cardUi.GetComponent<CardUi>().initCard(card);
         instance.usingCard = cardUi;
         cardUi.transform.SetAsLastSibling();
         RectTransform rect = cardUi.GetComponent<RectTransform>();

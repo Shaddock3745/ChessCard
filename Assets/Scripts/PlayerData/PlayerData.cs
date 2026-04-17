@@ -80,11 +80,17 @@ public class PlayerData
         mana -= cost;
     }
 
-    public bool canMoveChess(ChessPiece chess) => !couldntMoveChessThisTurn && mana >= (1 + chess.getExtraMoveCost());
+    public bool canMoveChess(ChessPiece chess)
+    {
+        return chess.isWhite() == isWhite && !couldntMoveChessThisTurn && mana >= (1 + chess.getExtraMoveCost());
+    }
 
     public bool chessMovedThisTurn() => chessMoved;
 
-    public bool canUseCard(Card card) => !couldntUseCardThisTurn && mana >= card.getCost();
+    public bool canUseCard(Card card)
+    {
+        return !couldntUseCardThisTurn && mana >= card.getCost() && CardEffectManager.canActivateCard(isLocal, card);
+    }
 
     public bool isCouldntMoveChessThisTurn() => couldntMoveChessThisTurn;
 

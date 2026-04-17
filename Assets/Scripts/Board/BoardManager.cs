@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UIElements;
+using static UnityEngine.Audio.ProcessorInstance;
 
 public class BoardManager : MonoBehaviour
 {
@@ -12,12 +14,12 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private GameObject boardOuter;
     [SerializeField] private GameObject piecePrefab;
     [SerializeField] private GameObject tilePrefab;
-    [SerializeField] PieceData[] pieceDatas;
+    [SerializeField] private PieceSpriteLibrary pieceSpriteLibrary;
 
     private static readonly float OUTER_ALPHA_WHEN_MOUSE_INNER = 1f, OUTER_ALPHA_WHEN_MOUSE_NOT_INNER = 0.3f;
     private static readonly float TILE_SIZE = 0.64f;
     private static readonly float START_OFFSET = -2.24f;
-    private static readonly float MOVING_ANIMATION_DURATION = 0.5f;
+    private Dictionary<ChessPiece, ChessPieceUi> pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
     private BoardState boardState;
 
     void Awake()
@@ -48,8 +50,8 @@ public class BoardManager : MonoBehaviour
             for (int j = 0; j < 8; j++)
                 setTile(i, j);
 
-        spawnKing(4, 0, true); // White King
-        spawnKing(4, 7, false); // Black King
+        spawnPiece(ChessType.King, true, 4, 0); // White King
+        spawnPiece(ChessType.King, false, 4, 7); // Black King
     }
 
     private void setTile(int indexX, int indexY)
@@ -57,74 +59,27 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * indexX);
         float y = START_OFFSET + (TILE_SIZE * indexY);
 
-        GameObject gameObject = GameObject.Instantiate(tilePrefab, new Vector3(x, y, 0), Quaternion.identity);
-        gameObject.transform.SetParent(chessBoard.transform);
-        gameObject.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
-
-        BoardTile tile = gameObject.GetComponent<BoardTile>();
+        BoardTile tile = GameObject.Instantiate(tilePrefab, new Vector3(x, y, 0), Quaternion.identity).GetComponent<BoardTile>();
+        tile.transform.SetParent(chessBoard.transform);
+        tile.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
         boardState.setBoardTileAtPosition(indexX, indexY, tile);
     }
 
-    private void spawnPawn(int indexX, int indexY, bool isWhite)
+    private void spawnPiece(ChessType chessType, bool isWhite, int indexX, int indexY)
     {
-        if (isWhite)
-            spawnPiece(pieceDatas[0], indexX, indexY);
-        else
-            spawnPiece(pieceDatas[6], indexX, indexY);
-    }
+        ChessPiece piece = new ChessPiece(chessType, isWhite, new Vector2Int(indexX, indexY));
+        boardState.setChessPieceAtPosition(indexX, indexY, piece);
 
-    private void spawnRooK(int indexX, int indexY, bool isWhite)
-    {
-        if (isWhite)
-            spawnPiece(pieceDatas[1], indexX, indexY);
-        else
-            spawnPiece(pieceDatas[7], indexX, indexY);
-    }
-
-    private void spawnKnight(int indexX, int indexY, bool isWhite)
-    {
-        if (isWhite)
-            spawnPiece(pieceDatas[2], indexX, indexY);
-        else
-            spawnPiece(pieceDatas[8], indexX, indexY);
-    }
-
-    private void spawnBishop(int indexX, int indexY, bool isWhite)
-    {
-        if (isWhite)
-            spawnPiece(pieceDatas[3], indexX, indexY);
-        else
-            spawnPiece(pieceDatas[9], indexX, indexY);
-    }
-
-    private void spawnQueen(int indexX, int indexY, bool isWhite)
-    {
-        if (isWhite)
-            spawnPiece(pieceDatas[4], indexX, indexY);
-        else
-            spawnPiece(pieceDatas[10], indexX, indexY);
-    }
-
-    private void spawnKing(int indexX, int indexY, bool isWhite)
-    {
-        if (isWhite)
-            spawnPiece(pieceDatas[5], indexX, indexY);
-        else
-            spawnPiece(pieceDatas[11], indexX, indexY);
-    }
-
-    private void spawnPiece(PieceData data, int indexX, int indexY)
-    {
         float x = START_OFFSET + (TILE_SIZE * indexX);
         float y = START_OFFSET + (TILE_SIZE * indexY);
 
-        GameObject gameObject = Instantiate(piecePrefab, new Vector3(x, y, 0), Quaternion.identity);
-        gameObject.transform.SetParent(chessBoard.transform);
-        gameObject.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
+        ChessPieceUi chessPieceUi = GameObject.Instantiate(piecePrefab, new Vector3(x, y, 0), Quaternion.identity).GetComponent<ChessPieceUi>();
+        chessPieceUi.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
+        chessPieceUi.initChessUi(piece, pieceSpriteLibrary.getSprite(chessType, isWhite));
+        chessPieceUi.moveToPoint(new Vector3(x, y, 0));
+        chessPieceUi.transform.SetParent(chessBoard.transform);
 
-        ChessPiece chessPiece = gameObject.GetComponent<ChessPiece>();
-        chessPiece.SetPieceData(data);
-        boardState.setChessPieceAtPosition(indexX, indexY, chessPiece);
+        pieceToUiMap.Add(piece, chessPieceUi);
     }
 
     public static List<BoardTile> getSummonableTiles(ChessType type, bool isWhite)
@@ -199,48 +154,13 @@ public class BoardManager : MonoBehaviour
 
     public static void summonChessPiece(ChessType chessType, bool isWhite, Vector2Int position)
     {
-        switch (chessType)
-        {
-            case ChessType.Pawn:
-                instance.spawnPawn(position.x, position.y, isWhite);
-                break;
-            case ChessType.Rook:
-                instance.spawnRooK(position.x, position.y, isWhite);
-                break;
-            case ChessType.Knight:
-                instance.spawnKnight(position.x, position.y, isWhite);
-                break;
-            case ChessType.Bishop:
-                instance.spawnBishop(position.x, position.y, isWhite);
-                break;
-            case ChessType.Queen:
-                instance.spawnQueen(position.x, position.y, isWhite);
-                break;
-        }
+        instance.spawnPiece(chessType, isWhite, position.x, position.y);
     }
 
     public static async Task summonChessPieceWithAnimation(ChessType chessType, bool isWhite, Vector2Int position)
     {
-        switch (chessType)
-        {
-            case ChessType.Pawn:
-                instance.spawnPawn(position.x, position.y, isWhite);
-                break;
-            case ChessType.Rook:
-                instance.spawnRooK(position.x, position.y, isWhite);
-                break;
-            case ChessType.Knight:
-                instance.spawnKnight(position.x, position.y, isWhite);
-                break;
-            case ChessType.Bishop:
-                instance.spawnBishop(position.x, position.y, isWhite);
-                break;
-            case ChessType.Queen:
-                instance.spawnQueen(position.x, position.y, isWhite);
-                break;
-        }
-
-        await getChessPieceAtPosition(position).fadeIn();
+        summonChessPiece(chessType, isWhite, position);
+        await GetChessPieceUiAtPosition(position).fadeIn();
     }
 
     public static ChessPiece getChessPieceAtPosition(int x, int y)
@@ -256,6 +176,41 @@ public class BoardManager : MonoBehaviour
     public static ChessPiece getChessPieceAtTile(BoardTile tile)
     {
         return instance.boardState.getChessPieceAtPosition(tile.getX(), tile.getY());
+    }
+
+    public static ChessPieceUi GetChessPieceUiAtPosition(Vector2Int position)
+    {
+        ChessPiece piece = instance.boardState.getChessPieceAtPosition(position);
+
+        if (piece != null)
+            return instance.pieceToUiMap[piece];
+        else
+            return null;
+    }
+
+    public static ChessPieceUi GetChessPieceUiAtPosition(int x, int y)
+    {
+        ChessPiece piece = instance.boardState.getChessPieceAtPosition(x, y);
+
+        if (piece != null)
+            return instance.pieceToUiMap[piece];
+        else
+            return null;
+    }
+
+    public static ChessPieceUi GetChessPieceUiAtTile(BoardTile tile)
+    {
+        ChessPiece piece = instance.boardState.getChessPieceAtPosition(tile.getPos());
+
+        if (piece != null)
+            return instance.pieceToUiMap[piece];
+        else
+            return null;
+    }
+
+    public static ChessPieceUi getUiOfChess(ChessPiece piece)
+    {
+        return instance.pieceToUiMap[piece];
     }
 
     public static BoardTile getTileAtPosition(Vector2Int position)
@@ -299,7 +254,7 @@ public class BoardManager : MonoBehaviour
     {
         float x = START_OFFSET + (TILE_SIZE * firstPos.x);
         float y = START_OFFSET + (TILE_SIZE * firstPos.y);
-        movingPiece.moveToPoint(new Vector3(x, y, 0));
+        getUiOfChess(movingPiece).moveToPoint(new Vector3(x, y, 0));
     }
 
     public static void movePiece(Vector2Int from, Vector2Int to)
@@ -308,7 +263,7 @@ public class BoardManager : MonoBehaviour
         instance.boardState.moveChessPiece(from, to);
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
-        movingPiece.moveToPoint(new Vector3(x, y, 0));
+        getUiOfChess(movingPiece).moveToPoint(new Vector3(x, y, 0));
     }
 
     public static async Task movePieceWithAnimation(Vector2Int from, Vector2Int to)
@@ -317,56 +272,41 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
-        await movingPiece.transform.DOMove(new Vector3(x, y, 0), MOVING_ANIMATION_DURATION)
-            .SetEase(Ease.InOutQuad)
-            .OnComplete(() =>
-            {
-                instance.boardState.moveChessPiece(from, to);
-            })
-            .AsyncWaitForCompletion();
+        await getUiOfChess(movingPiece).moveToPointWithAnimation(new Vector3(x, y, 0));
+        instance.boardState.moveChessPiece(from, to);
     }
-
 
     public static void attackPiece(Vector2Int from, Vector2Int to)
     {
-        // unsolved
-
-        ChessPiece targetPiece = getChessPieceAtPosition(to.x, to.y);
-        ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
+        ChessPiece targetPiece = getChessPieceAtPosition(to);
         instance.boardState.moveChessPiece(from, to);
+
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
-        movingPiece.moveToPoint(new Vector3(x, y, 0));
-        Destroy(targetPiece.gameObject);
+        getUiOfChess(getChessPieceAtPosition(from)).moveToPoint(new Vector3(x, y, 0));
+        getUiOfChess(targetPiece).destroy();
+        instance.pieceToUiMap.Remove(targetPiece);
     }
 
     public static async Task attackPieceWithAnimation(Vector2Int from, Vector2Int to)
     {
-        ChessPiece targetPiece = getChessPieceAtPosition(to.x, to.y);
-        ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
+        ChessPiece targetPiece = getChessPieceAtPosition(to);
+        instance.boardState.moveChessPiece(from, to);
+
+        ChessPieceUi attackerUi = getUiOfChess(getChessPieceAtPosition(from));
+        ChessPieceUi targetUi = getUiOfChess(getChessPieceAtPosition(to));
+
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
-        SpriteRenderer movingSR = movingPiece.GetComponent<SpriteRenderer>();
-        SpriteRenderer targetSR = targetPiece.GetComponent<SpriteRenderer>();
+        attackerUi.BringToFrontOf(targetUi);
 
-        if (movingSR.sortingOrder < targetSR.sortingOrder)
-        {
-            int temp = movingSR.sortingOrder;
-            movingSR.sortingOrder = targetSR.sortingOrder;
-            targetSR.sortingOrder = temp;
-        }
+        Task moveTask = attackerUi.moveToPointWithAnimation(new Vector3(x, y, 0));
+        Task destroyTask = targetUi.destroyWithAnimation();
 
-        Sequence seq = DOTween.Sequence();
+        await Task.WhenAll(moveTask, destroyTask);
 
-        seq.Append(movingPiece.transform.DOMove(new Vector3(x, y, 0), MOVING_ANIMATION_DURATION).SetEase(Ease.InOutQuad));
-        seq.Join(targetSR.DOFade(0, MOVING_ANIMATION_DURATION));
-
-        await seq.OnComplete(() =>
-        {
-            Destroy(targetPiece.gameObject);
-            instance.boardState.moveChessPiece(from, to);
-        }).AsyncWaitForCompletion();
+        instance.pieceToUiMap.Remove(targetPiece);
     }
 
     public static void showMoveable(Vector2Int position)

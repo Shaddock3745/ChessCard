@@ -60,6 +60,8 @@ public class BoardState
         {
             setChessPieceAtPosition(to, pieceToMove);
             setChessPieceAtPosition(from, null);
+
+            pieceToMove.setPosition(to);
         }
     }
 

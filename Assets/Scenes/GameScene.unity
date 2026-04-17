@@ -334,7 +334,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 690, y: 440}
+  m_AnchoredPosition: {x: 750, y: 440}
   m_SizeDelta: {x: 300, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &149761488
@@ -1507,19 +1507,7 @@ MonoBehaviour:
   boardOuter: {fileID: 2059199463803700684}
   piecePrefab: {fileID: 7927473904604455407, guid: 2f45a722daa5a34438af79e7ce88acc7, type: 3}
   tilePrefab: {fileID: 4752603091014767210, guid: 10529db85b3c91644a5135ada88e4e81, type: 3}
-  pieceDatas:
-  - {fileID: 11400000, guid: 0981b73b553139e47910a92ff31c6b7c, type: 2}
-  - {fileID: 11400000, guid: 771214f558afbe040aef996f8ae636e0, type: 2}
-  - {fileID: 11400000, guid: 11d44a2bc4c06ef419d32a2db3d0ad05, type: 2}
-  - {fileID: 11400000, guid: 6e5548d9e4282844a80107511341c7d2, type: 2}
-  - {fileID: 11400000, guid: bfefd073809b226469723e81e8ab6e36, type: 2}
-  - {fileID: 11400000, guid: 5cfaf8898e1c68248a04aa6bbe44cdf7, type: 2}
-  - {fileID: 11400000, guid: 14cabab608c97064998f68de3a7f209c, type: 2}
-  - {fileID: 11400000, guid: 346d6a7369d37a04eb007c028e2e746e, type: 2}
-  - {fileID: 11400000, guid: 7daa3c18a7d706847baf22493cf4f3f7, type: 2}
-  - {fileID: 11400000, guid: 07279b5e7f981d542a82273df4c29fba, type: 2}
-  - {fileID: 11400000, guid: 7a12fef8ced5f8945accfc5421d1659e, type: 2}
-  - {fileID: 11400000, guid: 23a94ca3c61ae0c46af17ad403f7951e, type: 2}
+  pieceSpriteLibrary: {fileID: 11400000, guid: 7087c03163401cf47a7c3237c58a7cf8, type: 2}
 --- !u!4 &1242318412
 Transform:
   m_ObjectHideFlags: 0
@@ -1807,7 +1795,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 690, y: 360}
+  m_AnchoredPosition: {x: 750, y: 360}
   m_SizeDelta: {x: 300, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1290287683

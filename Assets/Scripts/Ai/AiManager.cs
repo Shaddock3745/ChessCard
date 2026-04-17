@@ -39,7 +39,7 @@ public class AiManager : MonoBehaviour
 
             foreach (var (piece, pos) in pieceList)
                 if (playerData.canMoveChess(piece))
-                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, pos));
+                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece));
         }
 
         List<Card> handCardList = playerData.getHandList();

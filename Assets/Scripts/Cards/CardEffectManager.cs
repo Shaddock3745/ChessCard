@@ -41,6 +41,17 @@ public class CardEffectManager : MonoBehaviour
         return cardRegistry.TryGetValue(card.getId(), out CardEffect effect) ? effect : null;
     }
 
+    public static bool canActivateCard(bool isLocal, Card card)
+    {
+        if (cardRegistry.TryGetValue(card.getId(), out CardEffect effect))
+            return effect.canActivate(isLocal, card);
+        else
+        {
+            Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
+            return false;
+        }
+    }
+
     private static ChessType getChessTypeByCard(Card card) => card.getId() switch
     {
         1 => ChessType.Pawn,

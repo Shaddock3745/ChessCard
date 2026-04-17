@@ -39,14 +39,14 @@ public class AiEvaluator
         return score;
     }
 
-    public static List<ChessMoveOption> getMoveOptionsByChessPiece(ChessPiece piece, Vector2Int position)
+    public static List<ChessMoveOption> getMoveOptionsByChessPiece(ChessPiece piece)
     {
 
-        List<MoveAction> moveActions = piece.getAvailableMoves(position);
+        List<MoveAction> moveActions = piece.getAvailableMoves();
         List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
 
         foreach (MoveAction moveAction in moveActions)
-            moveOptions.Add(new ChessMoveOption(piece, position, moveAction.targetPos, evaluateChessMove(moveAction)));
+            moveOptions.Add(new ChessMoveOption(piece, piece.getPosition(), moveAction.targetPos, evaluateChessMove(moveAction)));
 
         return moveOptions;
     }
