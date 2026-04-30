@@ -1,6 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+public enum Language
+{
+    TRADITIONAL_CHINESE = 0,
+    ENGLISH = 1,
+    JAPANESE = 2
+}
+
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private TMPro.TextMeshProUGUI nowTurn;
@@ -9,6 +16,7 @@ public class GameManager : MonoBehaviour
 
     private bool isWhiteTurn = true;
     private bool isLocalWhite = true; // This should be set based on local selection
+    private Language currentLanguage = Language.TRADITIONAL_CHINESE; // Default language
 
     void Awake()
     {
@@ -21,16 +29,34 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        BoardManager.initBoard();
+
+        MatchDataManager.initLocal(PlayerDataManager.initLocalPlayerData(false, true));
+        MatchDataManager.initEnemy(AiManager.initAIPlayerData(false, false));
+
+        startFirstTurn();
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
+    }
+
+    private void startFirstTurn()
+    {
+        isWhiteTurn = true;
+
+        if (IsLocalTurn())
+            MatchDataManager.turnStart(true);
+        else
+        {
+            MatchDataManager.turnStart(false);
+            _ = AiManager.doBestMove(MatchDataManager.getPlayerData(false));
+        }
     }
 
     public static async void ChangeTurn()
@@ -43,7 +69,7 @@ public class GameManager : MonoBehaviour
             MatchDataManager.turnEnd(false);
             MatchDataManager.turnStart(true);
 
-            if(MatchDataManager.isAI(true))
+            if (MatchDataManager.isAI(true))
                 await AiManager.doBestMove(MatchDataManager.getPlayerData(true));
         }
         else
@@ -51,7 +77,7 @@ public class GameManager : MonoBehaviour
             MatchDataManager.turnEnd(true);
             MatchDataManager.turnStart(false);
 
-            if(MatchDataManager.isAI(false))
+            if (MatchDataManager.isAI(false))
                 await AiManager.doBestMove(MatchDataManager.getPlayerData(false));
         }
     }
@@ -64,5 +90,13 @@ public class GameManager : MonoBehaviour
     public static bool IsLocalWhite()
     {
         return instance.isLocalWhite;
+    }
+
+    public static Language getCurrentLanguage()
+    {
+        if (instance != null)
+            return instance.currentLanguage;
+        else
+            return Language.ENGLISH; // Default language if instance is null
     }
 }

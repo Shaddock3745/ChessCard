@@ -22,8 +22,7 @@ public class MatchDataManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        initLocal(PlayerDataManager.initLocalPlayerData(false, true));
-        initEnemy(AiManager.initAIPlayerData(false, false));
+
     }
 
     // Update is called once per frame

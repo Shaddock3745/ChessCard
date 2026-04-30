@@ -52,63 +52,45 @@ public class CardEffectManager : MonoBehaviour
         }
     }
 
-    private static ChessType getChessTypeByCard(Card card) => card.getId() switch
-    {
-        1 => ChessType.Pawn,
-        2 => ChessType.Bishop,
-        3 => ChessType.Knight,
-        4 => ChessType.Rook,
-        5 => ChessType.Queen,
-        _ => ChessType.Pawn
-    };
-
     public static async Task processLocalPlayerCard(Card card)
     {
-        List<Vector2Int> targetPositions = new List<Vector2Int>();
-        List<Card> targetCards = new List<Card>();
-        bool isWhite = GameManager.IsLocalWhite();
-
-        switch (card.getId())
+        if (!cardRegistry.TryGetValue(card.getId(), out CardEffect effect))
         {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-                BoardTile tile = await InputManager.waitForTargetSelection(BoardManager.getSummonableTiles(getChessTypeByCard(card), isWhite));
+            Debug.LogWarning("卡片效果未註冊");
+            HandViewManager.rearrangeUsingCard();
+            return;
+        }
 
-                if (tile == null)
-                {
-                    HandViewManager.rearrangeUsingCard();
-                    return;
-                }
+        EffectTargetPayload payload = await effect.gatherTargets();
 
-                targetPositions.Add(tile.getPos());
-                break;
+        if (payload.isEmpty())
+        {
+            HandViewManager.rearrangeUsingCard();
+            return;
         }
 
         MatchDataManager.useCard(true, card);
         HandViewManager.destroyUsingCard();
 
-        await executeCardEffect(true, card, targetPositions, targetCards);
+        await executeCardEffect(true, card, payload);
     }
 
-    public static async Task processLocalAiCard(Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
+    public static async Task processLocalAiCard(Card card, EffectTargetPayload targets)
     {
         MatchDataManager.useCard(true, card);
-        await executeCardEffect(true, card, targetPositions, targetCards);
+        await executeCardEffect(true, card, targets);
     }
 
-    public static async Task processEnemyAiCard(Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
+    public static async Task processEnemyAiCard(Card card, EffectTargetPayload targets)
     {
         MatchDataManager.useCard(false, card);
-        await executeCardEffect(false, card, targetPositions, targetCards);
+        await executeCardEffect(false, card, targets);
     }
 
-    private static async Task executeCardEffect(bool isLocal, Card card, List<Vector2Int> targetPositions, List<Card> targetCards)
+    private static async Task executeCardEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
         if (cardRegistry.TryGetValue(card.getId(), out CardEffect effect))
-            await effect.executeEffect(isLocal, card, targetPositions);
+            await effect.executeEffect(isLocal, card, targets);
         else
             Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
     }

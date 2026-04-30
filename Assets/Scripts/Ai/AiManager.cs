@@ -8,6 +8,7 @@ public class AiManager : MonoBehaviour
     private static AiManager instance;
 
     private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5 });
+    private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
     void Awake()
     {
@@ -66,7 +67,7 @@ public class AiManager : MonoBehaviour
             while (HandViewManager.isPlayingAnimation())
                 await Task.Delay(100);
 
-            await Task.Delay(300);
+            await Task.Delay(OPTION_BUFFER_TIME_MILLIS);
 
             string result = "AI ";
 

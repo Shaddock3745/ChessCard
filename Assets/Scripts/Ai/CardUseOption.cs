@@ -7,24 +7,23 @@ public class CardUseOption : AiOption
 {
     private float scroe;
     private Card card;
-    private List<Vector2Int> targetPositions;
-    private List<Card> targetCards;
+    EffectTargetPayload targets;
 
     public CardUseOption(Card card, float scroe, List<Vector2Int> positions = null, List<Card> cards = null)
     {
         this.card = card;
         this.scroe = scroe;
-        targetPositions = positions ?? new List<Vector2Int>();
-        targetCards = cards ?? new List<Card>();
+        this.targets = new EffectTargetPayload(positions, cards);
     }
 
     public float getScore() => scroe;
     public async Task execute(PlayerData ownerData)
     {
+
         if (ownerData.IsLocal())
-            await CardEffectManager.processLocalAiCard(card, targetPositions, targetCards);
+            await CardEffectManager.processLocalAiCard(card, targets);
         else
-            await CardEffectManager.processEnemyAiCard(card, targetPositions, targetCards);
+            await CardEffectManager.processEnemyAiCard(card, targets);
     }
 
     public string getCardname() => card.getName();

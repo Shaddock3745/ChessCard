@@ -9,7 +9,7 @@ public class BoardTile : MonoBehaviour
     [SerializeField] private Sprite attackableSprite;
     [SerializeField] private Sprite selectableSprite;
 
-    private static readonly float FADE_DURATION = 0.3f;
+    private static readonly float FADE_DURATION = 0.5f;
 
     private SpriteRenderer spriteRenderer;
     private bool isMoveable = false;

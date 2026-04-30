@@ -19,6 +19,8 @@ public interface MovementType
     public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite);
 
     public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite);
+
+    public string getDescription();
 }
 
 public class PawnMovement : MovementType
@@ -47,12 +49,12 @@ public class PawnMovement : MovementType
 
         // Attack diagonally
         temp = new Vector2Int(currentPos.x + 1, currentPos.y + direction);
-        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp)&&(isWhite ^ BoardManager.isWhiteAtPosition(temp)))
-                moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+            moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
         temp = new Vector2Int(currentPos.x - 1, currentPos.y + direction);
-        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp)&& (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
-                moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+            moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
         return moves;
     }
@@ -72,6 +74,21 @@ public class PawnMovement : MovementType
             protectablePieces.Add(BoardManager.getChessPieceAtPosition(rightProtectPos));
 
         return protectablePieces;
+    }
+
+    public string getDescription()
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return "士兵只能向前移動一格，第一步可以選擇移動兩格。士兵只能斜向前攻擊對方棋子。";
+            case Language.ENGLISH:
+                return "Pawns can only move forward one square, with the option to move two squares on their first move. Pawns can only attack diagonally forward.";
+            case Language.JAPANESE:
+                return "ポーンは前方に1マスしか動けませんが、最初の一手では2マス動くこともできます。ポーンは斜め前にしか攻撃できません。";
+            default:
+                return "";
+        }
     }
 }
 
@@ -146,6 +163,21 @@ public class RookMovement : MovementType
 
         return protectablePieces;
     }
+
+    public string getDescription()
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return "城堡可以水平或垂直移動任意格數，直到被其他棋子阻擋。城堡可以攻擊在同一直線上且沒有其他棋子阻擋的對方棋子。";
+            case Language.ENGLISH:
+                return "Rooks can move any number of squares horizontally or vertically until blocked by another piece. Rooks can attack opponent pieces that are in the same line and not blocked by other pieces.";
+            case Language.JAPANESE:
+                return "ルークは水平または垂直に他の駒に阻まれるまで任意のマス数動けます。ルークは同じ列にいて他の駒に阻まれていない相手の駒を攻撃できます。";
+            default:
+                return "";
+        }
+    }
 }
 
 public class KnightMovement : MovementType
@@ -195,13 +227,30 @@ public class KnightMovement : MovementType
                 new Vector2Int(-2, 1),
                 new Vector2Int(-2, -1)
         };
+
         foreach (var move in knightMoves)
         {
             Vector2Int temp = targetPos + move;
             if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && BoardManager.isWhiteAtPosition(temp) == isWhite)
                 protectablePieces.Add(BoardManager.getChessPieceAtPosition(temp));
         }
+
         return protectablePieces;
+    }
+
+    public string getDescription()
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return "騎士以L形移動：水平或垂直移動兩格後再水平或垂直移動一格。騎士可以跳過其他棋子，攻擊在目的地的對方棋子。";
+            case Language.ENGLISH:
+                return "Knights move in an L shape: two squares horizontally or vertically, then one square perpendicular. Knights can jump over other pieces and attack opponent pieces on the destination square.";
+            case Language.JAPANESE:
+                return "ナイトはL字型に動きます：水平または垂直に2マス、その後垂直または水平に1マス。ナイトは他の駒を飛び越えることができ、目的地の相手の駒を攻撃できます。";
+            default:
+                return "";
+        }
     }
 }
 
@@ -269,6 +318,21 @@ public class BishopMovement : MovementType
             }
         }
         return protectablePieces;
+    }
+
+    public string getDescription()
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return "主教可以沿對角線移動任意格數，直到被其他棋子阻擋。主教可以攻擊在同一對角線上且沒有其他棋子阻擋的對方棋子。";
+            case Language.ENGLISH:
+                return "Bishops can move any number of squares diagonally until blocked by another piece. Bishops can attack opponent pieces that are on the same diagonal and not blocked by other pieces.";
+            case Language.JAPANESE:
+                return "ビショップは斜めに他の駒に阻まれるまで任意のマス数動けます。ビショップは同じ斜めにいて他の駒に阻まれていない相手の駒を攻撃できます。";
+            default:
+                return "";
+        }
     }
 }
 
@@ -344,6 +408,21 @@ public class QueenMovement : MovementType
         }
         return protectablePieces;
     }
+
+    public string getDescription()
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return "皇后可以水平、垂直或對角線移動任意格數，直到被其他棋子阻擋。皇后可以攻擊在同一直線或對角線上且沒有其他棋子阻擋的對方棋子。";
+            case Language.ENGLISH:
+                return "Queens can move any number of squares horizontally, vertically, or diagonally until blocked by another piece. Queens can attack opponent pieces that are in the same line or diagonal and not blocked by other pieces.";
+            case Language.JAPANESE:
+                return "クイーンは水平、垂直、または斜めに他の駒に阻まれるまで任意のマス数動けます。クイーンは同じ列、行、または斜めにいて他の駒に阻まれていない相手の駒を攻撃できます。";
+            default:
+                return "";
+        }
+    }
 }
 
 public class KingMovement : MovementType
@@ -399,4 +478,20 @@ public class KingMovement : MovementType
         }
         return protectablePieces;
     }
+
+    public string getDescription()
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return "國王可以移動到任何相鄰的格子（水平、垂直或對角線）。國王可以攻擊在相鄰格子的對方棋子。";
+            case Language.ENGLISH:
+                return "Kings can move to any adjacent square (horizontally, vertically, or diagonally). Kings can attack opponent pieces in adjacent squares.";
+            case Language.JAPANESE:
+                return "キングは隣接するマス（水平、垂直、または斜め）に移動できます。キングは隣接するマスの相手の駒を攻撃できます。";
+            default:
+                return "";
+        }
+    }
 }
+

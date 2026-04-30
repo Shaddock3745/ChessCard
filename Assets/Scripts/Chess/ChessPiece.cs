@@ -57,11 +57,69 @@ public class ChessPiece
 
     public string getName()
     {
-        return (isWhiteChess ? "White " : "Black ") + chessType.ToString();
+        return getChessColorName(isWhiteChess) + getChessTypeName(chessType);
+    }
+
+    public string getDescription()
+    {
+        return movementType.getDescription();
     }
 
     public List<MoveAction> getAvailableMoves()
     {
         return movementType.getAvailableMoves(currentPosition, isWhiteChess);
+    }
+
+    private static string getChessColorName(bool isWhite)
+    {
+        return GameManager.getCurrentLanguage() switch
+        {
+            Language.TRADITIONAL_CHINESE => isWhite ? "白" : "黑",
+            Language.ENGLISH => isWhite ? "White" : "Black",
+            Language.JAPANESE => isWhite ? "白" : "黒",
+            _ => isWhite ? "White" : "Black"
+        };
+    }
+
+    private static string getChessTypeName(ChessType type)
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return type switch
+                {
+                    ChessType.Pawn => "士兵",
+                    ChessType.Rook => "城堡",
+                    ChessType.Knight => "騎士",
+                    ChessType.Bishop => "主教",
+                    ChessType.Queen => "皇后",
+                    ChessType.King => "國王",
+                    _ => "未知棋子"
+                };
+            case Language.ENGLISH:
+                return type switch
+                {
+                    ChessType.Pawn => "Pawn",
+                    ChessType.Rook => "Rook",
+                    ChessType.Knight => "Knight",
+                    ChessType.Bishop => "Bishop",
+                    ChessType.Queen => "Queen",
+                    ChessType.King => "King",
+                    _ => "Unknown Piece"
+                };
+            case Language.JAPANESE:
+                return type switch
+                {
+                    ChessType.Pawn => "ポーン",
+                    ChessType.Rook => "ルーク",
+                    ChessType.Knight => "ナイト",
+                    ChessType.Bishop => "ビショップ",
+                    ChessType.Queen => "クイーン",
+                    ChessType.King => "キング",
+                    _ => "不明な駒"
+                };
+            default:
+                return type.ToString();
+        }
     }
 }

@@ -33,7 +33,7 @@ public class BoardManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        setBoard();
+
     }
 
     // Update is called once per frame
@@ -42,16 +42,16 @@ public class BoardManager : MonoBehaviour
 
     }
 
-    private void setBoard()
+    public static void initBoard()
     {
-        boardState = new BoardState();
+        instance.boardState = new BoardState();
 
         for (int i = 0; i < 8; i++)
             for (int j = 0; j < 8; j++)
-                setTile(i, j);
+                instance.setTile(i, j);
 
-        spawnPiece(ChessType.King, true, 4, 0); // White King
-        spawnPiece(ChessType.King, false, 4, 7); // Black King
+        instance.spawnPiece(ChessType.King, true, 4, 0); // White King
+        instance.spawnPiece(ChessType.King, false, 4, 7); // Black King
     }
 
     private void setTile(int indexX, int indexY)

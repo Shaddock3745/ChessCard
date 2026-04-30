@@ -7,7 +7,7 @@ public class ChessPieceUi : MonoBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
 
     private static readonly float MOVING_ANIMATION_DURATION = 0.5f;
-    private static readonly float FADE_DURATION = 0.3f;
+    private static readonly float FADE_DURATION = 0.5f;
 
     private ChessPiece data;
 

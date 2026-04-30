@@ -25,8 +25,6 @@ public class JsonReader : MonoBehaviour
     private static JsonReader instance;
     private Dictionary<int, CardTextData> cardTable = new Dictionary<int, CardTextData>();
 
-    private static readonly int LANGUAGE_ID = 0; // 0 for Traditional Chinese, 1 for English
-
     private void Awake()
     {
         if (instance == null)
@@ -80,18 +78,18 @@ public class JsonReader : MonoBehaviour
 
     public static string getCardName(int id)
     {
-        switch(LANGUAGE_ID)
+        switch(GameManager.getCurrentLanguage())
         {
-            case 0: // Traditional Chinese
+            case Language.TRADITIONAL_CHINESE: // Traditional Chinese
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataTw))
                     return cardDataTw.name_tw;
                 break;
-            case 1: // English
+            case Language.ENGLISH: // English
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataEn))
                     return cardDataEn.name_en;
                 break;
             default:
-                Debug.LogWarning($"Unsupported language ID {LANGUAGE_ID}.");
+                Debug.LogWarning($"Unsupported language: {GameManager.getCurrentLanguage()}.");
                 break;
         }
 
@@ -100,18 +98,18 @@ public class JsonReader : MonoBehaviour
 
     public static string getCardDescription(int id)
     {
-        switch(LANGUAGE_ID)
+        switch(GameManager.getCurrentLanguage())
         {
-            case 0: // Traditional Chinese
+            case Language.TRADITIONAL_CHINESE: // Traditional Chinese
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataTw))
                     return cardDataTw.desc_tw;
                 break;
-            case 1: // English
+            case Language.ENGLISH: // English
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataEn))
                     return cardDataEn.desc_en;
                 break;
             default:
-                Debug.LogWarning($"Unsupported language ID {LANGUAGE_ID}.");
+                Debug.LogWarning($"Unsupported language: {GameManager.getCurrentLanguage()}.");
                 break;
         }
         return null; // Return null if card not found or unsupported language

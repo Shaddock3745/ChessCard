@@ -26,6 +26,7 @@ public class InputManager : MonoBehaviour
     private bool isMouseHolding = false, isMouseInner = false;
     private int originalSortingOrder;
     private bool isAwaitingTarget = false;
+    private bool externalCallDetectHoverFlag = false;
 
     void Awake()
     {
@@ -115,7 +116,7 @@ public class InputManager : MonoBehaviour
         {
             GameObject hoveredObject = detectHover();
 
-            if (hoveredObject != lastHovered)
+            if (externalCallDetectHoverFlag || hoveredObject != lastHovered)
             {
                 if (lastHovered != null)
                     handleExit(lastHovered);
@@ -124,6 +125,7 @@ public class InputManager : MonoBehaviour
                     handleEnter(hoveredObject);
 
                 lastHovered = hoveredObject;
+                externalCallDetectHoverFlag = false;
             }
         }
     }
@@ -250,6 +252,12 @@ public class InputManager : MonoBehaviour
         return null;
     }
 
+    public static void tryDetectHover()
+    {
+        if (instance != null)
+            instance.externalCallDetectHoverFlag = true;
+    }
+
     private GameObject detectHover()
     {
         if (EventSystem.current == null)
@@ -281,12 +289,11 @@ public class InputManager : MonoBehaviour
             {
                 isSelectingChess = true;
                 isSelectingCard = false;
-                hoveredObjectName.text = selectedChess.getChess().getName();
+                UiManager.processHoveredObjectData(selectedChess.getChess());
             }
             else
             {
                 isSelectingChess = isSelectingCard = false;
-                hoveredObjectName.text = "Nothing";
             }
         }
         else if (obj.TryGetComponent<CardUi>(out CardUi cardUi))
@@ -294,13 +301,12 @@ public class InputManager : MonoBehaviour
             isSelectingChess = false;
             isSelectingCard = true;
             selectedCard = cardUi;
-            hoveredObjectName.text = cardUi.getCard().getName();
+            UiManager.processHoveredObjectData(cardUi.getCard());
             HandViewManager.hoverCard(cardUi);
         }
         else
         {
             isSelectingChess = isSelectingCard = false;
-            hoveredObjectName.text = "Nothing";
         }
 
     }
@@ -311,7 +317,6 @@ public class InputManager : MonoBehaviour
             HandViewManager.rearrangeHover();
 
         isSelectingChess = isSelectingCard = false;
-        hoveredObjectName.text = "Nothing";
     }
 
     private void movePieceWithMouse()

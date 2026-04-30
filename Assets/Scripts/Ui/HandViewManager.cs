@@ -9,7 +9,7 @@ public class HandViewManager : MonoBehaviour
 
     private static HandViewManager instance;
     private static readonly float SHIFT_X = 60f, LIFT_Y = 50f, OFFSET_Y = 30f;
-    private static readonly float USING_CARD_X = 800f, USING_CARD_Y = 500f;
+    private static readonly float USING_CARD_X = -500f, USING_CARD_Y = 600f;
     private static readonly Vector2 usingCardPos = new Vector2(USING_CARD_X, USING_CARD_Y);
     private static readonly float CARD_WIDTH = 240f;
     private static readonly float MAX_SPACING = CARD_WIDTH * 1.125f;
@@ -200,20 +200,17 @@ public class HandViewManager : MonoBehaviour
         if (instance.enemyCardBackList.Count <= 0)
             return;
 
-        CardUi cardUi = Instantiate(instance.cardPrefab, instance.enemyHandCardCanvas.transform).GetComponent<CardUi>();
-        cardUi.GetComponent<CardUi>().initCard(card);
-        instance.usingCard = cardUi;
-        cardUi.transform.SetAsLastSibling();
-        RectTransform rect = cardUi.GetComponent<RectTransform>();
-        rect.DOKill();
-        rect.anchoredPosition = usingCardPos;
+        UiManager.processHoveredObjectData(card);
 
         GameObject cardBackToConsume = instance.enemyCardBackList[0];
         instance.enemyCardBackList.RemoveAt(0);
         cardBackToConsume.GetComponent<RectTransform>().DOKill();
 
-        cardBackToConsume.GetComponent<RectTransform>().DOScale(Vector3.zero, USE_ANIMATION_DURATION).OnComplete(() => Destroy(cardBackToConsume));
-        instance.sortEnemyHand();
+        cardBackToConsume.GetComponent<RectTransform>().DOScale(Vector3.zero, USE_ANIMATION_DURATION).OnComplete(() =>
+        {
+            Destroy(cardBackToConsume);
+            instance.sortEnemyHand();
+        });
     }
 
     public static void destroyUsingCard()

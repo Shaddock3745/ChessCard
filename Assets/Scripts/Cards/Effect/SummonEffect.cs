@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -14,16 +15,6 @@ public class SummonEffect : CardEffect
         await BoardManager.summonChessPieceWithAnimation(type, isWhite, position);
     }
 
-    private static ChessType getChessTypeByCardId(int cardId) => cardId switch
-    {
-        1 => ChessType.Pawn,
-        2 => ChessType.Bishop,
-        3 => ChessType.Knight,
-        4 => ChessType.Rook,
-        5 => ChessType.Queen,
-        _ => ChessType.Pawn
-    };
-
     private ChessType chessType;
 
     public SummonEffect(ChessType chessType)
@@ -31,40 +22,50 @@ public class SummonEffect : CardEffect
         this.chessType = chessType;
     }
 
-    public bool canActivate(bool isLocal, Card card) => card != null && BoardManager.getSummonableTiles(getChessTypeByCardId(card.getId()), isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()).Count > 0;
+    public bool canActivate(bool isLocal, Card card) => card != null && BoardManager.getSummonableTiles(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()).Count > 0;
 
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
     {
         if (currentMana < card.getCost() || !canActivate(isLocal, card))
             return new List<CardUseOption>();
 
-        ChessType type = getChessTypeByCardId(card.getId());
-
         List<CardUseOption> useOptions = new List<CardUseOption>();
-        List<BoardTile> summonableTiles = BoardManager.getSummonableTiles(type, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite());
+        List<BoardTile> summonableTiles = BoardManager.getSummonableTiles(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite());
         float manaEfficiency = card.getCost() == 0 ? 2.0f : (float)currentMana / card.getCost();
 
         foreach (BoardTile tile in summonableTiles)
         {
             Vector2Int position = tile.getPos();
-            float score = AiEvaluator.getPieceValue(type) * manaEfficiency + AiEvaluator.getPositionValue(position);
+            float score = AiEvaluator.getPieceValue(chessType) * manaEfficiency + AiEvaluator.getPositionValue(position);
             useOptions.Add(new CardUseOption(card, score, new List<Vector2Int> { position }));
         }
 
         return useOptions;
     }
 
-    public async Task executeEffect(bool isLocal, Card card, List<Vector2Int> targetPositions)
+    public async Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
         bool isWhite = isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite();
 
         if (isLocal)
-            processSummonWithoutAnimation(chessType, isWhite, targetPositions[0]);
+            processSummonWithoutAnimation(chessType, isWhite, targets.getTargetPositions()[0]);
         else
         {
-            await BoardManager.showTargetWithAnimation(targetPositions);
-            await processSummonWithAnimation(chessType, isWhite, targetPositions[0]);
+            await BoardManager.showTargetWithAnimation(targets.getTargetPositions());
+            await processSummonWithAnimation(chessType, isWhite, targets.getTargetPositions()[0]);
             BoardManager.removeAllHint();
         }
+
+        InputManager.tryDetectHover();
+    }
+
+    public async Task<EffectTargetPayload> gatherTargets()
+    {
+        BoardTile tile = await InputManager.waitForTargetSelection(BoardManager.getSummonableTiles(chessType, GameManager.IsLocalWhite()));
+
+        if (tile == null)
+            return null;
+
+        return new EffectTargetPayload(new List<Vector2Int> { tile.getPos() });
     }
 }
