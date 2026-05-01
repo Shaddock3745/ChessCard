@@ -82,7 +82,7 @@ public class PlayerData
 
     public bool canMoveChess(ChessPiece chess)
     {
-        return chess.isWhite() == isWhite && !couldntMoveChessThisTurn && mana >= (1 + chess.getExtraMoveCost());
+        return chess.isWhite() == isWhite && !chessMoved && !couldntMoveChessThisTurn && mana >= (1 + chess.getExtraMoveCost());
     }
 
     public bool chessMovedThisTurn() => chessMoved;

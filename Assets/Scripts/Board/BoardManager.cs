@@ -264,6 +264,8 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
         getUiOfChess(movingPiece).moveToPoint(new Vector3(x, y, 0));
+
+        LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
     }
 
     public static async Task movePieceWithAnimation(Vector2Int from, Vector2Int to)
@@ -274,39 +276,46 @@ public class BoardManager : MonoBehaviour
 
         await getUiOfChess(movingPiece).moveToPointWithAnimation(new Vector3(x, y, 0));
         instance.boardState.moveChessPiece(from, to);
+
+        LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
     }
 
     public static void attackPiece(Vector2Int from, Vector2Int to)
     {
-        ChessPiece targetPiece = getChessPieceAtPosition(to);
+        ChessPiece attacker = getChessPieceAtPosition(from);
+        ChessPiece victim = getChessPieceAtPosition(to);
         instance.boardState.moveChessPiece(from, to);
 
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
-        getUiOfChess(getChessPieceAtPosition(from)).moveToPoint(new Vector3(x, y, 0));
-        getUiOfChess(targetPiece).destroy();
-        instance.pieceToUiMap.Remove(targetPiece);
+        getUiOfChess(attacker).moveToPoint(new Vector3(x, y, 0));
+        getUiOfChess(victim).destroy();
+        instance.pieceToUiMap.Remove(victim);
+
+        LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
     }
 
     public static async Task attackPieceWithAnimation(Vector2Int from, Vector2Int to)
     {
-        ChessPiece targetPiece = getChessPieceAtPosition(to);
+        ChessPiece attacker = getChessPieceAtPosition(from);
+        ChessPiece victim = getChessPieceAtPosition(to);
         instance.boardState.moveChessPiece(from, to);
 
-        ChessPieceUi attackerUi = getUiOfChess(getChessPieceAtPosition(from));
-        ChessPieceUi targetUi = getUiOfChess(getChessPieceAtPosition(to));
+        ChessPieceUi attackerUi = getUiOfChess(attacker);
+        ChessPieceUi victimUi = getUiOfChess(victim);
 
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
-        attackerUi.BringToFrontOf(targetUi);
+        attackerUi.BringToFrontOf(victimUi);
 
         Task moveTask = attackerUi.moveToPointWithAnimation(new Vector3(x, y, 0));
-        Task destroyTask = targetUi.destroyWithAnimation();
+        Task destroyTask = victimUi.destroyWithAnimation();
 
         await Task.WhenAll(moveTask, destroyTask);
+        instance.pieceToUiMap.Remove(victim);
 
-        instance.pieceToUiMap.Remove(targetPiece);
+        LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
     }
 
     public static void showMoveable(Vector2Int position)

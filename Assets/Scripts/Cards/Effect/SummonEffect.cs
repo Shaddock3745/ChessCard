@@ -64,7 +64,7 @@ public class SummonEffect : CardEffect
         BoardTile tile = await InputManager.waitForTargetSelection(BoardManager.getSummonableTiles(chessType, GameManager.IsLocalWhite()));
 
         if (tile == null)
-            return null;
+            return new EffectTargetPayload();
 
         return new EffectTargetPayload(new List<Vector2Int> { tile.getPos() });
     }

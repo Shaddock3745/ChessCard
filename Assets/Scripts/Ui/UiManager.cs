@@ -5,7 +5,8 @@ public class UiManager : MonoBehaviour
     private static UiManager instance;
 
     [SerializeField] private TMPro.TextMeshProUGUI deckCount, waitingCount, discardCount, manaCount;
-    [SerializeField] private GameObject hoveredObjectDataPanel;
+    [SerializeField] private GameObject hoveredObjectDataPanel, logPanel;
+    [SerializeField] private GameObject changeTurnButton, showLogPanelButton;
     [SerializeField] private TMPro.TextMeshProUGUI hoveredObjectName, hoveredObjectDescription;
 
     private void Awake()
@@ -16,18 +17,6 @@ public class UiManager : MonoBehaviour
         }
         else
             Destroy(gameObject);
-    }
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     public static void updateDeckCount(int count)
@@ -76,5 +65,28 @@ public class UiManager : MonoBehaviour
             showHoveredObjectDataPanel(card.getName(), card.getDescription());
         else
             hideHoveredObjectDataPanel();
+    }
+
+
+    public static void showChangeTurnButton()
+    {
+        instance.changeTurnButton.SetActive(true);
+    }
+
+    public static void hideChangeTurnButton()
+    {
+        instance.changeTurnButton.SetActive(false);
+    }
+
+    public static void showLogPanel()
+    {
+        instance.logPanel.SetActive(true);
+        instance.showLogPanelButton.SetActive(false);
+    }
+
+    public static void hideLogPanel()
+    {
+        instance.logPanel.SetActive(false);
+        instance.showLogPanelButton.SetActive(true);
     }
 }

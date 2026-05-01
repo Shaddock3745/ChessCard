@@ -63,7 +63,7 @@ public class CardEffectManager : MonoBehaviour
 
         EffectTargetPayload payload = await effect.gatherTargets();
 
-        if (payload.isEmpty())
+        if (payload == null || payload.isEmpty())
         {
             HandViewManager.rearrangeUsingCard();
             return;
@@ -93,5 +93,7 @@ public class CardEffectManager : MonoBehaviour
             await effect.executeEffect(isLocal, card, targets);
         else
             Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
+
+        LogManager.createLog(new CardUseLog(isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite(), card));
     }
 }

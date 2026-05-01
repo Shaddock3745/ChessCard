@@ -18,18 +18,6 @@ public class AiManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     public static AiOption getBestMove(PlayerData playerData)
     {
         List<AiOption> options = new List<AiOption>();
@@ -69,17 +57,10 @@ public class AiManager : MonoBehaviour
 
             await Task.Delay(OPTION_BUFFER_TIME_MILLIS);
 
-            string result = "AI ";
-
-            if (bestMove is CardUseOption cardUseOption)
-                result += string.Format("use card : {0}", cardUseOption.getCardname());
-            else if (bestMove is ChessMoveOption chessMoveOption)
-                result += string.Format("move {0}", chessMoveOption.getChessName());
-
-            Debug.Log(result);
-
             await bestMove.execute(playerData);
         }
+
+        GameManager.ChangeTurn();
     }
 
     public static PlayerData initAIPlayerData(bool isLocal, bool isWhite) => new PlayerData(true, isLocal, isWhite, DEFAULT_AI_DECK_LIST);

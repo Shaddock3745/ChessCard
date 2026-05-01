@@ -165,6 +165,8 @@ public class MatchDataManager : MonoBehaviour
             for (int i = 0; i < handCardCount; i++)
                 drawCard(false);
         }
+
+        LogManager.createLog(TextLog.createTurnStartLog(isLocalTurn ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()));
     }
 
     public static void turnEnd(bool isLocalTurn)

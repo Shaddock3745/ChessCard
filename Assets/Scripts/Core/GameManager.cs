@@ -51,7 +51,10 @@ public class GameManager : MonoBehaviour
         isWhiteTurn = true;
 
         if (IsLocalTurn())
+        {
             MatchDataManager.turnStart(true);
+            UiManager.showChangeTurnButton();
+        }
         else
         {
             MatchDataManager.turnStart(false);
@@ -68,6 +71,7 @@ public class GameManager : MonoBehaviour
         {
             MatchDataManager.turnEnd(false);
             MatchDataManager.turnStart(true);
+            UiManager.showChangeTurnButton();
 
             if (MatchDataManager.isAI(true))
                 await AiManager.doBestMove(MatchDataManager.getPlayerData(true));
@@ -76,6 +80,7 @@ public class GameManager : MonoBehaviour
         {
             MatchDataManager.turnEnd(true);
             MatchDataManager.turnStart(false);
+            UiManager.hideChangeTurnButton();
 
             if (MatchDataManager.isAI(false))
                 await AiManager.doBestMove(MatchDataManager.getPlayerData(false));
