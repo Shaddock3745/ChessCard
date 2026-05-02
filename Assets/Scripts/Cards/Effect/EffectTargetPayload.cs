@@ -6,6 +6,13 @@ public class EffectTargetPayload
     private List<Vector2Int> targetPositions;
     private List<Card> targetCards;
 
+    private static readonly EffectTargetPayload emptyPayload = new EffectTargetPayload();
+
+    public static EffectTargetPayload empty()
+    {
+        return emptyPayload;
+    }
+
     public EffectTargetPayload()
     {
         this.targetPositions = new List<Vector2Int>();
@@ -34,5 +41,5 @@ public class EffectTargetPayload
 
     public List<Card> getTargetCards() => targetCards;
 
-    public bool isEmpty() => targetPositions.Count == 0 && targetCards.Count == 0;
+    public virtual bool isEmpty() => targetPositions.Count == 0 && targetCards.Count == 0;
 }

@@ -33,9 +33,9 @@ public class LogTextInteract : MonoBehaviour, IPointerMoveHandler, IPointerExitH
 
                 if (LogManager.getLinkMap().TryGetValue(linkId, out object data))
                     if (data is Card card)
-                        UiManager.processHoveredObjectData(card);
+                        UiManager.processHoveredObjectData(card, false);
                     else if (data is ChessPiece chess)
-                        UiManager.processHoveredObjectData(chess);
+                        UiManager.processHoveredObjectData(chess, false);
             }
         }
         else

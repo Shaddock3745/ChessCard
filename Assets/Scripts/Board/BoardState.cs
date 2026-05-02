@@ -1,3 +1,5 @@
+using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BoardState
@@ -52,6 +54,22 @@ public class BoardState
         return boardTiles[position.x, position.y];
     }
 
+    public List<BoardTile> getTilesOfChesses(ChessType chessType, bool isWhite)
+    {
+        List<BoardTile> tiles = new List<BoardTile>();
+
+        for (int x = 0; x < chessPieces.GetLength(0); x++)
+            for (int y = 0; y < chessPieces.GetLength(1); y++)
+            {
+                ChessPiece piece = chessPieces[x, y];
+
+                if (piece != null && piece.getChessType() == chessType && piece.isWhite() == isWhite)
+                    tiles.Add(boardTiles[x, y]);
+            }
+
+        return tiles;
+    }
+
     public void moveChessPiece(Vector2Int from, Vector2Int to)
     {
         ChessPiece pieceToMove = getChessPieceAtPosition(from);
@@ -73,5 +91,21 @@ public class BoardState
     public void removeChessPieceAtPosition(Vector2Int position)
     {
         chessPieces[position.x, position.y] = null;
+    }
+
+    public int getChessAmount(ChessType type, bool isWhite)
+    {
+        int count = 0;
+
+        for (int x = 0; x < chessPieces.GetLength(0); x++)
+            for (int y = 0; y < chessPieces.GetLength(1); y++)
+            {
+                ChessPiece piece = chessPieces[x, y];
+
+                if (piece != null && piece.getChessType() == type && piece.isWhite() == isWhite)
+                    count++;
+            }
+
+        return count;
     }
 }

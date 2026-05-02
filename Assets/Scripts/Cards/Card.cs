@@ -20,6 +20,17 @@ public class Card
         currentCost = JsonReader.getCardCost(id);
     }
 
+    public Card(int id, bool isExileOnUse, bool noConsumption)
+    {
+        this.id = id;
+        this.isExileOnUse = isExileOnUse;
+
+        if (noConsumption)
+            currentCost = 0;
+        else
+            currentCost = JsonReader.getCardCost(id);
+    }
+
     public void resentCost()
     {
         currentCost = JsonReader.getCardCost(id);
@@ -44,7 +55,7 @@ public class Card
     {
         return isExileOnUse;
     }
-     public int getId()
+    public int getId()
     {
         return id;
     }

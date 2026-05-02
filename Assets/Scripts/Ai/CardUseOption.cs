@@ -9,17 +9,17 @@ public class CardUseOption : AiOption
     private Card card;
     EffectTargetPayload targets;
 
-    public CardUseOption(Card card, float scroe, List<Vector2Int> positions = null, List<Card> cards = null)
+    public CardUseOption(Card card, float scroe, EffectTargetPayload targets = null)
     {
         this.card = card;
         this.scroe = scroe;
-        this.targets = new EffectTargetPayload(positions, cards);
+        this.targets = targets ?? EffectTargetPayload.empty();
     }
 
     public float getScore() => scroe;
+
     public async Task execute(PlayerData ownerData)
     {
-
         if (ownerData.IsLocal())
             await CardEffectManager.processLocalAiCard(card, targets);
         else
@@ -27,4 +27,6 @@ public class CardUseOption : AiOption
     }
 
     public string getCardname() => card.getName();
+
+    public EffectTargetPayload getTargets() => targets;
 }

@@ -19,14 +19,6 @@ public class CardEffectManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-    void Start()
-    {
-    }
-
-    void Update()
-    {
-    }
-
     private static void initDictionary()
     {
         cardRegistry[1] = new SummonEffect(ChessType.Pawn);
@@ -34,6 +26,8 @@ public class CardEffectManager : MonoBehaviour
         cardRegistry[3] = new SummonEffect(ChessType.Knight);
         cardRegistry[4] = new SummonEffect(ChessType.Rook);
         cardRegistry[5] = new SummonEffect(ChessType.Queen);
+        cardRegistry[6] = new CompositeEffect(new ChessAmountCheckEffect(ChessType.Pawn, 3, true, false), new MaterializeCardEffect(1, 2, true));
+        cardRegistry[28] = new CompositeEffect(new RemoveChessEffect(true, ChessType.Pawn, ChessType.Rook, ChessType.Bishop, ChessType.Knight, ChessType.Queen), new ManaChangeEffect(2), new DrawCardEffect(1));
     }
 
     public static CardEffect getCardEffect(Card card)
@@ -63,7 +57,7 @@ public class CardEffectManager : MonoBehaviour
 
         EffectTargetPayload payload = await effect.gatherTargets();
 
-        if (payload == null || payload.isEmpty())
+        if (payload == null)
         {
             HandViewManager.rearrangeUsingCard();
             return;
@@ -73,6 +67,7 @@ public class CardEffectManager : MonoBehaviour
         HandViewManager.destroyUsingCard();
 
         await executeCardEffect(true, card, payload);
+
     }
 
     public static async Task processLocalAiCard(Card card, EffectTargetPayload targets)

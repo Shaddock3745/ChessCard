@@ -30,18 +30,6 @@ public class BoardManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     public static void initBoard()
     {
         instance.boardState = new BoardState();
@@ -80,6 +68,32 @@ public class BoardManager : MonoBehaviour
         chessPieceUi.transform.SetParent(chessBoard.transform);
 
         pieceToUiMap.Add(piece, chessPieceUi);
+    }
+
+    public static int getChessAmount(ChessType type, bool isWhite)
+    {
+        return instance.boardState.getChessAmount(type, isWhite);
+    }
+
+    public static bool chessAmountReachLimit(ChessType type, bool isWhite)
+    {
+        switch (type)
+        {
+            case ChessType.Pawn:
+                return getChessAmount(ChessType.Pawn, isWhite) >= 8;
+            case ChessType.Rook:
+                return getChessAmount(ChessType.Rook, isWhite) >= 2;
+            case ChessType.Knight:
+                return getChessAmount(ChessType.Knight, isWhite) >= 2;
+            case ChessType.Bishop:
+                return getChessAmount(ChessType.Bishop, isWhite) >= 2;
+            case ChessType.Queen:
+                return getChessAmount(ChessType.Queen, isWhite) >= 1;
+            case ChessType.King:
+                return getChessAmount(ChessType.King, isWhite) >= 1;
+            default:
+                return false;
+        }
     }
 
     public static List<BoardTile> getSummonableTiles(ChessType type, bool isWhite)
@@ -223,6 +237,11 @@ public class BoardManager : MonoBehaviour
         return instance.boardState.getBoardTileAtPosition(x, y);
     }
 
+    public static List<BoardTile> getTilesOfChesses(ChessType type, bool isWhite)
+    {
+        return instance.boardState.getTilesOfChesses(type, isWhite);
+    }
+
     public static List<(ChessPiece, Vector2Int)> getAllChessPieces(bool isWhite)
     {
         List<(ChessPiece, Vector2Int)> pieces = new List<(ChessPiece, Vector2Int)>();
@@ -316,6 +335,22 @@ public class BoardManager : MonoBehaviour
         instance.pieceToUiMap.Remove(victim);
 
         LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
+    }
+
+    public static void removePiece(Vector2Int position)
+    {
+        ChessPiece piece = getChessPieceAtPosition(position);
+        instance.boardState.removeChessPieceAtPosition(position);
+        getUiOfChess(piece).destroy();
+        instance.pieceToUiMap.Remove(piece);
+    }
+
+    public static async Task removePieceWithAnimation(Vector2Int position)
+    {
+        ChessPiece piece = getChessPieceAtPosition(position);
+        instance.boardState.removeChessPieceAtPosition(position);
+        await getUiOfChess(piece).destroyWithAnimation();
+        instance.pieceToUiMap.Remove(piece);
     }
 
     public static void showMoveable(Vector2Int position)

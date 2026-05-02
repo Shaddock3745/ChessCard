@@ -19,28 +19,6 @@ public class MatchDataManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
-    public static void addMana(bool isLoal, int amount)
-    {
-        if (isLoal)
-            instance.local.addMana(amount);
-        else
-            instance.enemy.addMana(amount);
-
-        instance.updateManaUi();
-    }
-
     public static void shuffleDeck(bool isLocal)
     {
         if (isLocal)
@@ -64,8 +42,10 @@ public class MatchDataManager : MonoBehaviour
             Card result = instance.local.drawCard();
 
             if (result != null)
+            {
                 HandViewManager.playerDrawCard(result);
-            instance.updateCardCountUi();
+                instance.updateCardCountUi();
+            }
 
             return result;
         }
@@ -77,6 +57,27 @@ public class MatchDataManager : MonoBehaviour
                 HandViewManager.enemyDrawCard();
 
             return result;
+        }
+    }
+
+    public static void materializeCard(bool isLocal, int cardId, bool noConsumption)
+    {
+        if (isLocal)
+        {
+            Card result = instance.local.materializeCard(cardId, noConsumption);
+
+            if (result != null)
+            {
+                HandViewManager.playerDrawCard(result);
+                instance.updateCardCountUi();
+            }
+        }
+        else
+        {
+            Card result = instance.enemy.materializeCard(cardId, noConsumption);
+
+            if (result != null)
+                HandViewManager.enemyDrawCard();
         }
     }
 
@@ -142,6 +143,36 @@ public class MatchDataManager : MonoBehaviour
     public static PlayerData getPlayerData(bool isLocal)
     {
         return isLocal ? instance.local : instance.enemy;
+    }
+
+    public static void changePlayerMana(bool isLocal, int delta)
+    {
+        if (isLocal)
+            instance.local.addMana(delta);
+        else
+            instance.enemy.addMana(delta);
+
+        instance.updateManaUi();
+    }   
+
+    public static int getPlayerDeckCardCount(bool isLocal)
+    {
+        return isLocal ? instance.local.getDeckCardCount() : instance.enemy.getDeckCardCount();
+    }
+
+    public static int getPlayerHandCardCount(bool isLocal)
+    {
+        return isLocal ? instance.local.getHandCardCount() : instance.enemy.getHandCardCount();
+    }
+
+    public static int getPlayerWaitingCardCount(bool isLocal)
+    {
+        return isLocal ? instance.local.getWaitingCardCount() : instance.enemy.getWaitingCardCount();
+    }
+
+    public static int getPlayerDiscardCardCount(bool isLocal)
+    {
+        return isLocal ? instance.local.getDiscardCardCount() : instance.enemy.getDiscardCardCount();
     }
 
     public static void turnStart(bool isLocalTurn)

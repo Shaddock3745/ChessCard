@@ -92,13 +92,6 @@ public class InputManager : MonoBehaviour
         return localPoint;
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
     void Update()
     {
         if (GameManager.IsLocalTurn())
@@ -142,6 +135,10 @@ public class InputManager : MonoBehaviour
                     selectBoardTile();
                 else
                     cancelTargetSelection();
+            }
+            else
+            {
+                cancelTargetSelection();
             }
         }
         else
@@ -289,7 +286,7 @@ public class InputManager : MonoBehaviour
             {
                 isSelectingChess = true;
                 isSelectingCard = false;
-                UiManager.processHoveredObjectData(selectedChess.getChess());
+                UiManager.processHoveredObjectData(selectedChess.getChess(), true);
             }
             else
             {
@@ -301,7 +298,7 @@ public class InputManager : MonoBehaviour
             isSelectingChess = false;
             isSelectingCard = true;
             selectedCard = cardUi;
-            UiManager.processHoveredObjectData(cardUi.getCard());
+            UiManager.processHoveredObjectData(cardUi.getCard(), true);
             HandViewManager.hoverCard(cardUi);
         }
         else
@@ -387,8 +384,8 @@ public class InputManager : MonoBehaviour
 
         if (isMouseInner)
         {
-            _ = CardEffectManager.processLocalPlayerCard(selectedCard.getCard());
             HandViewManager.playerUseCard(selectedCard);
+            _ = CardEffectManager.processLocalPlayerCard(selectedCard.getCard());
         }
         else
             HandViewManager.rearrangeHover();

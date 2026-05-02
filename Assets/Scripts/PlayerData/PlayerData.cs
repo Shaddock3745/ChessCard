@@ -180,6 +180,13 @@ public class PlayerData
         return result;
     }
 
+    public Card materializeCard(int cardId, bool noConsumption)
+    {
+        Card result = new Card(cardId, true, noConsumption);
+        handList.Add(result);
+        return result;
+    }
+
     public void useCard(Card card)
     {
         consumeMana(card.getCost());

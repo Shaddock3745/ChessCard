@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 public class UiManager : MonoBehaviour
@@ -51,20 +52,30 @@ public class UiManager : MonoBehaviour
         instance.hoveredObjectDataPanel.SetActive(false);
     }
 
-    public static void processHoveredObjectData(ChessPiece piece)
+    public static void processHoveredObjectData(ChessPiece piece, bool isOnBoard)
     {
         if (piece != null)
-            showHoveredObjectDataPanel(piece.getName(), piece.getDescription());
-        else
-            hideHoveredObjectDataPanel();
+        {
+            string description = piece.getDescription();
+
+            if (isOnBoard)
+                description += MatchDataManager.canMoveChess(true, piece) ? "\n\n(可移動)" : "";
+
+            showHoveredObjectDataPanel(piece.getName(), description);
+        }
     }
 
-    public static void processHoveredObjectData(Card card)
+    public static void processHoveredObjectData(Card card, bool isInHand)
     {
         if (card != null)
-            showHoveredObjectDataPanel(card.getName(), card.getDescription());
-        else
-            hideHoveredObjectDataPanel();
+        {
+            string description = card.getDescription();
+
+            if (isInHand)
+                description += MatchDataManager.canUseCard(true, card) ? "\n\n(可使用)" : "\n\n(條件不符)";
+
+            showHoveredObjectDataPanel(card.getName(), description);
+        }
     }
 
 

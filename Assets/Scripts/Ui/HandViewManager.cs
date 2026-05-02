@@ -180,19 +180,16 @@ public class HandViewManager : MonoBehaviour
 
     public static void playerUseCard(CardUi cardUi)
     {
-        if (!instance.isPlayerAnimating)
-        {
-            instance.usingCard = cardUi;
-            instance.usingCardIndex = instance.playerCardUiList.IndexOf(cardUi);
+        instance.usingCard = cardUi;
+        instance.usingCardIndex = instance.playerCardUiList.IndexOf(cardUi);
 
-            instance.playerCardUiList.Remove(cardUi);
-            instance.hoveredCardIndex = -1;
-            cardUi.transform.SetAsLastSibling();
-            RectTransform rect = cardUi.GetComponent<RectTransform>();
-            rect.DOKill();
-            rect.anchoredPosition = usingCardPos;
-            instance.sortPlayerHand();
-        }
+        instance.playerCardUiList.Remove(cardUi);
+        instance.hoveredCardIndex = -1;
+        cardUi.transform.SetAsLastSibling();
+        RectTransform rect = cardUi.GetComponent<RectTransform>();
+        rect.DOKill();
+        rect.anchoredPosition = usingCardPos;
+        instance.sortPlayerHand();
     }
 
     public static void enemyUseCard(Card card)
@@ -200,7 +197,7 @@ public class HandViewManager : MonoBehaviour
         if (instance.enemyCardBackList.Count <= 0)
             return;
 
-        UiManager.processHoveredObjectData(card);
+        UiManager.processHoveredObjectData(card, false);
 
         GameObject cardBackToConsume = instance.enemyCardBackList[0];
         instance.enemyCardBackList.RemoveAt(0);
@@ -238,11 +235,8 @@ public class HandViewManager : MonoBehaviour
 
     public static void rearrangeHover()
     {
-        if (!instance.isPlayerAnimating)
-        {
-            instance.hoveredCardIndex = -1;
-            instance.sortPlayerHand();
-        }
+        instance.hoveredCardIndex = -1;
+        instance.sortPlayerHand();
     }
 
     public static void flush(bool isPlayer)

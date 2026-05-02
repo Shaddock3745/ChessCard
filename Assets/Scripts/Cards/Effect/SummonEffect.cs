@@ -22,7 +22,11 @@ public class SummonEffect : CardEffect
         this.chessType = chessType;
     }
 
-    public bool canActivate(bool isLocal, Card card) => card != null && BoardManager.getSummonableTiles(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()).Count > 0;
+    public bool canActivate(bool isLocal, Card card)
+    {
+        return card != null && !BoardManager.chessAmountReachLimit(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite())
+            && BoardManager.getSummonableTiles(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()).Count > 0;
+    }
 
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
     {
@@ -37,7 +41,7 @@ public class SummonEffect : CardEffect
         {
             Vector2Int position = tile.getPos();
             float score = AiEvaluator.getPieceValue(chessType) * manaEfficiency + AiEvaluator.getPositionValue(position);
-            useOptions.Add(new CardUseOption(card, score, new List<Vector2Int> { position }));
+            useOptions.Add(new CardUseOption(card, score, new EffectTargetPayload(new List<Vector2Int> { position })));
         }
 
         return useOptions;
@@ -64,7 +68,7 @@ public class SummonEffect : CardEffect
         BoardTile tile = await InputManager.waitForTargetSelection(BoardManager.getSummonableTiles(chessType, GameManager.IsLocalWhite()));
 
         if (tile == null)
-            return new EffectTargetPayload();
+            return null;
 
         return new EffectTargetPayload(new List<Vector2Int> { tile.getPos() });
     }
