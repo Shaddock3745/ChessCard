@@ -54,7 +54,7 @@ public class RemoveChessEffect : CardEffect
         foreach (ChessType type in removeableChessTypes)
             validTiles.AddRange(BoardManager.getTilesOfChesses(type, isSameTeam ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()));
 
-        BoardTile tile = await InputManager.waitForTargetSelection(validTiles);
+        BoardTile tile = await InputManager.waitForBoardTileSelection(validTiles);
 
         if (tile == null)
             return null;

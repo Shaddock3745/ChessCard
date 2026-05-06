@@ -140,7 +140,7 @@
     "name_tw": "施術準備",
     "name_en": "Preparation",
     "cost": 1,
-    "desc_tw": "抽取兩張牌，這回合我方不能發動「施術準備」",
+    "desc_tw": "抽取兩張牌，這回合我方不能再次發動「施術準備」",
     "desc_en": "Draw 2 cards. Cannot use 'Preparation' again this turn."
   },
   {

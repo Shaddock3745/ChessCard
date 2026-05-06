@@ -43,7 +43,7 @@ public class MatchDataManager : MonoBehaviour
 
             if (result != null)
             {
-                HandViewManager.playerDrawCard(result);
+                _ = HandViewManager.playerDrawCard(result);
                 instance.updateCardCountUi();
             }
 
@@ -54,7 +54,7 @@ public class MatchDataManager : MonoBehaviour
             Card result = instance.enemy.drawCard();
 
             if (result != null)
-                HandViewManager.enemyDrawCard();
+                _ = HandViewManager.enemyDrawCard();
 
             return result;
         }
@@ -68,7 +68,7 @@ public class MatchDataManager : MonoBehaviour
 
             if (result != null)
             {
-                HandViewManager.playerDrawCard(result);
+                _ = HandViewManager.playerDrawCard(result);
                 instance.updateCardCountUi();
             }
         }
@@ -77,7 +77,7 @@ public class MatchDataManager : MonoBehaviour
             Card result = instance.enemy.materializeCard(cardId, noConsumption);
 
             if (result != null)
-                HandViewManager.enemyDrawCard();
+                _ = HandViewManager.enemyDrawCard();
         }
     }
 
@@ -92,7 +92,7 @@ public class MatchDataManager : MonoBehaviour
         else
         {
             instance.enemy.useCard(card);
-            HandViewManager.enemyUseCard(card);
+            _ = HandViewManager.enemyUseCard(card);
         }
     }
 
@@ -101,13 +101,13 @@ public class MatchDataManager : MonoBehaviour
         if (isLocal)
         {
             instance.local.flushHandCards();
-            HandViewManager.flush(true);
+            _ = HandViewManager.flush(true);
             instance.updateCardCountUi();
         }
         else
         {
             instance.enemy.flushHandCards();
-            HandViewManager.flush(false);
+            _ = HandViewManager.flush(false);
         }
     }
 
@@ -153,7 +153,7 @@ public class MatchDataManager : MonoBehaviour
             instance.enemy.addMana(delta);
 
         instance.updateManaUi();
-    }   
+    }
 
     public static int getPlayerDeckCardCount(bool isLocal)
     {
@@ -206,7 +206,7 @@ public class MatchDataManager : MonoBehaviour
         {
             instance.local.resetForEndTurn();
             instance.local.flushHandCards();
-            HandViewManager.flush(true);
+            _ = HandViewManager.flush(true);
             instance.updateCardCountUi();
             instance.updateManaUi();
         }
@@ -214,7 +214,7 @@ public class MatchDataManager : MonoBehaviour
         {
             instance.enemy.resetForEndTurn();
             instance.enemy.flushHandCards();
-            HandViewManager.flush(false);
+            _ = HandViewManager.flush(false);
         }
     }
 

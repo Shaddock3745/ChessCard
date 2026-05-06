@@ -12,4 +12,9 @@ public interface CardEffect
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana);
 
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets);
+
+    Task<EffectTargetPayload> gatherTargets(List<EffectTargetPayload> previousPayloads)
+    {
+        return gatherTargets();
+    }
 }

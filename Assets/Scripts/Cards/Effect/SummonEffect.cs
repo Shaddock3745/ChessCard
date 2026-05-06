@@ -65,7 +65,7 @@ public class SummonEffect : CardEffect
 
     public async Task<EffectTargetPayload> gatherTargets()
     {
-        BoardTile tile = await InputManager.waitForTargetSelection(BoardManager.getSummonableTiles(chessType, GameManager.IsLocalWhite()));
+        BoardTile tile = await InputManager.waitForBoardTileSelection(BoardManager.getSummonableTiles(chessType, GameManager.IsLocalWhite()));
 
         if (tile == null)
             return null;

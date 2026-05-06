@@ -6,8 +6,7 @@ using UnityEngine.InputSystem;
 
 public class InputManager : MonoBehaviour
 {
-    [SerializeField] private InputActionReference clickReference;
-    [SerializeField] private InputActionReference positionReference;
+    [SerializeField] private InputActionReference clickReference, positionReference;
     [SerializeField] private TMPro.TextMeshProUGUI hoveredObjectName;
     [SerializeField] private LayerMask boardLayer;
     [SerializeField] private RectTransform handcardCanvaseRectTramsform;
@@ -17,6 +16,7 @@ public class InputManager : MonoBehaviour
     private static readonly int MOVING_SORTING_ORDER = 100;
 
     private TaskCompletionSource<BoardTile> targetTileSelectionTcs;
+    private TaskCompletionSource<Card> targetCardSelectionTcs;
     private GameObject lastHovered = null;
     private ChessPieceUi selectedChess = null;
     private CardUi selectedCard = null;
@@ -25,7 +25,8 @@ public class InputManager : MonoBehaviour
     private bool isRaisingChess = false, isRaisingCard = false;
     private bool isMouseHolding = false, isMouseInner = false;
     private int originalSortingOrder;
-    private bool isAwaitingTarget = false;
+    private bool isAwaitingChessSelection = false;
+    private bool isAwaitingCardSelection = false;
     private bool externalCallDetectHoverFlag = false;
 
     void Awake()
@@ -56,9 +57,9 @@ public class InputManager : MonoBehaviour
         positionReference.action.Disable();
     }
 
-    public static async Task<BoardTile> waitForTargetSelection(List<BoardTile> validTiles)
+    public static async Task<BoardTile> waitForBoardTileSelection(List<BoardTile> validTiles)
     {
-        instance.isAwaitingTarget = true;
+        instance.isAwaitingChessSelection = true;
         instance.targetTileSelectionTcs = new TaskCompletionSource<BoardTile>();
 
         foreach (BoardTile tile in validTiles)
@@ -67,16 +68,44 @@ public class InputManager : MonoBehaviour
         return await instance.targetTileSelectionTcs.Task;
     }
 
+    public static async Task<Card> waitForCardSelection(List<Card> validCards, params int[] excludedIds)
+    {
+        instance.isAwaitingCardSelection = true;
+        instance.targetCardSelectionTcs = new TaskCompletionSource<Card>();
+
+        await HandViewManager.hidePlayerHandCards();
+        await HandViewManager.showSelectingCardList(validCards, excludedIds);
+
+        Card resultCard = await instance.targetCardSelectionTcs.Task;
+
+        await HandViewManager.hideSelectingCardList();
+        await HandViewManager.showPlayHandCards();
+
+        return resultCard;
+    }
+
+    private void selectCard()
+    {
+        instance.isAwaitingCardSelection = false;
+        instance.targetCardSelectionTcs?.TrySetResult(selectedCard.getCard());
+    }
+
+    private void cancelCardSelection()
+    {
+        instance.isAwaitingCardSelection = false;
+        instance.targetCardSelectionTcs?.TrySetResult(null);
+    }
+
     private void selectBoardTile()
     {
-        instance.isAwaitingTarget = false;
+        instance.isAwaitingChessSelection = false;
         BoardManager.removeAllHint();
         instance.targetTileSelectionTcs?.TrySetResult(currentTile);
     }
 
-    private void cancelTargetSelection()
+    private void cancelBoardTileSelection()
     {
-        instance.isAwaitingTarget = false;
+        instance.isAwaitingChessSelection = false;
         BoardManager.removeAllHint();
         instance.targetTileSelectionTcs?.TrySetResult(null);
     }
@@ -96,7 +125,7 @@ public class InputManager : MonoBehaviour
     {
         if (GameManager.IsLocalTurn())
         {
-            if (isAwaitingTarget)
+            if (isAwaitingChessSelection)
                 updateWhenSelecting();
             else if (isMouseHolding)
                 if (isRaisingChess)
@@ -125,21 +154,28 @@ public class InputManager : MonoBehaviour
 
     private void onMouseHeldStarted(InputAction.CallbackContext context)
     {
-        if (isAwaitingTarget)
+        if (isAwaitingCardSelection)
+        {
+            if (isSelectingCard && selectedCard != null)
+                selectCard();
+            else
+                cancelCardSelection();
+
+            return;
+        }
+        else if (isAwaitingChessSelection)
         {
             BoardTile tile = getHoveredTile();
 
             if (tile != null)
-            {
                 if (tile.isSelectableTile())
                     selectBoardTile();
                 else
-                    cancelTargetSelection();
-            }
+                    cancelBoardTileSelection();
             else
-            {
-                cancelTargetSelection();
-            }
+                cancelBoardTileSelection();
+
+            return;
         }
         else
         {
@@ -299,7 +335,11 @@ public class InputManager : MonoBehaviour
             isSelectingCard = true;
             selectedCard = cardUi;
             UiManager.processHoveredObjectData(cardUi.getCard(), true);
-            HandViewManager.hoverCard(cardUi);
+
+            if (isAwaitingCardSelection)
+                _ = HandViewManager.hoverSelectingCard(cardUi);
+            else
+                _ = HandViewManager.hoverHandCard(cardUi);
         }
         else
         {
@@ -311,7 +351,10 @@ public class InputManager : MonoBehaviour
     private void handleExit(GameObject obj)
     {
         if (isSelectingCard)
-            HandViewManager.rearrangeHover();
+            if (isAwaitingCardSelection)
+                _ = HandViewManager.rearrangeSelectingCardHover();
+            else
+                _ = HandViewManager.rearrangeHandCardHover();
 
         isSelectingChess = isSelectingCard = false;
     }
@@ -384,10 +427,10 @@ public class InputManager : MonoBehaviour
 
         if (isMouseInner)
         {
-            HandViewManager.playerUseCard(selectedCard);
+            _ = HandViewManager.playerUseCard(selectedCard);
             _ = CardEffectManager.processLocalPlayerCard(selectedCard.getCard());
         }
         else
-            HandViewManager.rearrangeHover();
+            _ = HandViewManager.rearrangeHandCardHover();
     }
 }

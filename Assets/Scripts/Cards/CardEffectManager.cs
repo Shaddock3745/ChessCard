@@ -51,7 +51,7 @@ public class CardEffectManager : MonoBehaviour
         if (!cardRegistry.TryGetValue(card.getId(), out CardEffect effect))
         {
             Debug.LogWarning("卡片效果未註冊");
-            HandViewManager.rearrangeUsingCard();
+            _ = HandViewManager.rearrangeUsingCard();
             return;
         }
 
@@ -59,7 +59,7 @@ public class CardEffectManager : MonoBehaviour
 
         if (payload == null)
         {
-            HandViewManager.rearrangeUsingCard();
+            _ = HandViewManager.rearrangeUsingCard();
             return;
         }
 
