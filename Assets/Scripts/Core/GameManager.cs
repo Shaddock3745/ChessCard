@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,9 +15,13 @@ public class GameManager : MonoBehaviour
 
     private static GameManager instance;
 
+    private int turnCount;
     private bool isWhiteTurn = true;
-    private bool isLocalWhite = true; // This should be set based on local selection
-    private Language currentLanguage = Language.TRADITIONAL_CHINESE; // Default language
+    private bool isLocalWhite = true;
+    private Language currentLanguage = Language.TRADITIONAL_CHINESE;
+
+    public static event Action<int> OnTurnStart;
+    public static event Action<int> OnTurnEnd;
 
     void Awake()
     {
@@ -40,15 +45,16 @@ public class GameManager : MonoBehaviour
         startFirstTurn();
     }
 
-    // Update is called once per frame
-    void Update()
+    public static int getCurrentTurnCount()
     {
-
+        return instance.turnCount;
     }
 
     private void startFirstTurn()
     {
         isWhiteTurn = true;
+        turnCount = 1;
+        OnTurnStart?.Invoke(turnCount);
 
         if (IsLocalTurn())
         {
@@ -64,27 +70,23 @@ public class GameManager : MonoBehaviour
 
     public static async void ChangeTurn()
     {
+        OnTurnEnd?.Invoke(instance.turnCount);
+        MatchDataManager.turnEnd(IsLocalTurn());
+
         instance.isWhiteTurn = !instance.isWhiteTurn;
+        instance.turnCount++;
+
+        OnTurnStart?.Invoke(instance.turnCount);
         instance.nowTurn.text = instance.isWhiteTurn ? "White" : "Black";
+        MatchDataManager.turnStart(IsLocalTurn());
 
         if (IsLocalTurn())
-        {
-            MatchDataManager.turnEnd(false);
-            MatchDataManager.turnStart(true);
             UiManager.showChangeTurnButton();
-
-            if (MatchDataManager.isAI(true))
-                await AiManager.doBestMove(MatchDataManager.getPlayerData(true));
-        }
         else
-        {
-            MatchDataManager.turnEnd(true);
-            MatchDataManager.turnStart(false);
             UiManager.hideChangeTurnButton();
 
-            if (MatchDataManager.isAI(false))
-                await AiManager.doBestMove(MatchDataManager.getPlayerData(false));
-        }
+        if (MatchDataManager.isAI(IsLocalTurn()))
+            await AiManager.doBestMove(MatchDataManager.getPlayerData(IsLocalTurn()));
     }
 
     public static bool IsLocalTurn()
@@ -102,6 +104,6 @@ public class GameManager : MonoBehaviour
         if (instance != null)
             return instance.currentLanguage;
         else
-            return Language.ENGLISH; // Default language if instance is null
+            return Language.ENGLISH;
     }
 }

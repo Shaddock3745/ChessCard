@@ -172,7 +172,7 @@
     "name_tw": "政治聯姻",
     "name_en": "Political Marriage",
     "cost": 4,
-    "desc_tw": "手牌加入一張「皇后」(Cost變為0)，這回合我方無法攻擊，下回合對方AP+2",
+    "desc_tw": "手牌加入一張「皇后」(Cost變為0)，直到下一個我方回合結束前無法攻擊，下回合對方AP+2",
     "desc_en": "Add 1 'Queen' (Cost 0). No attack this turn; opponent AP +2 next turn."
   },
   {

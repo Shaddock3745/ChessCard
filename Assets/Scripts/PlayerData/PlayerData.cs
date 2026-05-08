@@ -14,6 +14,7 @@ public class PlayerData
     private readonly PlayerType playerType;
     private readonly bool isWhite;
     private readonly bool isLocal;
+    private PlayerStatusContainer statusContainer = new PlayerStatusContainer();
     private List<Card> deck, handList, waitingList, discardList;
     private int mana = DEFAULT_MANA;
     private bool chessMoved = false;
@@ -202,5 +203,15 @@ public class PlayerData
             waitingList.Add(card);
 
         handList.Clear();
+    }
+
+    public void addStatus(PlayerStatus status)
+    {
+        statusContainer.addStatus(status);
+    }
+
+     public void cleanUpExpiredStatuses(int currentTotalTurn)
+    {
+        statusContainer.cleanUpExpiredStatuses(currentTotalTurn);
     }
 }

@@ -21,12 +21,14 @@ public class CardEffectManager : MonoBehaviour
 
     private static void initDictionary()
     {
+        cardRegistry.Clear();
         cardRegistry[1] = new SummonEffect(ChessType.Pawn);
         cardRegistry[2] = new SummonEffect(ChessType.Bishop);
         cardRegistry[3] = new SummonEffect(ChessType.Knight);
         cardRegistry[4] = new SummonEffect(ChessType.Rook);
         cardRegistry[5] = new SummonEffect(ChessType.Queen);
         cardRegistry[6] = new CompositeEffect(new ChessAmountCheckEffect(ChessType.Pawn, 3, true, false), new MaterializeCardEffect(1, 2, true));
+        cardRegistry[17] = new SequentialCompositeEffect(new RemoveChessEffect(true, ChessType.Pawn, ChessType.Rook, ChessType.Bishop, ChessType.Knight, ChessType.Queen), (firstPayload) => new RemoveChessEffect(false, BoardManager.getChessPieceAtPosition(firstPayload.getTargetPositions()[0]).getChessType()));
         cardRegistry[28] = new CompositeEffect(new RemoveChessEffect(true, ChessType.Pawn, ChessType.Rook, ChessType.Bishop, ChessType.Knight, ChessType.Queen), new ManaChangeEffect(2), new DrawCardEffect(1));
     }
 

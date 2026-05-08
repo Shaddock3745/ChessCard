@@ -42,6 +42,16 @@ public class BoardManager : MonoBehaviour
         instance.spawnPiece(ChessType.King, false, 4, 7); // Black King
     }
 
+    public static void hideBoard()
+    {
+        instance.chessBoard.SetActive(false);
+    }
+
+    public static void showBoard()
+    {
+        instance.chessBoard.SetActive(true);
+    }
+
     private void setTile(int indexX, int indexY)
     {
         float x = START_OFFSET + (TILE_SIZE * indexX);
@@ -430,5 +440,19 @@ public class BoardManager : MonoBehaviour
     public static void hideOuter()
     {
         instance.boardOuter.SetActive(false);
+    }
+
+    public static void addChessStatus(Vector2Int targetPosition, ChessStatus status)
+    {
+        ChessPiece piece = getChessPieceAtPosition(targetPosition);
+        piece.addStatus(status);
+    }
+
+    public static void cleanUpChessExpiredStatuses(int currentTotalTurn)
+    {
+        for (int i = 0; i < 8; i++)
+            for (int j = 0; j < 8; j++)
+                if (getChessPieceAtPosition(i, j) != null)
+                    getChessPieceAtPosition(i, j).cleanUpExpiredStatuses(currentTotalTurn);
     }
 }

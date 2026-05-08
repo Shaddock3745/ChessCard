@@ -322,6 +322,7 @@ public class HandViewManager : MonoBehaviour
     public static async Task showSelectingCardList(List<Card> cards, params int[] excludedCardIds)
     {
         instance.isPlayerAnimating = true;
+        BoardManager.hideBoard();
         instance.hoveredSelectingCardIndex = -1;
 
         foreach (var card in cards)
@@ -337,7 +338,7 @@ public class HandViewManager : MonoBehaviour
             rect.localScale = Vector3.zero;
         }
 
-        await sortSelectingCardList();
+        await instance.sortSelectingCardList();
         instance.isPlayerAnimating = false;
     }
 
@@ -359,13 +360,14 @@ public class HandViewManager : MonoBehaviour
 
         foreach (var cardUi in instance.selectingCardUiList) Destroy(cardUi.gameObject);
 
+        BoardManager.showBoard();
         instance.selectingCardUiList.Clear();
         instance.isPlayerAnimating = false;
     }
 
-    public static async Task sortSelectingCardList()
+    private async Task sortSelectingCardList()
     {
-        int n = instance.selectingCardUiList.Count;
+        int n = selectingCardUiList.Count;
         if (n == 0) return;
 
         int totalRows = (n - 1) / SELECTING_COLUMNS + 1;
@@ -375,7 +377,7 @@ public class HandViewManager : MonoBehaviour
 
         for (int i = 0; i < n; i++)
         {
-            CardUi cardUi = instance.selectingCardUiList[i];
+            CardUi cardUi = selectingCardUiList[i];
 
             int row = i / SELECTING_COLUMNS;
             int col = i % SELECTING_COLUMNS;
@@ -385,9 +387,9 @@ public class HandViewManager : MonoBehaviour
             float targetX = startX + col * SELECTING_SPACING_X;
             float targetY = startY - row * SELECTING_SPACING_Y;
 
-            float targetScale = (i == instance.hoveredSelectingCardIndex) ? SELECTING_SCALE_HOVER : SELECTING_SCALE_NORMAL;
+            float targetScale = (i == hoveredSelectingCardIndex) ? SELECTING_SCALE_HOVER : SELECTING_SCALE_NORMAL;
 
-            if (i == instance.hoveredSelectingCardIndex) cardUi.transform.SetAsLastSibling();
+            if (i == hoveredSelectingCardIndex) cardUi.transform.SetAsLastSibling();
             else cardUi.transform.SetSiblingIndex(i);
 
             RectTransform rect = cardUi.GetComponent<RectTransform>();
@@ -405,13 +407,13 @@ public class HandViewManager : MonoBehaviour
         if (!instance.isPlayerAnimating)
         {
             instance.hoveredSelectingCardIndex = instance.selectingCardUiList.IndexOf(cardUi);
-            await sortSelectingCardList();
+            await instance.sortSelectingCardList();
         }
     }
 
     public static async Task rearrangeSelectingCardHover()
     {
         instance.hoveredSelectingCardIndex = -1;
-        await sortSelectingCardList();
+        await instance.sortSelectingCardList();
     }
 }

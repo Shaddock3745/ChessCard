@@ -18,6 +18,7 @@ public class ChessPiece
     private Vector2Int currentPosition;
     private MovementType movementType;
     private int extraMoveCost = 0;
+    private ChessStatusContainer statusContainer = new ChessStatusContainer();
 
     public ChessPiece(ChessType chessType, bool isWhite, Vector2Int currentPosition)
     {
@@ -79,6 +80,16 @@ public class ChessPiece
             Language.JAPANESE => isWhite ? "白" : "黒",
             _ => isWhite ? "White" : "Black"
         };
+    }
+
+    public void addStatus(ChessStatus status)
+    {
+        statusContainer.addStatus(status);
+    }
+
+    public void cleanUpExpiredStatuses(int currentTotalTurn) 
+    {
+        statusContainer.cleanUpExpiredStatuses(currentTotalTurn);
     }
 
     private static string getChessTypeName(ChessType type)

@@ -145,6 +145,11 @@ public class MatchDataManager : MonoBehaviour
         return isLocal ? instance.local : instance.enemy;
     }
 
+    public static int getPlayerMana(bool isLocal)
+    {
+        return isLocal ? instance.local.getMana() : instance.enemy.getMana();
+    }
+
     public static void changePlayerMana(bool isLocal, int delta)
     {
         if (isLocal)
@@ -244,5 +249,19 @@ public class MatchDataManager : MonoBehaviour
             instance.enemy.doChessMoved(chess);
 
         instance.updateManaUi();
+    }
+
+    public static void addPlayerStatus(bool isLocal, PlayerStatus status)
+    {
+        if (isLocal)
+            instance.local.addStatus(status);
+        else
+            instance.enemy.addStatus(status);
+    }
+
+    public static void cleanUpExpiredPlayerStatuses(int currentTotalTurn)
+    {
+        instance.local.cleanUpExpiredStatuses(currentTotalTurn);
+        instance.enemy.cleanUpExpiredStatuses(currentTotalTurn);
     }
 }
