@@ -59,7 +59,7 @@ public class UiManager : MonoBehaviour
             string description = piece.getDescription();
 
             if (isOnBoard)
-                description += MatchDataManager.canMoveChess(true, piece) ? "\n\n(可移動)" : "";
+                description += MatchDataManager.canMoveChess(true, piece, GameManager.getCurrentTurnCount()) ? "\n\n(可移動)" : "";
 
             showHoveredObjectDataPanel(piece.getName(), description);
         }

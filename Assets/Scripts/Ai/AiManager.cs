@@ -18,7 +18,7 @@ public class AiManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-    public static AiOption getBestMove(PlayerData playerData)
+    public static AiOption getBestMove(PlayerData playerData, int currentTurnCount)
     {
         List<AiOption> options = new List<AiOption>();
 
@@ -27,8 +27,8 @@ public class AiManager : MonoBehaviour
             List<(ChessPiece, Vector2Int)> pieceList = BoardManager.getAllChessPieces(playerData.IsWhite());
 
             foreach (var (piece, pos) in pieceList)
-                if (playerData.canMoveChess(piece))
-                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece));
+                if (playerData.canMoveChess(piece, currentTurnCount))
+                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, playerData.canAttackThisTurn(currentTurnCount)));
         }
 
         List<Card> handCardList = playerData.getHandList();
@@ -46,11 +46,11 @@ public class AiManager : MonoBehaviour
         return bestMove;
     }
 
-    public static async Task doBestMove(PlayerData playerData)
+    public static async Task doBestMove(PlayerData playerData, int currentTurnCount)
     {
         AiOption bestMove;
 
-        while ((bestMove = getBestMove(playerData)) != null)
+        while ((bestMove = getBestMove(playerData, currentTurnCount)) != null)
         {
             while (HandViewManager.isPlayingAnimation())
                 await Task.Delay(100);

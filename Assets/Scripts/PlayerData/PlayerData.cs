@@ -18,9 +18,6 @@ public class PlayerData
     private List<Card> deck, handList, waitingList, discardList;
     private int mana = DEFAULT_MANA;
     private bool chessMoved = false;
-    private bool couldntMoveChessThisTurn = false;
-    private bool couldntUseCardThisTurn = false;
-    private int bonusMana = 0, bonusHandCardCount = 0;
 
     public static int getDefaultMana()
     {
@@ -56,10 +53,6 @@ public class PlayerData
         mana += amount;
     }
 
-    public int getBonusMana() => bonusMana;
-
-    public int getBonusHandCardCount() => bonusHandCardCount;
-
     public int getHandCardCount() => handList.Count;
 
     public int getDeckCardCount() => deck.Count;
@@ -81,52 +74,39 @@ public class PlayerData
         mana -= cost;
     }
 
-    public bool canMoveChess(ChessPiece chess)
+    public bool canMoveChess(ChessPiece chess, int currentTurnCount)
     {
-        return chess.isWhite() == isWhite && !chessMoved && !couldntMoveChessThisTurn && mana >= (1 + chess.getExtraMoveCost());
+        return !chessMoved && chess.isWhite() == isWhite && statusContainer.canMoveChess(chess.getChessType(), currentTurnCount) && chess.canMove(currentTurnCount)
+            && mana >= chess.getMoveCost(currentTurnCount) + statusContainer.getGlobalExtraMoveCost(currentTurnCount);
+    }
+
+    public bool canAttackThisTurn(int currentTurnCount)
+    {
+        return !chessMoved && statusContainer.canAttack(currentTurnCount);
     }
 
     public bool chessMovedThisTurn() => chessMoved;
 
     public bool canUseCard(Card card)
     {
-        return !couldntUseCardThisTurn && mana >= card.getCost() && CardEffectManager.canActivateCard(isLocal, card);
+        return mana >= card.getCost() && CardEffectManager.canActivateCard(isLocal, card);
     }
 
-    public bool isCouldntMoveChessThisTurn() => couldntMoveChessThisTurn;
-
-    public void addBonusMana(int amount)
-    {
-        bonusMana += amount;
-    }
-
-    public void addBonusHandCardCount(int amount)
-    {
-        bonusHandCardCount += amount;
-    }
-
-    public void setCouldntMoveChessThisTurn(bool value)
-    {
-        couldntMoveChessThisTurn = value;
-    }
-
-    public void doChessMoved(ChessPiece chess)
+    public void doChessMoved(ChessPiece chess, int currentTurnCount)
     {
         chessMoved = true;
-        mana -= 1 + chess.getExtraMoveCost();
+        mana -= chess.getMoveCost(currentTurnCount) + statusContainer.getGlobalExtraMoveCost(currentTurnCount);
     }
 
     public void resetForNewTurn()
     {
-        mana = DEFAULT_MANA + bonusMana;
+        mana = DEFAULT_MANA;
         chessMoved = false;
-        couldntMoveChessThisTurn = false;
     }
 
     public void resetForEndTurn()
     {
-        bonusHandCardCount = 0;
-        bonusMana = 0;
+
     }
 
     private void loadDeck(List<int> cardIds)
@@ -210,7 +190,7 @@ public class PlayerData
         statusContainer.addStatus(status);
     }
 
-     public void cleanUpExpiredStatuses(int currentTotalTurn)
+    public void cleanUpExpiredStatuses(int currentTotalTurn)
     {
         statusContainer.cleanUpExpiredStatuses(currentTotalTurn);
     }

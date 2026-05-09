@@ -185,7 +185,7 @@ public class MatchDataManager : MonoBehaviour
         if (isLocalTurn)
         {
             instance.local.resetForNewTurn();
-            int handCardCount = PlayerData.getDefaultHandCardCount() + instance.local.getBonusHandCardCount();
+            int handCardCount = PlayerData.getDefaultHandCardCount();
 
             for (int i = 0; i < handCardCount; i++)
                 drawCard(true);
@@ -196,7 +196,7 @@ public class MatchDataManager : MonoBehaviour
         else
         {
             instance.enemy.resetForNewTurn();
-            int handCardCount = PlayerData.getDefaultHandCardCount() + instance.enemy.getBonusHandCardCount();
+            int handCardCount = PlayerData.getDefaultHandCardCount();
 
             for (int i = 0; i < handCardCount; i++)
                 drawCard(false);
@@ -223,14 +223,21 @@ public class MatchDataManager : MonoBehaviour
         }
     }
 
-    public static bool canMoveChess(bool isLocal, ChessPiece chess)
+    public static bool canMoveChess(bool isLocal, ChessPiece chess, int currentTurnCount)
     {
         if (isLocal)
-            return instance.local.canMoveChess(chess);
+            return instance.local.canMoveChess(chess, currentTurnCount);
         else
-            return instance.enemy.canMoveChess(chess);
+            return instance.enemy.canMoveChess(chess, currentTurnCount);
     }
 
+    public static bool canAttackThisTurn(bool isLocal, int currentTurnCount)
+    {
+        if (isLocal)
+            return instance.local.canAttackThisTurn(currentTurnCount);
+        else
+            return instance.enemy.canAttackThisTurn(currentTurnCount);
+    }
 
     public static bool canUseCard(bool isLocal, Card card)
     {
@@ -241,17 +248,17 @@ public class MatchDataManager : MonoBehaviour
     }
 
 
-    public static void doChessMoved(bool isLocal, ChessPiece chess)
+    public static void doChessMoved(bool isLocal, ChessPiece chess, int currentTurnCount)
     {
         if (isLocal)
-            instance.local.doChessMoved(chess);
+            instance.local.doChessMoved(chess, currentTurnCount);
         else
-            instance.enemy.doChessMoved(chess);
+            instance.enemy.doChessMoved(chess, currentTurnCount);
 
         instance.updateManaUi();
     }
 
-    public static void addPlayerStatus(bool isLocal, PlayerStatus status)
+    public static void addStatus(bool isLocal, PlayerStatus status)
     {
         if (isLocal)
             instance.local.addStatus(status);

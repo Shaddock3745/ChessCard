@@ -18,7 +18,7 @@ public class ChessMoveOption : AiOption
 
     public async Task execute(PlayerData ownerData)
     {
-        ownerData.doChessMoved(piece);
+        ownerData.doChessMoved(piece, GameManager.getCurrentTurnCount());
 
         if (BoardManager.isEmpty(targetPos))
             await BoardManager.movePieceWithAnimation(currentPos, targetPos);

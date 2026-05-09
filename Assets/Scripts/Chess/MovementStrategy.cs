@@ -16,7 +16,7 @@ public struct MoveAction
 
 public interface MovementType
 {
-    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite);
+    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite, bool canAttack);
 
     public List<ChessPiece> getProtectablePieces(Vector2Int targetPos, bool isWhite);
 
@@ -25,7 +25,7 @@ public interface MovementType
 
 public class PawnMovement : MovementType
 {
-    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite)
+    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite, bool canAttack)
     {
         List<MoveAction> moves = new List<MoveAction>();
         int direction = isWhite ? 1 : -1;
@@ -46,6 +46,9 @@ public class PawnMovement : MovementType
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
             }
         }
+
+        if(!canAttack)
+            return moves;
 
         // Attack diagonally
         temp = new Vector2Int(currentPos.x + 1, currentPos.y + direction);
@@ -102,7 +105,7 @@ public class RookMovement : MovementType
             Vector2Int.down
     };
 
-    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite)
+    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite, bool canAttack)
     {
         List<MoveAction> moves = new List<MoveAction>();
 
@@ -119,7 +122,7 @@ public class RookMovement : MovementType
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
                 else
                 {
-                    if (isWhite ^ BoardManager.isWhiteAtPosition(temp))
+                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
                         moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
                     break;
@@ -194,7 +197,7 @@ public class KnightMovement : MovementType
             new Vector2Int(-2, -1)
     };
 
-    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite)
+    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite, bool canAttack)
     {
         List<MoveAction> moves = new List<MoveAction>();
 
@@ -205,7 +208,7 @@ public class KnightMovement : MovementType
             {
                 if (BoardManager.isEmpty(temp))
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
-                else if (isWhite ^ BoardManager.isWhiteAtPosition(temp))
+                else if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
             }
         }
@@ -263,7 +266,7 @@ public class BishopMovement : MovementType
             new Vector2Int(-1, 1),
             new Vector2Int(-1, -1)
     };
-    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite)
+    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite, bool canAttack)
     {
         List<MoveAction> moves = new List<MoveAction>();
 
@@ -280,7 +283,7 @@ public class BishopMovement : MovementType
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
                 else
                 {
-                    if (isWhite ^ BoardManager.isWhiteAtPosition(temp))
+                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
                         moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
                     break;
@@ -349,7 +352,7 @@ public class QueenMovement : MovementType
             new Vector2Int(-1, 1),
             new Vector2Int(-1, -1)
     };
-    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite)
+    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite, bool canAttack)
     {
         List<MoveAction> moves = new List<MoveAction>();
         foreach (var dir in queenMoveDirections)
@@ -365,7 +368,7 @@ public class QueenMovement : MovementType
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
                 else
                 {
-                    if (isWhite ^ BoardManager.isWhiteAtPosition(temp))
+                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
                         moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
                     break;
@@ -438,7 +441,7 @@ public class KingMovement : MovementType
             new Vector2Int(-1, 1),
             new Vector2Int(-1, -1)
     };
-    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite)
+    public List<MoveAction> getAvailableMoves(Vector2Int currentPos, bool isWhite, bool canAttack)
     {
         List<MoveAction> moves = new List<MoveAction>();
         foreach (var move in kingMoves)
@@ -448,7 +451,7 @@ public class KingMovement : MovementType
             {
                 if (BoardManager.isEmpty(temp))
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
-                else if (isWhite ^ BoardManager.isWhiteAtPosition(temp))
+                else if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
             }
         }

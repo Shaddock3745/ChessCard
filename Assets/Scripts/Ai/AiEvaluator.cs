@@ -39,10 +39,10 @@ public class AiEvaluator
         return score;
     }
 
-    public static List<ChessMoveOption> getMoveOptionsByChessPiece(ChessPiece piece)
+    public static List<ChessMoveOption> getMoveOptionsByChessPiece(ChessPiece piece, bool canAttack)
     {
 
-        List<MoveAction> moveActions = piece.getAvailableMoves();
+        List<MoveAction> moveActions = piece.getAvailableMoves(canAttack);
         List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
 
         foreach (MoveAction moveAction in moveActions)

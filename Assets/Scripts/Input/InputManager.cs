@@ -183,7 +183,7 @@ public class InputManager : MonoBehaviour
 
             if (GameManager.IsLocalTurn())
             {
-                if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess.getChess()))
+                if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess.getChess(), GameManager.getCurrentTurnCount()))
                     raiseChess();
 
                 if (isSelectingCard && MatchDataManager.canUseCard(true, selectedCard.getCard()))
@@ -379,7 +379,7 @@ public class InputManager : MonoBehaviour
 
     private void showHint(ChessPieceUi pieceUi)
     {
-        var tempList = pieceUi.getChess().getAvailableMoves();
+        var tempList = pieceUi.getChess().getAvailableMoves(MatchDataManager.canAttackThisTurn(true, GameManager.getCurrentTurnCount()));
 
         foreach (var move in tempList)
             switch (move.actionType)
@@ -403,12 +403,12 @@ public class InputManager : MonoBehaviour
         else if (currentTile.isMoveableTile())
         {
             BoardManager.movePiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-            MatchDataManager.doChessMoved(true, selectedChess.getChess());
+            MatchDataManager.doChessMoved(true, selectedChess.getChess(), GameManager.getCurrentTurnCount());
         }
         else if (currentTile.isAttackableTile())
         {
             BoardManager.attackPiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-            MatchDataManager.doChessMoved(true, selectedChess.getChess());
+            MatchDataManager.doChessMoved(true, selectedChess.getChess(), GameManager.getCurrentTurnCount());
         }
         else
             BoardManager.moveCanceled(selectedChess.getChess(), new Vector2Int(firstTile.getX(), firstTile.getY()));

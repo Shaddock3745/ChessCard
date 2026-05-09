@@ -64,29 +64,31 @@ public class GameManager : MonoBehaviour
         else
         {
             MatchDataManager.turnStart(false);
-            _ = AiManager.doBestMove(MatchDataManager.getPlayerData(false));
+            _ = AiManager.doBestMove(MatchDataManager.getPlayerData(false), getCurrentTurnCount());
         }
     }
 
     public static async void ChangeTurn()
     {
+        bool isLocalTurn = IsLocalTurn();
         OnTurnEnd?.Invoke(instance.turnCount);
-        MatchDataManager.turnEnd(IsLocalTurn());
+        MatchDataManager.turnEnd(isLocalTurn);
 
         instance.isWhiteTurn = !instance.isWhiteTurn;
+        isLocalTurn = IsLocalTurn();
         instance.turnCount++;
 
         OnTurnStart?.Invoke(instance.turnCount);
         instance.nowTurn.text = instance.isWhiteTurn ? "White" : "Black";
-        MatchDataManager.turnStart(IsLocalTurn());
+        MatchDataManager.turnStart(isLocalTurn);
 
-        if (IsLocalTurn())
+        if (isLocalTurn)
             UiManager.showChangeTurnButton();
         else
             UiManager.hideChangeTurnButton();
 
-        if (MatchDataManager.isAI(IsLocalTurn()))
-            await AiManager.doBestMove(MatchDataManager.getPlayerData(IsLocalTurn()));
+        if (MatchDataManager.isAI(isLocalTurn))
+            await AiManager.doBestMove(MatchDataManager.getPlayerData(isLocalTurn), getCurrentTurnCount());
     }
 
     public static bool IsLocalTurn()

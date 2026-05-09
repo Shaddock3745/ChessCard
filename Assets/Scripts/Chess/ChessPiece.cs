@@ -16,8 +16,7 @@ public class ChessPiece
     private ChessType chessType;
     private bool isWhiteChess;
     private Vector2Int currentPosition;
-    private MovementType movementType;
-    private int extraMoveCost = 0;
+    private MovementType defaultMovementType;
     private ChessStatusContainer statusContainer = new ChessStatusContainer();
 
     public ChessPiece(ChessType chessType, bool isWhite, Vector2Int currentPosition)
@@ -26,7 +25,7 @@ public class ChessPiece
         this.isWhiteChess = isWhite;
         this.currentPosition = currentPosition;
 
-        movementType = chessType switch
+        defaultMovementType = chessType switch
         {
             ChessType.Pawn => new PawnMovement(),
             ChessType.Rook => new RookMovement(),
@@ -49,11 +48,9 @@ public class ChessPiece
         currentPosition = newPosition;
     }
 
-    public int getExtraMoveCost() => extraMoveCost;
-
-    public void setExtraMoveCost(int cost)
+    public int getMoveCost(int currentTurnCount)
     {
-        extraMoveCost = cost;
+        return 1 + statusContainer.getExtraMoveCost(currentTurnCount);
     }
 
     public string getName()
@@ -63,12 +60,27 @@ public class ChessPiece
 
     public string getDescription()
     {
-        return movementType.getDescription();
+        return defaultMovementType.getDescription();
     }
 
-    public List<MoveAction> getAvailableMoves()
+    public List<MoveAction> getAvailableMoves(bool canAttack)
     {
-        return movementType.getAvailableMoves(currentPosition, isWhiteChess);
+        return defaultMovementType.getAvailableMoves(currentPosition, isWhiteChess, canAttack);
+    }
+
+    public bool canAttack(int currentTurnCount)
+    {
+        return statusContainer.canMove(currentTurnCount) && statusContainer.canAttack(currentTurnCount);
+    }
+
+    public bool canBeAttacked(int currentTurnCount)
+    {
+        return statusContainer.canBeAttacked(currentTurnCount);
+    }
+
+    public bool canMove(int currentTurnCount)
+    {
+        return statusContainer.canMove(currentTurnCount);
     }
 
     private static string getChessColorName(bool isWhite)
@@ -87,7 +99,7 @@ public class ChessPiece
         statusContainer.addStatus(status);
     }
 
-    public void cleanUpExpiredStatuses(int currentTotalTurn) 
+    public void cleanUpExpiredStatuses(int currentTotalTurn)
     {
         statusContainer.cleanUpExpiredStatuses(currentTotalTurn);
     }

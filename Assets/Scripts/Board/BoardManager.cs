@@ -442,10 +442,9 @@ public class BoardManager : MonoBehaviour
         instance.boardOuter.SetActive(false);
     }
 
-    public static void addChessStatus(Vector2Int targetPosition, ChessStatus status)
+    public void addStatus(Vector2Int position, ChessStatus status)
     {
-        ChessPiece piece = getChessPieceAtPosition(targetPosition);
-        piece.addStatus(status);
+        getChessPieceAtPosition(position).addStatus(status);
     }
 
     public static void cleanUpChessExpiredStatuses(int currentTotalTurn)

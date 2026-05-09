@@ -4,17 +4,17 @@ using UnityEngine;
 
 public abstract class BaseStatus<TEnum> where TEnum :Enum
 {
-    public TEnum status;
+    public TEnum statusType;
     public int startTurn, endTurn;
 
     public BaseStatus(TEnum status, int startTurn, int endTurn)
     {
-        this.status = status;
+        this.statusType = status;
         this.startTurn = startTurn;
         this.endTurn = endTurn;
     }
 
-    public TEnum getStatus() => status;
+    public TEnum getStatusType() => statusType;
 
     public int getStartTurn() => startTurn;
 
@@ -51,6 +51,11 @@ public abstract class StatusContainer<TStatus, TEnum> : MonoBehaviour
 
     public bool hasActiveStatus(TEnum type, int currentTotalTurn)
     {
-        return activeStatuses.Exists(s => s.GetType().Equals(type) && s.isActive(currentTotalTurn));
+        return activeStatuses.Exists(s => s.getStatusType().Equals(type) && s.isActive(currentTotalTurn));
+    }
+
+    public List<TStatus> GetActiveStatuses(TEnum type, int currentTotalTurn)
+    {
+        return activeStatuses.FindAll(s => s.getStatusType().Equals(type) && s.isActive(currentTotalTurn));
     }
 }
