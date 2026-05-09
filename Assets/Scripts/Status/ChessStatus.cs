@@ -17,6 +17,11 @@ public class ChessStatus : BaseStatus<ChessStatusType>
 
 public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType>
 {
+    public ChessStatusContainer() : base()
+    {
+
+    }
+
     public int getExtraMoveCost(int currentTotalTurn)
     {
         int extraCost = 0;

@@ -1,26 +1,30 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public class AddPlayerStatusEffect : CardEffect
 {
-    bool isEnemy;
-    PlayerStatus status;
+    private bool isEnemy;
+    private int duration;
+    private Func<int, int, PlayerStatus> statusFactory;
 
-    public AddPlayerStatusEffect(bool isEnemy, PlayerStatus status)
+    public AddPlayerStatusEffect(bool isEnemy, int duration, Func<int, int, PlayerStatus> statusFactory)
     {
         this.isEnemy = isEnemy;
-        this.status = status;
+        this.duration = duration;
+        this.statusFactory = statusFactory;
     }
 
-    public bool canActivate(bool isLocal, Card card)
+    public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
         return true;
     }
 
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
-        MatchDataManager.addStatus(isEnemy ^ isLocal, status);
+        int currentTurnCount = GameManager.getCurrentTurnCount();
+        MatchDataManager.addStatus(isEnemy ^ isLocal, statusFactory.Invoke(currentTurnCount, currentTurnCount + duration));
         return Task.CompletedTask;
     }
 
@@ -29,8 +33,8 @@ public class AddPlayerStatusEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
+    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        return new List<CardUseOption> { new CardUseOption(card, 1, EffectTargetPayload.empty()) };
     }
 }

@@ -22,15 +22,15 @@ public class SummonEffect : CardEffect
         this.chessType = chessType;
     }
 
-    public bool canActivate(bool isLocal, Card card)
+    public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
-        return card != null && !BoardManager.chessAmountReachLimit(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite())
+        return card != null && MatchDataManager.canSummonThisTurn(isLocal, currentTurnCount) && !BoardManager.chessAmountReachLimit(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite())
             && BoardManager.getSummonableTiles(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()).Count > 0;
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
+    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        if (currentMana < card.getCost() || !canActivate(isLocal, card))
+        if (currentMana < card.getCost() || !canActivate(isLocal, currentTurnCount, card))
             return new List<CardUseOption>();
 
         List<CardUseOption> useOptions = new List<CardUseOption>();
@@ -41,7 +41,7 @@ public class SummonEffect : CardEffect
         {
             Vector2Int position = tile.getPos();
             float score = AiEvaluator.getPieceValue(chessType) * manaEfficiency + AiEvaluator.getPositionValue(position);
-            useOptions.Add(new CardUseOption(card, score, new EffectTargetPayload(new List<Vector2Int> { position })));
+            useOptions.Add(new CardUseOption(card, score, new EffectTargetPayload(position)));
         }
 
         return useOptions;
@@ -70,6 +70,6 @@ public class SummonEffect : CardEffect
         if (tile == null)
             return null;
 
-        return new EffectTargetPayload(new List<Vector2Int> { tile.getPos() });
+        return new EffectTargetPayload(tile.getPos());
     }
 }

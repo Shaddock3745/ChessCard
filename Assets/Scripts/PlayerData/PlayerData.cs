@@ -77,7 +77,7 @@ public class PlayerData
     public bool canMoveChess(ChessPiece chess, int currentTurnCount)
     {
         return !chessMoved && chess.isWhite() == isWhite && statusContainer.canMoveChess(chess.getChessType(), currentTurnCount) && chess.canMove(currentTurnCount)
-            && mana >= chess.getMoveCost(currentTurnCount) + statusContainer.getGlobalExtraMoveCost(currentTurnCount);
+            && mana >= chess.getMoveCost(currentTurnCount) + getExtraMoveCost(currentTurnCount);
     }
 
     public bool canAttackThisTurn(int currentTurnCount)
@@ -87,9 +87,21 @@ public class PlayerData
 
     public bool chessMovedThisTurn() => chessMoved;
 
-    public bool canUseCard(Card card)
+    public bool canSummonThisTurn(int currentTurnCount) => statusContainer.canSummon(currentTurnCount);
+
+    public bool canUseCard(Card card, int currentTurnCount)
     {
-        return mana >= card.getCost() && CardEffectManager.canActivateCard(isLocal, card);
+        return mana >= (card.getCost() + getExtraCardCost(currentTurnCount)) && CardEffectManager.canActivateCard(isLocal, card, currentTurnCount);
+    }
+
+    public int getExtraMoveCost(int currentTurnCount)
+    {
+        return statusContainer.getGlobalExtraMoveCost(currentTurnCount);
+    }
+
+    public int getExtraCardCost(int currentTurnCount)
+    {
+        return statusContainer.getGlobalExtraCardCost(currentTurnCount);
     }
 
     public void doChessMoved(ChessPiece chess, int currentTurnCount)
@@ -193,5 +205,10 @@ public class PlayerData
     public void cleanUpExpiredStatuses(int currentTotalTurn)
     {
         statusContainer.cleanUpExpiredStatuses(currentTotalTurn);
+    }
+
+    public void onGameOver()
+    {
+        statusContainer.Dispose();
     }
 }

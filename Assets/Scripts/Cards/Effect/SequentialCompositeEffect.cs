@@ -14,9 +14,9 @@ public class SequentialCompositeEffect : CardEffect
         this.secondEffectFactory = secondEffectFactory;
     }
 
-    public bool canActivate(bool isLocal, Card card)
+    public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
-        List<CardUseOption> firstOptions = firstEffect.getUseOptions(isLocal, card, MatchDataManager.getPlayerMana(isLocal));
+        List<CardUseOption> firstOptions = firstEffect.getUseOptions(isLocal, card, MatchDataManager.getPlayerMana(isLocal), currentTurnCount);
 
         if (firstOptions == null)
             return false;
@@ -26,7 +26,7 @@ public class SequentialCompositeEffect : CardEffect
             EffectTargetPayload firstPayload = option.getTargets();
             CardEffect secondEffect = secondEffectFactory.Invoke(firstPayload);
 
-            if(secondEffect.canActivate(isLocal, card))
+            if (secondEffect.canActivate(isLocal, currentTurnCount, card))
                 return true;
         }
 
@@ -37,7 +37,7 @@ public class SequentialCompositeEffect : CardEffect
     {
         CompositePayload compositePayload = targets as CompositePayload;
 
-        if(compositePayload == null || compositePayload.getPayLoads().Count < 2)
+        if (compositePayload == null || compositePayload.getPayLoads().Count < 2)
             throw new System.ArgumentException("Expected CompositePayload");
 
         EffectTargetPayload firstPayload = compositePayload.getPayLoad(0);
@@ -78,13 +78,13 @@ public class SequentialCompositeEffect : CardEffect
         return await gatherTargets(null);
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
+    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         List<CardUseOption> finalOptions = new List<CardUseOption>();
 
-        List<CardUseOption> firstOptions = firstEffect.getUseOptions(isLocal, card, currentMana);
+        List<CardUseOption> firstOptions = firstEffect.getUseOptions(isLocal, card, currentMana, currentTurnCount);
 
-        if(firstOptions == null)
+        if (firstOptions == null)
             return finalOptions;
 
         foreach (CardUseOption option in firstOptions)
@@ -92,7 +92,7 @@ public class SequentialCompositeEffect : CardEffect
             EffectTargetPayload firstPayload = option.getTargets();
             float firstScore = option.getScore();
             CardEffect secondEffect = secondEffectFactory.Invoke(firstPayload);
-            List<CardUseOption> secondOptions = secondEffect.getUseOptions(isLocal, card, currentMana);
+            List<CardUseOption> secondOptions = secondEffect.getUseOptions(isLocal, card, currentMana, currentTurnCount);
 
             if (secondOptions == null)
                 continue;

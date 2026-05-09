@@ -39,10 +39,10 @@ public class AiEvaluator
         return score;
     }
 
-    public static List<ChessMoveOption> getMoveOptionsByChessPiece(ChessPiece piece, bool canAttack)
+    public static List<ChessMoveOption> getMoveOptionsByChessPiece(ChessPiece piece, bool canAttack, int currentTurnCount)
     {
 
-        List<MoveAction> moveActions = piece.getAvailableMoves(canAttack);
+        List<MoveAction> moveActions = piece.getAvailableMoves(canAttack, currentTurnCount);
         List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
 
         foreach (MoveAction moveAction in moveActions)
@@ -51,12 +51,12 @@ public class AiEvaluator
         return moveOptions;
     }
 
-    public static List<CardUseOption> getCardUseOptionsByCard(PlayerData playerData, Card card, int currentMana)
+    public static List<CardUseOption> getCardUseOptionsByCard(PlayerData playerData, Card card, int currentMana, int currentTurnCount)
     {
         CardEffect cardEffect = CardEffectManager.getCardEffect(card);
 
-        if (cardEffect != null)
-            return cardEffect.getUseOptions(playerData.IsLocal(), card, currentMana);
+        if (cardEffect != null && playerData.canUseCard(card, currentTurnCount))
+            return cardEffect.getUseOptions(playerData.IsLocal(), card, currentMana, currentTurnCount);
         else
             return new List<CardUseOption>();
     }

@@ -72,7 +72,7 @@ public class UiManager : MonoBehaviour
             string description = card.getDescription();
 
             if (isInHand)
-                description += MatchDataManager.canUseCard(true, card) ? "\n\n(可使用)" : "\n\n(條件不符)";
+                description += MatchDataManager.canUseCard(true, card, GameManager.getCurrentTurnCount()) ? "\n\n(可使用)" : "\n\n(條件不符)";
 
             showHoveredObjectDataPanel(card.getName(), description);
         }

@@ -18,13 +18,9 @@ public class RemoveChessEffect : CardEffect
         this.removeableChessTypes = new List<ChessType>(removeableChessTypes);
     }
 
-    public bool canActivate(bool isLocal, Card card)
+    public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
-        foreach (ChessType type in removeableChessTypes)
-            if (BoardManager.getChessAmount(type, isSameTeam ? (isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()) : (isLocal ? !GameManager.IsLocalWhite() : GameManager.IsLocalWhite())) > 0)
-                return true;
-
-        return false;
+        return BoardManager.getChessAmount(isSameTeam ? (isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()) : (isLocal ? !GameManager.IsLocalWhite() : GameManager.IsLocalWhite()), removeableChessTypes) > 0;
     }
 
     public async Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
@@ -66,7 +62,7 @@ public class RemoveChessEffect : CardEffect
         return new EffectTargetPayload(targetPositions);
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
+    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         List<CardUseOption> options = new List<CardUseOption>();
         List<BoardTile> validTiles = new List<BoardTile>();

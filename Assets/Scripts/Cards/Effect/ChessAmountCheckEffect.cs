@@ -4,23 +4,24 @@ using UnityEngine;
 
 public class ChessAmountCheckEffect : CardEffect
 {
-    ChessType chessType;
+    List<ChessType> chessTypes;
     int amount;
-    bool checkLess, allowEqual;
+    bool checkAlly, checkLess, allowEqual;
 
-    public ChessAmountCheckEffect(ChessType type, int amount, bool checkLess, bool allowEqual)
+    public ChessAmountCheckEffect(bool checkAlly, int amount, bool checkLess, bool allowEqual, params ChessType[] type)
     {
-        chessType = type;
+        chessTypes = new List<ChessType>(type);
+        this.checkAlly = checkAlly;
         this.amount = amount;
         this.checkLess = checkLess;
         this.allowEqual = allowEqual;
     }
 
-    public bool canActivate(bool isLocal, Card card)
+    public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
         if (card != null)
         {
-            int count = BoardManager.getChessAmount(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite());
+            int count = BoardManager.getChessAmount(checkAlly ? isLocal == GameManager.IsLocalWhite() : isLocal != GameManager.IsLocalWhite(), chessTypes);
 
             if (allowEqual)
                 if (checkLess)
@@ -47,7 +48,7 @@ public class ChessAmountCheckEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
+    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         List<CardUseOption> options = new List<CardUseOption>();
 

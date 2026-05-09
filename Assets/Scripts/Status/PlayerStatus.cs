@@ -17,6 +17,11 @@ public class PlayerStatus : BaseStatus<PlayerStatusType>
 
 public class PlayerStatusContainer : StatusContainer<PlayerStatus, PlayerStatusType>
 {
+    public PlayerStatusContainer() : base()
+    {
+
+    }
+
     public bool canSummon(int currentTotalTurn)
     {
         return !hasActiveStatus(PlayerStatusType.CANT_SUMMON, currentTotalTurn);

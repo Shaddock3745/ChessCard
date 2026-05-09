@@ -7,7 +7,7 @@ public class AiManager : MonoBehaviour
 {
     private static AiManager instance;
 
-    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5 });
+    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 5 });
     private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
     void Awake()
@@ -24,18 +24,18 @@ public class AiManager : MonoBehaviour
 
         if (!playerData.chessMovedThisTurn())
         {
-            List<(ChessPiece, Vector2Int)> pieceList = BoardManager.getAllChessPieces(playerData.IsWhite());
+            List<ChessPiece> pieceList = BoardManager.getAllChessPieces(playerData.IsWhite());
 
-            foreach (var (piece, pos) in pieceList)
+            foreach (var piece in pieceList)
                 if (playerData.canMoveChess(piece, currentTurnCount))
-                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, playerData.canAttackThisTurn(currentTurnCount)));
+                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, playerData.canAttackThisTurn(currentTurnCount), currentTurnCount));
         }
 
         List<Card> handCardList = playerData.getHandList();
         int currentMana = playerData.getMana();
 
         foreach (Card card in handCardList)
-            options.AddRange(AiEvaluator.getCardUseOptionsByCard(playerData, card, currentMana));
+            options.AddRange(AiEvaluator.getCardUseOptionsByCard(playerData, card, currentMana, currentTurnCount));
 
         AiOption bestMove = null;
 

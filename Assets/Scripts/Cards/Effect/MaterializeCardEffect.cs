@@ -16,7 +16,7 @@ public class MaterializeCardEffect : CardEffect
     }
 
 
-    public bool canActivate(bool isLocal, Card card)
+    public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
         return true;
     }
@@ -39,7 +39,7 @@ public class MaterializeCardEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
+    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         List<CardUseOption> options = new List<CardUseOption>();
 

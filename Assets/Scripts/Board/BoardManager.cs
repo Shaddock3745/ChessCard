@@ -80,9 +80,19 @@ public class BoardManager : MonoBehaviour
         pieceToUiMap.Add(piece, chessPieceUi);
     }
 
-    public static int getChessAmount(ChessType type, bool isWhite)
+    public static int getChessAmount(bool isWhite, params ChessType[] type)
     {
-        return instance.boardState.getChessAmount(type, isWhite);
+        return instance.boardState.getChessAmount(isWhite, type);
+    }
+
+    public static int getChessAmount(bool isWhite, ChessType type)
+    {
+        return instance.boardState.getChessAmount(isWhite, type);
+    }
+
+    public static int getChessAmount(bool isWhite, List<ChessType> vaildTypes)
+    {
+        return instance.boardState.getChessAmount(isWhite, vaildTypes);
     }
 
     public static bool chessAmountReachLimit(ChessType type, bool isWhite)
@@ -90,17 +100,17 @@ public class BoardManager : MonoBehaviour
         switch (type)
         {
             case ChessType.Pawn:
-                return getChessAmount(ChessType.Pawn, isWhite) >= 8;
+                return getChessAmount(isWhite, ChessType.Pawn) >= 8;
             case ChessType.Rook:
-                return getChessAmount(ChessType.Rook, isWhite) >= 2;
+                return getChessAmount(isWhite, ChessType.Rook) >= 2;
             case ChessType.Knight:
-                return getChessAmount(ChessType.Knight, isWhite) >= 2;
+                return getChessAmount(isWhite, ChessType.Knight) >= 2;
             case ChessType.Bishop:
-                return getChessAmount(ChessType.Bishop, isWhite) >= 2;
+                return getChessAmount(isWhite, ChessType.Bishop) >= 2;
             case ChessType.Queen:
-                return getChessAmount(ChessType.Queen, isWhite) >= 1;
+                return getChessAmount(isWhite, ChessType.Queen) >= 1;
             case ChessType.King:
-                return getChessAmount(ChessType.King, isWhite) >= 1;
+                return getChessAmount(isWhite, ChessType.King) >= 1;
             default:
                 return false;
         }
@@ -252,14 +262,30 @@ public class BoardManager : MonoBehaviour
         return instance.boardState.getTilesOfChesses(type, isWhite);
     }
 
-    public static List<(ChessPiece, Vector2Int)> getAllChessPieces(bool isWhite)
+    public static List<ChessPiece> getAllChessPieces(bool isWhite, params ChessType[] chessTypes)
     {
-        List<(ChessPiece, Vector2Int)> pieces = new List<(ChessPiece, Vector2Int)>();
+        return getAllChessPieces(isWhite, new List<ChessType>(chessTypes));
+    }
+
+    public static List<ChessPiece> getAllChessPieces(bool isWhite, List<ChessType> vaildTypes)
+    {
+        bool checkSpecificType = vaildTypes.Count > 0;
+        List<ChessPiece> pieces = new List<ChessPiece>();
 
         for (int i = 0; i < 8; i++)
             for (int j = 0; j < 8; j++)
-                if (getChessPieceAtPosition(i, j) != null && getChessPieceAtPosition(i, j).isWhite() == isWhite)
-                    pieces.Add((getChessPieceAtPosition(i, j), new Vector2Int(i, j)));
+            {
+                ChessPiece piece = getChessPieceAtPosition(i, j);
+
+                if (piece != null && piece.isWhite() == isWhite)
+                    if (checkSpecificType)
+                    {
+                        if (vaildTypes.Contains(piece.getChessType()))
+                            pieces.Add(piece);
+                    }
+                    else
+                        pieces.Add(piece);
+            }
 
         return pieces;
     }

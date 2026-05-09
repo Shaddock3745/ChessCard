@@ -35,4 +35,9 @@ public class CardUi : MonoBehaviour
     {
         return rectTransform.DOKill();
     }
+
+    public void recalculateCost(int extraCost)
+    {
+        this.costText.text = (card.getCost() + extraCost).ToString();
+    }
 }

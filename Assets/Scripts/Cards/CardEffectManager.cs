@@ -22,13 +22,51 @@ public class CardEffectManager : MonoBehaviour
     private static void initDictionary()
     {
         cardRegistry.Clear();
+
+        // 士兵
         cardRegistry[1] = new SummonEffect(ChessType.Pawn);
+
+        // 主教
         cardRegistry[2] = new SummonEffect(ChessType.Bishop);
+
+        // 騎士
         cardRegistry[3] = new SummonEffect(ChessType.Knight);
+
+        // 城堡
         cardRegistry[4] = new SummonEffect(ChessType.Rook);
+
+        // 皇后
         cardRegistry[5] = new SummonEffect(ChessType.Queen);
-        cardRegistry[6] = new CompositeEffect(new ChessAmountCheckEffect(ChessType.Pawn, 3, true, false), new MaterializeCardEffect(1, 2, true));
-        cardRegistry[17] = new SequentialCompositeEffect(new RemoveChessEffect(true, ChessType.Pawn, ChessType.Rook, ChessType.Bishop, ChessType.Knight, ChessType.Queen), (firstPayload) => new RemoveChessEffect(false, BoardManager.getChessPieceAtPosition(firstPayload.getTargetPositions()[0]).getChessType()));
+
+        // 徵兵令
+        cardRegistry[6] = new CompositeEffect(new ChessAmountCheckEffect(true, 3, true, false, ChessType.Pawn), new MaterializeCardEffect(1, 2, true));
+
+        // 政教合一
+        cardRegistry[8] = new AddAllChessStatusEffect(true, 1, (startTurn, endTurn) => new ChessMovementOverrideStatus(new BishopMovement(), startTurn, endTurn), true, ChessType.King);
+
+        // 護盾 (未完成)
+        cardRegistry[10] = new CompositeEffect(new ChessAmountCompareEffect(true, false), new AddTargetChessStatusEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn), ChessPiece.getAllChessTypes(true)));
+
+        // 鐐銬 (未完成)
+        cardRegistry[16] = new CompositeEffect(new ChessAmountCheckEffect(false, 4, false, false, ChessPiece.getAllChessTypes(false)), new ChessAmountCompareEffect(true, false), new AddTargetChessMultipleStatusEffect(false, (startTurn) => new ChessStatus[] { new ChessCantMoveStatus(startTurn, startTurn + 2), new ChessCantBeAttackedStatus(startTurn, startTurn + 3) }));
+
+        // 一換一
+        cardRegistry[17] = new SequentialCompositeEffect(new RemoveChessEffect(true, ChessPiece.getAllChessTypes(true)), (firstPayload) => new RemoveChessEffect(false, BoardManager.getChessPieceAtPosition(firstPayload.getTargetPositions()[0]).getChessType()));
+
+        // 冊封
+        cardRegistry[20] = new CompositeEffect(new ChessAmountCheckEffect(true, 1, true, false, ChessType.Knight), new ChessAmountCheckEffect(true, 2, false, true, ChessType.Pawn), new RemoveChessEffect(true, ChessType.Pawn), new MaterializeCardEffect(3, 1, true));
+
+        // 停戰協議
+        cardRegistry[23] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new PlayerCantAttackStatus(startTurn, endTurn)), new AddPlayerStatusEffect(true, 2, (startTurn, endTurn) => new PlayerCantAttackStatus(startTurn, endTurn)));
+
+        // 大飢荒
+        cardRegistry[26] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new PlayerCantSummonStatus(startTurn, endTurn)), new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new PlayerCantSummonStatus(startTurn, endTurn)));
+
+        // 通貨膨脹
+        cardRegistry[27] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new IncreasePlayerCardCostStatus(1, startTurn, endTurn)), new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new IncreasePlayerMoveCostStatus(1, startTurn, endTurn)), 
+            new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new IncreasePlayerCardCostStatus(1, startTurn, endTurn)), new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new IncreasePlayerMoveCostStatus(1, startTurn, endTurn)));
+
+        // 捨身取義
         cardRegistry[28] = new CompositeEffect(new RemoveChessEffect(true, ChessType.Pawn, ChessType.Rook, ChessType.Bishop, ChessType.Knight, ChessType.Queen), new ManaChangeEffect(2), new DrawCardEffect(1));
     }
 
@@ -37,10 +75,10 @@ public class CardEffectManager : MonoBehaviour
         return cardRegistry.TryGetValue(card.getId(), out CardEffect effect) ? effect : null;
     }
 
-    public static bool canActivateCard(bool isLocal, Card card)
+    public static bool canActivateCard(bool isLocal, Card card, int currentTurnCount)
     {
         if (cardRegistry.TryGetValue(card.getId(), out CardEffect effect))
-            return effect.canActivate(isLocal, card);
+            return effect.canActivate(isLocal, currentTurnCount, card);
         else
         {
             Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
@@ -91,6 +129,7 @@ public class CardEffectManager : MonoBehaviour
         else
             Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
 
+        HandViewManager.recalculateCost();
         LogManager.createLog(new CardUseLog(isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite(), card));
     }
 }

@@ -11,9 +11,9 @@ public class CompositeEffect : CardEffect
         this.effects = new List<CardEffect>(effects);
     }
 
-    public bool canActivate(bool isLocal, Card card)
+    public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
-        return effects.TrueForAll(effect => effect.canActivate(isLocal, card));
+        return effects.TrueForAll(effect => effect.canActivate(isLocal, currentTurnCount, card));
     }
 
     public async Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
@@ -47,9 +47,9 @@ public class CompositeEffect : CardEffect
         return payload;
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana)
+    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        if (currentMana < card.getCost() || !canActivate(isLocal, card))
+        if (currentMana < card.getCost() || !canActivate(isLocal, currentTurnCount, card))
             return new List<CardUseOption>();
 
         List<CardUseOption> options = new List<CardUseOption>();
@@ -57,12 +57,12 @@ public class CompositeEffect : CardEffect
         if (effects == null || effects.Count == 0)
             return options;
 
-        buildOptionsRecursive(0, new CompositePayload(), 0, options, isLocal, card, currentMana);
+        buildOptionsRecursive(0, new CompositePayload(), 0, options, isLocal, card, currentMana, currentTurnCount);
 
         return options;
     }
 
-    private void buildOptionsRecursive(int effectIndex, CompositePayload currentPayload, float currentScore, List<CardUseOption> result, bool isLocal, Card card, int currentMana)
+    private void buildOptionsRecursive(int effectIndex, CompositePayload currentPayload, float currentScore, List<CardUseOption> result, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         if (effectIndex >= effects.Count)
         {
@@ -70,7 +70,7 @@ public class CompositeEffect : CardEffect
             return;
         }
 
-        List<CardUseOption> effectOptions = effects[effectIndex].getUseOptions(isLocal, card, currentMana);
+        List<CardUseOption> effectOptions = effects[effectIndex].getUseOptions(isLocal, card, currentMana, currentTurnCount);
 
         if (effectOptions.Count == 0)
             return;
@@ -79,7 +79,7 @@ public class CompositeEffect : CardEffect
         {
             CompositePayload newPayload = new CompositePayload(currentPayload);
             newPayload.addPayload(option.getTargets());
-            buildOptionsRecursive(effectIndex + 1, newPayload, currentScore + option.getScore(), result, isLocal, card, currentMana);
+            buildOptionsRecursive(effectIndex + 1, newPayload, currentScore + option.getScore(), result, isLocal, card, currentMana, currentTurnCount);
         }
     }
 }

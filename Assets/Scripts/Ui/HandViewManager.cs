@@ -42,6 +42,12 @@ public class HandViewManager : MonoBehaviour
 
     public static bool isPlayingAnimation() => instance.isPlayerAnimating || instance.isEnemyAnimating;
 
+    public static void recalculateCost()
+    {
+        foreach (CardUi cardUi in instance.playerCardUiList)
+            cardUi.recalculateCost(MatchDataManager.getExtraCardCost(true, GameManager.getCurrentTurnCount()));
+    }
+
     public static async Task playerDrawCard(Card card)
     {
         CardUi cardUi = Instantiate(instance.cardPrefab, instance.playerHandCardCanvas.transform).GetComponent<CardUi>();

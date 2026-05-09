@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class BoardState
 {
@@ -72,28 +73,43 @@ public class BoardState
 
     public void moveChessPiece(Vector2Int from, Vector2Int to)
     {
-        ChessPiece pieceToMove = getChessPieceAtPosition(from);
+        ChessPiece pieceFrom = getChessPieceAtPosition(from);
+        ChessPiece pieceTo = getChessPieceAtPosition(to);
 
-        if (pieceToMove != null)
+        if (pieceFrom != null)
         {
-            setChessPieceAtPosition(to, pieceToMove);
+            setChessPieceAtPosition(to, pieceFrom);
             setChessPieceAtPosition(from, null);
 
-            pieceToMove.setPosition(to);
+            if (pieceTo != null)
+                pieceTo.onDeath();
+
+            pieceFrom.setPosition(to);
         }
+
     }
 
     public void removeChessPieceAtPosition(int x, int y)
     {
+        ChessPiece target = chessPieces[x, y];
+
+        if(target != null) 
+            target.onDeath();
+
         chessPieces[x, y] = null;
     }
 
     public void removeChessPieceAtPosition(Vector2Int position)
     {
-        chessPieces[position.x, position.y] = null;
+        ChessPiece target = chessPieces[position.x, position.y];
+
+        if (target != null)
+            target.onDeath();
+
+        chessPieces[position.x, position.y] = null;        
     }
 
-    public int getChessAmount(ChessType type, bool isWhite)
+    public int getChessAmount(bool isWhite, ChessType type)
     {
         int count = 0;
 
@@ -103,6 +119,27 @@ public class BoardState
                 ChessPiece piece = chessPieces[x, y];
 
                 if (piece != null && piece.getChessType() == type && piece.isWhite() == isWhite)
+                    count++;
+            }
+
+        return count;
+    }
+
+    public int getChessAmount(bool isWhite, params ChessType[] type)
+    {
+        return getChessAmount(isWhite, new List<ChessType>(type));
+    }
+
+    public int getChessAmount(bool isWhite, List<ChessType> vaildType)
+    {
+        int count = 0;
+
+        for (int x = 0; x < chessPieces.GetLength(0); x++)
+            for (int y = 0; y < chessPieces.GetLength(1); y++)
+            {
+                ChessPiece piece = chessPieces[x, y];
+
+                if (piece != null && vaildType.Contains(piece.getChessType()) && piece.isWhite() == isWhite)
                     count++;
             }
 

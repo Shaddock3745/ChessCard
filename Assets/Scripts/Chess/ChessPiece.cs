@@ -19,6 +19,11 @@ public class ChessPiece
     private MovementType defaultMovementType;
     private ChessStatusContainer statusContainer = new ChessStatusContainer();
 
+    private static readonly ChessType[] ALL_TYPES = { ChessType.Pawn, ChessType.Rook, ChessType.Knight, ChessType.Bishop, ChessType.Queen, ChessType.King };
+    private static readonly ChessType[] ALL_TYPES_EXCEPT_KING = { ChessType.Pawn, ChessType.Rook, ChessType.Knight, ChessType.Bishop, ChessType.Queen };
+
+    public static ChessType[] getAllChessTypes(bool exceptKing) => exceptKing ? ALL_TYPES_EXCEPT_KING : ALL_TYPES;
+
     public ChessPiece(ChessType chessType, bool isWhite, Vector2Int currentPosition)
     {
         this.chessType = chessType;
@@ -63,8 +68,13 @@ public class ChessPiece
         return defaultMovementType.getDescription();
     }
 
-    public List<MoveAction> getAvailableMoves(bool canAttack)
+    public List<MoveAction> getAvailableMoves(bool canAttack, int currentTurnCount)
     {
+        MovementType overrideMovementType = statusContainer.getMovementOverride(currentTurnCount);
+
+        if (overrideMovementType != null)
+            return overrideMovementType.getAvailableMoves(currentPosition, isWhiteChess, canAttack);
+
         return defaultMovementType.getAvailableMoves(currentPosition, isWhiteChess, canAttack);
     }
 
@@ -102,6 +112,11 @@ public class ChessPiece
     public void cleanUpExpiredStatuses(int currentTotalTurn)
     {
         statusContainer.cleanUpExpiredStatuses(currentTotalTurn);
+    }
+
+    public void onDeath()
+    {
+        statusContainer.Dispose();
     }
 
     private static string getChessTypeName(ChessType type)

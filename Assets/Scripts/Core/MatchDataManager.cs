@@ -239,14 +239,37 @@ public class MatchDataManager : MonoBehaviour
             return instance.enemy.canAttackThisTurn(currentTurnCount);
     }
 
-    public static bool canUseCard(bool isLocal, Card card)
+    public static bool canSummonThisTurn(bool isLocal, int currentTurnCount)
     {
         if (isLocal)
-            return instance.local.canUseCard(card);
+            return instance.local.canSummonThisTurn(currentTurnCount);
         else
-            return instance.enemy.canUseCard(card);
+            return instance.enemy.canSummonThisTurn(currentTurnCount);
     }
 
+    public static bool canUseCard(bool isLocal, Card card, int currentTurnCount)
+    {
+        if (isLocal)
+            return instance.local.canUseCard(card, currentTurnCount);
+        else
+            return instance.enemy.canUseCard(card, currentTurnCount);
+    }
+
+    public static int getExtraMoveCost(bool isLocal, int currentTurnCount)
+    {
+        if (isLocal)
+            return instance.local.getExtraMoveCost(currentTurnCount);
+        else
+            return instance.enemy.getExtraMoveCost(currentTurnCount);
+    }
+
+    public static int getExtraCardCost(bool isLocal, int currentTurnCount)
+    {
+        if (isLocal)
+            return instance.local.getExtraCardCost(currentTurnCount);
+        else
+            return instance.enemy.getExtraCardCost(currentTurnCount);
+    }
 
     public static void doChessMoved(bool isLocal, ChessPiece chess, int currentTurnCount)
     {
@@ -270,5 +293,10 @@ public class MatchDataManager : MonoBehaviour
     {
         instance.local.cleanUpExpiredStatuses(currentTotalTurn);
         instance.enemy.cleanUpExpiredStatuses(currentTotalTurn);
+    }
+
+    public static void resetGame()
+    {
+
     }
 }

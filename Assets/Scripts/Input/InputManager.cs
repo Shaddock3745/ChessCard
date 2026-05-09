@@ -186,7 +186,7 @@ public class InputManager : MonoBehaviour
                 if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess.getChess(), GameManager.getCurrentTurnCount()))
                     raiseChess();
 
-                if (isSelectingCard && MatchDataManager.canUseCard(true, selectedCard.getCard()))
+                if (isSelectingCard && MatchDataManager.canUseCard(true, selectedCard.getCard(), GameManager.getCurrentTurnCount()))
                     raiseCard();
             }
         }
@@ -379,7 +379,7 @@ public class InputManager : MonoBehaviour
 
     private void showHint(ChessPieceUi pieceUi)
     {
-        var tempList = pieceUi.getChess().getAvailableMoves(MatchDataManager.canAttackThisTurn(true, GameManager.getCurrentTurnCount()));
+        var tempList = pieceUi.getChess().getAvailableMoves(MatchDataManager.canAttackThisTurn(true, GameManager.getCurrentTurnCount()), GameManager.getCurrentTurnCount());
 
         foreach (var move in tempList)
             switch (move.actionType)

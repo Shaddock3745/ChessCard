@@ -20,28 +20,23 @@ public abstract class BaseStatus<TEnum> where TEnum :Enum
 
     public int getEndTurn() => endTurn;
 
-    public bool isActive(int currentTurn) => currentTurn >= startTurn && currentTurn <= endTurn;
+    public bool isActive(int currentTurn) => currentTurn >= startTurn && currentTurn < endTurn;
 }
 
-public abstract class StatusContainer<TStatus, TEnum> : MonoBehaviour
+public abstract class StatusContainer<TStatus, TEnum> : IDisposable
     where TStatus : BaseStatus<TEnum>
     where TEnum : Enum
 {
     protected List<TStatus> activeStatuses = new List<TStatus>();
 
-    public void addStatus(TStatus status)
-    {
-        activeStatuses.Add(status);
-    }
-
-    private void OnEnable()
+    public StatusContainer()
     {
         GameManager.OnTurnStart += cleanUpExpiredStatuses;
     }
 
-    private void OnDisable()
+    public void addStatus(TStatus status)
     {
-        GameManager.OnTurnStart -= cleanUpExpiredStatuses;
+        activeStatuses.Add(status);
     }
 
     public void cleanUpExpiredStatuses(int currentTotalTurn)
@@ -57,5 +52,11 @@ public abstract class StatusContainer<TStatus, TEnum> : MonoBehaviour
     public List<TStatus> GetActiveStatuses(TEnum type, int currentTotalTurn)
     {
         return activeStatuses.FindAll(s => s.getStatusType().Equals(type) && s.isActive(currentTotalTurn));
+    }
+
+    public void Dispose()
+    {
+        GameManager.OnTurnStart -= cleanUpExpiredStatuses;
+        activeStatuses.Clear();
     }
 }
