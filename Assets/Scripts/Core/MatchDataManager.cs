@@ -182,10 +182,12 @@ public class MatchDataManager : MonoBehaviour
 
     public static void turnStart(bool isLocalTurn)
     {
+        int currentTurnCount = GameManager.getCurrentTurnCount();
+
         if (isLocalTurn)
         {
-            instance.local.resetForNewTurn();
-            int handCardCount = PlayerData.getDefaultHandCardCount();
+            instance.local.resetForNewTurn(currentTurnCount);
+            int handCardCount = PlayerData.getDefaultHandCardCount() + instance.local.getBonusHandCardCount(currentTurnCount);
 
             for (int i = 0; i < handCardCount; i++)
                 drawCard(true);
@@ -195,8 +197,8 @@ public class MatchDataManager : MonoBehaviour
         }
         else
         {
-            instance.enemy.resetForNewTurn();
-            int handCardCount = PlayerData.getDefaultHandCardCount();
+            instance.enemy.resetForNewTurn(currentTurnCount);
+            int handCardCount = PlayerData.getDefaultHandCardCount() + instance.enemy.getBonusHandCardCount(currentTurnCount);
 
             for (int i = 0; i < handCardCount; i++)
                 drawCard(false);
@@ -207,9 +209,11 @@ public class MatchDataManager : MonoBehaviour
 
     public static void turnEnd(bool isLocalTurn)
     {
+        int currentTurnCount = GameManager.getCurrentTurnCount();
+
         if (isLocalTurn)
         {
-            instance.local.resetForEndTurn();
+            instance.local.resetForEndTurn(currentTurnCount);
             instance.local.flushHandCards();
             _ = HandViewManager.flush(true);
             instance.updateCardCountUi();
@@ -217,7 +221,7 @@ public class MatchDataManager : MonoBehaviour
         }
         else
         {
-            instance.enemy.resetForEndTurn();
+            instance.enemy.resetForEndTurn(currentTurnCount);
             instance.enemy.flushHandCards();
             _ = HandViewManager.flush(false);
         }
@@ -226,17 +230,25 @@ public class MatchDataManager : MonoBehaviour
     public static bool canMoveChess(bool isLocal, ChessPiece chess, int currentTurnCount)
     {
         if (isLocal)
-            return instance.local.canMoveChess(chess, currentTurnCount);
+            return instance.local.canMoveChessThisTurn(chess, currentTurnCount);
         else
-            return instance.enemy.canMoveChess(chess, currentTurnCount);
+            return instance.enemy.canMoveChessThisTurn(chess, currentTurnCount);
     }
 
-    public static bool canAttackThisTurn(bool isLocal, int currentTurnCount)
+    public static bool canAttackGloballyThisTurn(bool isLocal, int currentTurnCount)
     {
         if (isLocal)
-            return instance.local.canAttackThisTurn(currentTurnCount);
+            return instance.local.canAttackGloballyThisTurn(currentTurnCount);
         else
-            return instance.enemy.canAttackThisTurn(currentTurnCount);
+            return instance.enemy.canAttackGloballyThisTurn(currentTurnCount);
+    }
+
+    public static bool canAttackChessThisTurn(bool isLocal, ChessPiece attacker, ChessPiece target, int currentTurnCount)
+    {
+        if (isLocal)
+            return instance.local.canAttackChessThisTurn(attacker, target, currentTurnCount);
+        else
+            return instance.enemy.canAttackChessThisTurn(attacker, target, currentTurnCount);
     }
 
     public static bool canSummonThisTurn(bool isLocal, int currentTurnCount)

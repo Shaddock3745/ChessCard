@@ -8,6 +8,8 @@ public enum PlayerStatusType
     CANT_USE_ALL_CARD,
     MOVE_COST_MODIFIER,
     CARD_COST_MODIFIER,
+    BONUS_HAND_CARD,
+    BONUS_MANA
 }
 
 public class PlayerStatus : BaseStatus<PlayerStatusType>
@@ -22,60 +24,82 @@ public class PlayerStatusContainer : StatusContainer<PlayerStatus, PlayerStatusT
 
     }
 
-    public bool canSummon(int currentTotalTurn)
+    public bool canSummon(int currentTurnCount)
     {
-        return !hasActiveStatus(PlayerStatusType.CANT_SUMMON, currentTotalTurn);
+        return !hasActiveStatus(PlayerStatusType.CANT_SUMMON, currentTurnCount);
     }
 
-    public int getGlobalExtraMoveCost(int currentTotalTurn)
+    public int getGlobalExtraMoveCost(int currentTurnCount)
     {
         int extraCost = 0;
 
-        foreach (var status in GetActiveStatuses(PlayerStatusType.MOVE_COST_MODIFIER, currentTotalTurn))
+        foreach (var status in GetActiveStatuses(PlayerStatusType.MOVE_COST_MODIFIER, currentTurnCount))
             if (status is IncreasePlayerMoveCostStatus increaseGlobalMoveCostStatus)
                 extraCost += increaseGlobalMoveCostStatus.getValue();
 
         return extraCost;
     }
 
-    public int getGlobalExtraCardCost(int currentTotalTurn)
+    public int getGlobalExtraCardCost(int currentTurnCount)
     {
         int extraCost = 0;
 
-        foreach (var status in GetActiveStatuses(PlayerStatusType.CARD_COST_MODIFIER, currentTotalTurn))
+        foreach (var status in GetActiveStatuses(PlayerStatusType.CARD_COST_MODIFIER, currentTurnCount))
             if (status is IncreasePlayerCardCostStatus increaseGlobalCardCostStatus)
                 extraCost += increaseGlobalCardCostStatus.getValue();
 
         return extraCost;
     }
 
-    public bool canUseCard(int cardId, int currentTotalTurn)
+    public int getBonusHandCardCount(int currentTurnCount)
     {
-        if (hasActiveStatus(PlayerStatusType.CANT_USE_ALL_CARD, currentTotalTurn))
+        int bonusHandCardCount = 0;
+
+        foreach (var status in GetActiveStatuses(PlayerStatusType.BONUS_HAND_CARD, currentTurnCount))
+            if (status is PlayerBonusHandCardStatus bonusHandCardStatus)
+                bonusHandCardCount += bonusHandCardStatus.getBonusHandCardCount();
+
+        return bonusHandCardCount;
+    }
+
+    public int getBonusManaCount(int currentTurnCount)
+    {
+        int bonusManaCount = 0;
+
+        foreach (var status in GetActiveStatuses(PlayerStatusType.BONUS_MANA, currentTurnCount))
+            if (status is PlayerBonusManaStatus bonusManaStatus)
+                bonusManaCount += bonusManaStatus.getBonusManaCount();
+
+        return bonusManaCount;
+    }
+
+    public bool canUseCard(int cardId, int currentTurnCount)
+    {
+        if (hasActiveStatus(PlayerStatusType.CANT_USE_ALL_CARD, currentTurnCount))
             return false;
 
-        foreach (var status in GetActiveStatuses(PlayerStatusType.CANT_USE_SPECIFIC_CARD, currentTotalTurn))
-            if (status is PlayerCantUseSpecificCardStatus cantUseSpecificCardStatus && cantUseSpecificCardStatus.cardId == cardId)
+        foreach (var status in GetActiveStatuses(PlayerStatusType.CANT_USE_SPECIFIC_CARD, currentTurnCount))
+            if (status is PlayerCantUseSpecificCardStatus cantUseSpecificCardStatus && cantUseSpecificCardStatus.getCardId() == cardId)
                 return false;
 
         return true;
     }
 
-    public bool canMoveChess(ChessType chessType, int currentTotalTurn)
+    public bool canMoveChess(ChessType chessType, int currentTurnCount)
     {
-        if (hasActiveStatus(PlayerStatusType.CANT_MOVE, currentTotalTurn))
+        if (hasActiveStatus(PlayerStatusType.CANT_MOVE, currentTurnCount))
             return false;
 
-        foreach (var status in GetActiveStatuses(PlayerStatusType.CANT_MOVE_SPECIFIC_CHESS_TYPE, currentTotalTurn))
+        foreach (var status in GetActiveStatuses(PlayerStatusType.CANT_MOVE_SPECIFIC_CHESS_TYPE, currentTurnCount))
             if (status is PlayerCantMoveSpecificChessTypeStatus cantMoveSpecificChessTypeStatus && cantMoveSpecificChessTypeStatus.getChessType() == chessType)
                 return false;
 
         return true;
     }
 
-    public bool canAttack(int currentTotalTurn)
+    public bool canAttack(int currentTurnCount)
     {
-        return !hasActiveStatus(PlayerStatusType.CANT_ATTACK, currentTotalTurn);
+        return !hasActiveStatus(PlayerStatusType.CANT_ATTACK, currentTurnCount);
     }
 }
 
@@ -145,11 +169,36 @@ public class PlayerCantMoveSpecificChessTypeStatus : PlayerStatus
 
 public class PlayerCantUseSpecificCardStatus : PlayerStatus
 {
-    public int cardId;
+    private int cardId;
+
     public PlayerCantUseSpecificCardStatus(int cardId, int startTurn, int endTurn) : base(PlayerStatusType.CANT_USE_SPECIFIC_CARD, startTurn, endTurn)
     {
         this.cardId = cardId;
     }
 
     public int getCardId() => cardId;
+}
+
+public class PlayerBonusHandCardStatus : PlayerStatus
+{
+    private int bonusHandCardCount;
+
+    public PlayerBonusHandCardStatus(int bonusHandCardCount, int startTurn, int endTurn) : base(PlayerStatusType.BONUS_HAND_CARD, startTurn, endTurn)
+    {
+        this.bonusHandCardCount = bonusHandCardCount;
+    }
+
+    public int getBonusHandCardCount() => bonusHandCardCount;
+}
+
+public class PlayerBonusManaStatus : PlayerStatus
+{
+    private int bonusManaCount;
+
+    public PlayerBonusManaStatus(int bonusManaCount, int startTurn, int endTurn) : base(PlayerStatusType.BONUS_MANA, startTurn, endTurn)
+    {
+        this.bonusManaCount = bonusManaCount;
+    }
+
+    public int getBonusManaCount() => bonusManaCount;
 }

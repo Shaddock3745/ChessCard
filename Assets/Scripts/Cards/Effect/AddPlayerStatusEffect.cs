@@ -6,13 +6,22 @@ using UnityEngine;
 public class AddPlayerStatusEffect : CardEffect
 {
     private bool isEnemy;
-    private int duration;
+    private int duration, delay;
     private Func<int, int, PlayerStatus> statusFactory;
 
     public AddPlayerStatusEffect(bool isEnemy, int duration, Func<int, int, PlayerStatus> statusFactory)
     {
         this.isEnemy = isEnemy;
         this.duration = duration;
+        this.delay = 0;
+        this.statusFactory = statusFactory;
+    }
+
+    public AddPlayerStatusEffect(bool isEnemy, int duration, int delay, Func<int, int, PlayerStatus> statusFactory)
+    {
+        this.isEnemy = isEnemy;
+        this.duration = duration;
+        this.delay = delay;
         this.statusFactory = statusFactory;
     }
 
@@ -24,7 +33,7 @@ public class AddPlayerStatusEffect : CardEffect
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
         int currentTurnCount = GameManager.getCurrentTurnCount();
-        MatchDataManager.addStatus(isEnemy ^ isLocal, statusFactory.Invoke(currentTurnCount, currentTurnCount + duration));
+        MatchDataManager.addStatus(isEnemy ^ isLocal, statusFactory.Invoke(currentTurnCount + delay, currentTurnCount + duration + delay));
         return Task.CompletedTask;
     }
 

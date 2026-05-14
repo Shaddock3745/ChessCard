@@ -4,14 +4,14 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class AddAllChessStatusEffect : CardEffect
+public class AddStatusToAllMatchingTypeChessEffect : CardEffect
 {
     private bool isSameTeam, hardConstraint;
     private int duration;
     private List<ChessType> targetTypes;
     private Func<int, int, ChessStatus> statusFactory;
 
-    public AddAllChessStatusEffect(bool isSameTeam, int duration, Func<int, int, ChessStatus> statusFactory, bool hardConstraint, params ChessType[] targetTypes)
+    public AddStatusToAllMatchingTypeChessEffect(bool isSameTeam, int duration, Func<int, int, ChessStatus> statusFactory, bool hardConstraint, params ChessType[] targetTypes)
     {
         this.isSameTeam = isSameTeam;
         this.hardConstraint = hardConstraint;

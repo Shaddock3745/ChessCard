@@ -41,7 +41,7 @@ public abstract class StatusContainer<TStatus, TEnum> : IDisposable
 
     public void cleanUpExpiredStatuses(int currentTotalTurn)
     {
-        activeStatuses.RemoveAll(status => !status.isActive(currentTotalTurn));
+        activeStatuses.RemoveAll(status => currentTotalTurn >= status.getEndTurn());
     }
 
     public bool hasActiveStatus(TEnum type, int currentTotalTurn)

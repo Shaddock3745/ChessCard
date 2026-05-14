@@ -7,7 +7,7 @@ public class AiManager : MonoBehaviour
 {
     private static AiManager instance;
 
-    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 5 });
+    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 5, 1, 1, 4, 4, 3, 3, 6, 6, 6 });
     private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
     void Awake()
@@ -27,8 +27,8 @@ public class AiManager : MonoBehaviour
             List<ChessPiece> pieceList = BoardManager.getAllChessPieces(playerData.IsWhite());
 
             foreach (var piece in pieceList)
-                if (playerData.canMoveChess(piece, currentTurnCount))
-                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, playerData.canAttackThisTurn(currentTurnCount), currentTurnCount));
+                if (playerData.canMoveChessThisTurn(piece, currentTurnCount))
+                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, playerData.canAttackGloballyThisTurn(currentTurnCount), currentTurnCount));
         }
 
         List<Card> handCardList = playerData.getHandList();

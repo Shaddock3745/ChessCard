@@ -57,6 +57,10 @@ public class PlayerData
 
     public int getDeckCardCount() => deck.Count;
 
+    public int getBonusHandCardCount(int currentTurnCount) => statusContainer.getBonusHandCardCount(currentTurnCount);
+
+    public int getBonusManaCount(int currentTurnCount) => statusContainer.getBonusManaCount(currentTurnCount);
+
     public int getWaitingCardCount() => waitingList.Count;
 
     public int getDiscardCardCount() => discardList.Count;
@@ -74,15 +78,20 @@ public class PlayerData
         mana -= cost;
     }
 
-    public bool canMoveChess(ChessPiece chess, int currentTurnCount)
+    public bool canMoveChessThisTurn(ChessPiece chess, int currentTurnCount)
     {
         return !chessMoved && chess.isWhite() == isWhite && statusContainer.canMoveChess(chess.getChessType(), currentTurnCount) && chess.canMove(currentTurnCount)
             && mana >= chess.getMoveCost(currentTurnCount) + getExtraMoveCost(currentTurnCount);
     }
 
-    public bool canAttackThisTurn(int currentTurnCount)
+    public bool canAttackGloballyThisTurn(int currentTurnCount)
     {
         return !chessMoved && statusContainer.canAttack(currentTurnCount);
+    }
+
+    public bool canAttackChessThisTurn(ChessPiece attacker, ChessPiece target, int currentTurnCount)
+    {
+        return canMoveChessThisTurn(attacker, currentTurnCount) && canAttackGloballyThisTurn(currentTurnCount) && attacker.canAttack(currentTurnCount) && target.canBeAttacked(currentTurnCount);
     }
 
     public bool chessMovedThisTurn() => chessMoved;
@@ -110,13 +119,13 @@ public class PlayerData
         mana -= chess.getMoveCost(currentTurnCount) + statusContainer.getGlobalExtraMoveCost(currentTurnCount);
     }
 
-    public void resetForNewTurn()
+    public void resetForNewTurn(int currentTurnCount)
     {
-        mana = DEFAULT_MANA;
+        mana = DEFAULT_MANA + statusContainer.getBonusManaCount(currentTurnCount);
         chessMoved = false;
     }
 
-    public void resetForEndTurn()
+    public void resetForEndTurn(int currentTurnCount)
     {
 
     }

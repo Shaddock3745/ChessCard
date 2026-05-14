@@ -41,14 +41,22 @@ public class CardEffectManager : MonoBehaviour
         // 徵兵令
         cardRegistry[6] = new CompositeEffect(new ChessAmountCheckEffect(true, 3, true, false, ChessType.Pawn), new MaterializeCardEffect(1, 2, true));
 
+        // 王車易位
+        cardRegistry[7] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Rook), new AddStatusToPayloadTargetChessEffect((startTurn) => new ChessCantMoveStatus(startTurn, startTurn + 1)),
+            new SwapChessPositionEffect((payload) => { return (payload.getTargetPositions()[0], BoardManager.getPositionOfKing(GameManager.IsLocalTurn() == GameManager.IsLocalWhite())); }));
+
         // 政教合一
-        cardRegistry[8] = new AddAllChessStatusEffect(true, 1, (startTurn, endTurn) => new ChessMovementOverrideStatus(new BishopMovement(), startTurn, endTurn), true, ChessType.King);
+        cardRegistry[8] = new AddStatusToAllMatchingTypeChessEffect(true, 1, (startTurn, endTurn) => new ChessMovementOverrideStatus(new BishopMovement(), startTurn, endTurn), true, ChessType.King);
 
-        // 護盾 (未完成)
-        cardRegistry[10] = new CompositeEffect(new ChessAmountCompareEffect(true, false), new AddTargetChessStatusEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn), ChessPiece.getAllChessTypes(true)));
+        // 護盾 (UI未完成)
+        cardRegistry[10] = new CompositeEffect(new ChessAmountCompareEffect(true, false), new AddSelectedChessSingleStatusEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn), ChessPiece.getAllChessTypes(true)));
 
-        // 鐐銬 (未完成)
-        cardRegistry[16] = new CompositeEffect(new ChessAmountCheckEffect(false, 4, false, false, ChessPiece.getAllChessTypes(false)), new ChessAmountCompareEffect(true, false), new AddTargetChessMultipleStatusEffect(false, (startTurn) => new ChessStatus[] { new ChessCantMoveStatus(startTurn, startTurn + 2), new ChessCantBeAttackedStatus(startTurn, startTurn + 3) }));
+        // 蓄勢待發 (需要未移動判斷)
+        cardRegistry[13] = new CompositeEffect(new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerCantMoveStatus(startTurn, endTurn)), new AddPlayerStatusEffect(false, 1, 2, (startTurn, endTurn) => new PlayerBonusManaStatus(3, startTurn, endTurn)));
+
+        // 鐐銬 (UI未完成)
+        cardRegistry[16] = new CompositeEffect(new ChessAmountCheckEffect(false, 4, false, false, ChessPiece.getAllChessTypes(false)), new ChessAmountCompareEffect(true, false),
+            new AddSelectedChessMultipleStatusEffect(false, (startTurn) => new ChessStatus[] { new ChessCantMoveStatus(startTurn, startTurn + 2), new ChessCantBeAttackedStatus(startTurn, startTurn + 3) }));
 
         // 一換一
         cardRegistry[17] = new SequentialCompositeEffect(new RemoveChessEffect(true, ChessPiece.getAllChessTypes(true)), (firstPayload) => new RemoveChessEffect(false, BoardManager.getChessPieceAtPosition(firstPayload.getTargetPositions()[0]).getChessType()));
@@ -63,7 +71,7 @@ public class CardEffectManager : MonoBehaviour
         cardRegistry[26] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new PlayerCantSummonStatus(startTurn, endTurn)), new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new PlayerCantSummonStatus(startTurn, endTurn)));
 
         // 通貨膨脹
-        cardRegistry[27] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new IncreasePlayerCardCostStatus(1, startTurn, endTurn)), new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new IncreasePlayerMoveCostStatus(1, startTurn, endTurn)), 
+        cardRegistry[27] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new IncreasePlayerCardCostStatus(1, startTurn, endTurn)), new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new IncreasePlayerMoveCostStatus(1, startTurn, endTurn)),
             new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new IncreasePlayerCardCostStatus(1, startTurn, endTurn)), new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new IncreasePlayerMoveCostStatus(1, startTurn, endTurn)));
 
         // 捨身取義

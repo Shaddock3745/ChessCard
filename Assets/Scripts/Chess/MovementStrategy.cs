@@ -52,11 +52,11 @@ public class PawnMovement : MovementType
 
         // Attack diagonally
         temp = new Vector2Int(currentPos.x + 1, currentPos.y + direction);
-        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)) && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount())) 
             moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
         temp = new Vector2Int(currentPos.x - 1, currentPos.y + direction);
-        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)) && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount()))
             moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
         return moves;
@@ -122,7 +122,7 @@ public class RookMovement : MovementType
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
                 else
                 {
-                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)) && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount()))
                         moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
                     break;
@@ -208,7 +208,7 @@ public class KnightMovement : MovementType
             {
                 if (BoardManager.isEmpty(temp))
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
-                else if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+                else if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)) && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount()))
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
             }
         }
@@ -283,7 +283,7 @@ public class BishopMovement : MovementType
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
                 else
                 {
-                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)) && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount()))
                         moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
                     break;
@@ -368,7 +368,7 @@ public class QueenMovement : MovementType
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
                 else
                 {
-                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+                    if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)) && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount()))
                         moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
                     break;
@@ -451,7 +451,7 @@ public class KingMovement : MovementType
             {
                 if (BoardManager.isEmpty(temp))
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
-                else if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+                else if (canAttack && (isWhite ^ BoardManager.isWhiteAtPosition(temp)) && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount()))
                     moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
             }
         }

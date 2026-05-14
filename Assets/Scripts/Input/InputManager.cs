@@ -379,7 +379,7 @@ public class InputManager : MonoBehaviour
 
     private void showHint(ChessPieceUi pieceUi)
     {
-        var tempList = pieceUi.getChess().getAvailableMoves(MatchDataManager.canAttackThisTurn(true, GameManager.getCurrentTurnCount()), GameManager.getCurrentTurnCount());
+        var tempList = pieceUi.getChess().getAvailableMoves(MatchDataManager.canAttackGloballyThisTurn(true, GameManager.getCurrentTurnCount()), GameManager.getCurrentTurnCount());
 
         foreach (var move in tempList)
             switch (move.actionType)

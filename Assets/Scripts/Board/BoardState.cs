@@ -39,6 +39,34 @@ public class BoardState
         return chessPieces[position.x, position.y];
     }
 
+    public ChessPiece getKing(bool isWhite)
+    {
+        for (int x = 0; x < chessPieces.GetLength(0); x++)
+            for (int y = 0; y < chessPieces.GetLength(1); y++)
+            {
+                ChessPiece piece = chessPieces[x, y];
+
+                if (piece != null && piece.getChessType() == ChessType.King && piece.isWhite() == isWhite)
+                    return piece;
+            }
+
+        return null;
+    }
+
+    public Vector2Int getPositionOfKing(bool isWhite)
+    {
+        for (int x = 0; x < chessPieces.GetLength(0); x++)
+            for (int y = 0; y < chessPieces.GetLength(1); y++)
+            {
+                ChessPiece piece = chessPieces[x, y];
+
+                if (piece != null && piece.getChessType() == ChessType.King && piece.isWhite() == isWhite)
+                    return new Vector2Int(x, y);
+            }
+
+        return new Vector2Int(0, 0);
+    }
+
     public void setBoardTileAtPosition(int x, int y, BoardTile tile)
     {
         boardTiles[x, y] = tile;
@@ -93,7 +121,7 @@ public class BoardState
     {
         ChessPiece target = chessPieces[x, y];
 
-        if(target != null) 
+        if (target != null)
             target.onDeath();
 
         chessPieces[x, y] = null;
@@ -106,7 +134,21 @@ public class BoardState
         if (target != null)
             target.onDeath();
 
-        chessPieces[position.x, position.y] = null;        
+        chessPieces[position.x, position.y] = null;
+    }
+
+    public void swapTwoPosition(Vector2Int first, Vector2Int second)
+    {
+        ChessPiece firstChess = chessPieces[first.x, first.y];
+        ChessPiece secondChess = chessPieces[second.x, second.y];
+        setChessPieceAtPosition(second, firstChess);
+        setChessPieceAtPosition(first, secondChess);
+
+        if (firstChess != null)
+            firstChess.setPosition(second);
+
+        if (secondChess != null)
+            secondChess.setPosition(first);
     }
 
     public int getChessAmount(bool isWhite, ChessType type)

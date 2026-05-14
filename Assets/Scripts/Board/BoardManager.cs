@@ -242,8 +242,21 @@ public class BoardManager : MonoBehaviour
             return null;
     }
 
+    public static ChessPiece getKing(bool isWhite)
+    {
+        return instance.boardState.getKing(isWhite);
+    }
+
+    public static Vector2Int getPositionOfKing(bool isWhite)
+    {
+        return instance.boardState.getPositionOfKing(isWhite);
+    }
+
     public static ChessPieceUi getUiOfChess(ChessPiece piece)
     {
+        if (piece == null)
+            return null;
+
         return instance.pieceToUiMap[piece];
     }
 
@@ -310,17 +323,21 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * firstPos.x);
         float y = START_OFFSET + (TILE_SIZE * firstPos.y);
         getUiOfChess(movingPiece).moveToPoint(new Vector3(x, y, 0));
+        InputManager.tryDetectHover();
     }
 
     public static void movePiece(Vector2Int from, Vector2Int to)
     {
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         instance.boardState.moveChessPiece(from, to);
+
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
+
         getUiOfChess(movingPiece).moveToPoint(new Vector3(x, y, 0));
 
         LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
+        InputManager.tryDetectHover();
     }
 
     public static async Task movePieceWithAnimation(Vector2Int from, Vector2Int to)
@@ -333,6 +350,7 @@ public class BoardManager : MonoBehaviour
         instance.boardState.moveChessPiece(from, to);
 
         LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
+        InputManager.tryDetectHover();
     }
 
     public static void attackPiece(Vector2Int from, Vector2Int to)
@@ -348,6 +366,7 @@ public class BoardManager : MonoBehaviour
         instance.pieceToUiMap.Remove(victim);
 
         LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
+        InputManager.tryDetectHover();
     }
 
     public static async Task attackPieceWithAnimation(Vector2Int from, Vector2Int to)
@@ -371,6 +390,7 @@ public class BoardManager : MonoBehaviour
         instance.pieceToUiMap.Remove(victim);
 
         LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
+        InputManager.tryDetectHover();
     }
 
     public static void removePiece(Vector2Int position)
@@ -379,6 +399,8 @@ public class BoardManager : MonoBehaviour
         instance.boardState.removeChessPieceAtPosition(position);
         getUiOfChess(piece).destroy();
         instance.pieceToUiMap.Remove(piece);
+
+        InputManager.tryDetectHover();
     }
 
     public static async Task removePieceWithAnimation(Vector2Int position)
@@ -387,6 +409,46 @@ public class BoardManager : MonoBehaviour
         instance.boardState.removeChessPieceAtPosition(position);
         await getUiOfChess(piece).destroyWithAnimation();
         instance.pieceToUiMap.Remove(piece);
+
+        InputManager.tryDetectHover();
+    }
+
+    public static void swapTwoPosition(Vector2Int first, Vector2Int second)
+    {
+        ChessPieceUi firstUi = getUiOfChess(getChessPieceAtPosition(first));
+        ChessPieceUi secondUi = getUiOfChess(getChessPieceAtPosition(second));
+        instance.boardState.swapTwoPosition(first, second);
+
+        float firstX = START_OFFSET + (TILE_SIZE * first.x), firstY = START_OFFSET + (TILE_SIZE * first.y);
+        float secondX = START_OFFSET + (TILE_SIZE * second.x), secondY = START_OFFSET + (TILE_SIZE * second.y);
+
+        if (firstUi != null)
+            firstUi.moveToPoint(new Vector3(firstX, firstY, 0));
+
+        if (secondUi != null)
+            secondUi.moveToPoint(new Vector3(secondX, secondY, 0));
+
+        InputManager.tryDetectHover();
+    }
+
+    public static async Task swapTwoPositionWithAnimation(Vector2Int first, Vector2Int second)
+    {
+        ChessPieceUi firstUi = getUiOfChess(getChessPieceAtPosition(first));
+        ChessPieceUi secondUi = getUiOfChess(getChessPieceAtPosition(second));
+        instance.boardState.swapTwoPosition(first, second);
+
+        float firstX = START_OFFSET + (TILE_SIZE * first.x), firstY = START_OFFSET + (TILE_SIZE * first.y);
+        float secondX = START_OFFSET + (TILE_SIZE * second.x), secondY = START_OFFSET + (TILE_SIZE * second.y);
+        List<Task> tasks = new List<Task>();
+
+        if (firstUi != null)
+            tasks.Add(firstUi.moveToPointWithAnimation(new Vector3(secondX, secondY, 0)));
+
+        if (secondUi != null)
+            tasks.Add(secondUi.moveToPointWithAnimation(new Vector3(firstX, firstY, 0)));
+
+        await Task.WhenAll(tasks);
+        InputManager.tryDetectHover();
     }
 
     public static void showMoveable(Vector2Int position)

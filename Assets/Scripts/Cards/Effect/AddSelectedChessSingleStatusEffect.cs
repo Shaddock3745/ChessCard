@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class AddTargetChessStatusEffect : CardEffect
+public class AddSelectedChessSingleStatusEffect : CardEffect
 {
     private bool isSameTeam;
     private int duration;
     private List<ChessType> targetTypes;
     private Func<int, int, ChessStatus> statusFactory;
 
-    public AddTargetChessStatusEffect(bool isSameTeam, int duration, Func<int, int, ChessStatus> statusFactory, params ChessType[] targetTypes)
+    public AddSelectedChessSingleStatusEffect(bool isSameTeam, int duration, Func<int, int, ChessStatus> statusFactory, params ChessType[] targetTypes)
     {
         this.isSameTeam = isSameTeam;
         this.duration = duration;
