@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class MaterializeCardEffect : CardEffect
 {
+    private bool isEnemy;
     private int cardId;
     private int amount;
     private bool noConsumption;
 
-    public MaterializeCardEffect(int cardId, int amount, bool noConsumption)
+    public MaterializeCardEffect(bool isEnemy, int cardId, int amount, bool noConsumption)
     {
+        this.isEnemy = isEnemy;
         this.cardId = cardId;
         this.amount = amount;
         this.noConsumption = noConsumption;
@@ -24,12 +26,7 @@ public class MaterializeCardEffect : CardEffect
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
         for (int i = 0; i < amount; i++)
-        {
-            if (isLocal)
-                MatchDataManager.materializeCard(true, cardId, noConsumption);
-            else
-                MatchDataManager.materializeCard(false, cardId, noConsumption);
-        }
+            MatchDataManager.materializeCard(isLocal != isEnemy, cardId, noConsumption);
 
         return Task.CompletedTask;
     }
@@ -44,7 +41,7 @@ public class MaterializeCardEffect : CardEffect
         List<CardUseOption> options = new List<CardUseOption>();
 
         if (currentMana >= card.getCost())
-            options.Add(new CardUseOption(card, 1));
+            options.Add(new CardUseOption(card, 1 * (isEnemy ? -1 : 1)));
 
         return options;
     }

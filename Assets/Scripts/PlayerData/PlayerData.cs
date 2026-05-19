@@ -91,16 +91,17 @@ public class PlayerData
 
     public bool canAttackChessThisTurn(ChessPiece attacker, ChessPiece target, int currentTurnCount)
     {
-        return canMoveChessThisTurn(attacker, currentTurnCount) && canAttackGloballyThisTurn(currentTurnCount) && attacker.canAttack(currentTurnCount) && target.canBeAttacked(currentTurnCount);
+        return canMoveChessThisTurn(attacker, currentTurnCount) && canAttackGloballyThisTurn(currentTurnCount)
+            && attacker.canMove(currentTurnCount) && attacker.canAttack(currentTurnCount) && target.canBeAttacked(currentTurnCount) && attacker.canAttackSpecificTypeChess(target.getChessType(), currentTurnCount);
     }
 
     public bool chessMovedThisTurn() => chessMoved;
 
     public bool canSummonThisTurn(int currentTurnCount) => statusContainer.canSummon(currentTurnCount);
 
-    public bool canUseCard(Card card, int currentTurnCount)
+    public bool canUseCardThisTurn(Card card, int currentTurnCount)
     {
-        return mana >= (card.getCost() + getExtraCardCost(currentTurnCount)) && CardEffectManager.canActivateCard(isLocal, card, currentTurnCount);
+        return mana >= (card.getCost() + getExtraCardCost(currentTurnCount)) && statusContainer.canUseCard(card.getId(), currentTurnCount) && CardEffectManager.canActivateCard(isLocal, card, currentTurnCount);
     }
 
     public int getExtraMoveCost(int currentTurnCount)

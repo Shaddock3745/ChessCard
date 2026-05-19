@@ -81,6 +81,7 @@ public class GameManager : MonoBehaviour
         OnTurnStart?.Invoke(instance.turnCount);
         instance.nowTurn.text = instance.isWhiteTurn ? "White" : "Black";
         MatchDataManager.turnStart(isLocalTurn);
+        BoardManager.refreshAllPiecesStatusFx();
 
         if (isLocalTurn)
             UiManager.showChangeTurnButton();

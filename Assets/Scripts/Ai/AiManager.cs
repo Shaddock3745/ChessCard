@@ -7,7 +7,7 @@ public class AiManager : MonoBehaviour
 {
     private static AiManager instance;
 
-    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 5, 1, 1, 4, 4, 3, 3, 6, 6, 6 });
+    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 6, 6, 6, 6, 6, 6 });
     private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
     void Awake()
@@ -59,6 +59,9 @@ public class AiManager : MonoBehaviour
 
             await bestMove.execute(playerData);
         }
+
+        while (HandViewManager.isPlayingAnimation())
+            await Task.Delay(100);
 
         GameManager.ChangeTurn();
     }

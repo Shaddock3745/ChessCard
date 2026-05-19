@@ -532,7 +532,9 @@ public class BoardManager : MonoBehaviour
 
     public void addStatus(Vector2Int position, ChessStatus status)
     {
-        getChessPieceAtPosition(position).addStatus(status);
+        ChessPiece targetPiece = getChessPieceAtPosition(position);
+        targetPiece.addStatus(status);
+        refreshPieceStatusFx(targetPiece);
     }
 
     public static void cleanUpChessExpiredStatuses(int currentTotalTurn)
@@ -541,5 +543,18 @@ public class BoardManager : MonoBehaviour
             for (int j = 0; j < 8; j++)
                 if (getChessPieceAtPosition(i, j) != null)
                     getChessPieceAtPosition(i, j).cleanUpExpiredStatuses(currentTotalTurn);
+    }
+
+    public static void refreshAllPiecesStatusFx()
+    {
+        int currentTurnCount = GameManager.getCurrentTurnCount();
+
+        foreach (var pair in instance.pieceToUiMap)
+            pair.Value.UpdateStatusFx(currentTurnCount);
+    }
+
+    public static void refreshPieceStatusFx(ChessPiece piece)
+    {
+        getUiOfChess(piece).UpdateStatusFx(GameManager.getCurrentTurnCount());
     }
 }

@@ -4,7 +4,8 @@ public enum ChessStatusType
     CANT_ATTACK,
     CANT_BE_ATTACKED,
     MOVE_COST_MODIFIER,
-    MOVEMENT_OVERRIDE
+    MOVEMENT_OVERRIDE,
+    CANT_ATTACK_SPECIFIC_TYPE_CHESS
 }
 
 public class ChessStatus : BaseStatus<ChessStatusType>
@@ -43,6 +44,15 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
         return !hasActiveStatus(ChessStatusType.CANT_ATTACK, currentTotalTurn);
     }
 
+    public bool canAttackSpecificTypeChess(ChessType chessType, int currentTotalTurn)
+    {
+        foreach (var status in GetActiveStatuses(ChessStatusType.CANT_ATTACK_SPECIFIC_TYPE_CHESS, currentTotalTurn))
+            if (status is ChessCantAttackSpecificTypeStatus chessCantAttackSpecificType && chessCantAttackSpecificType.getCantAttackType() == chessType)
+                return false;
+
+        return true;
+    }
+
     public bool canBeAttacked(int currentTotalTurn)
     {
         return !hasActiveStatus(ChessStatusType.CANT_BE_ATTACKED, currentTotalTurn);
@@ -52,7 +62,7 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
     {
         foreach (var status in GetActiveStatuses(ChessStatusType.MOVEMENT_OVERRIDE, currentTotalTurn))
             if (status is ChessMovementOverrideStatus movementOverrideStatus)
-                return movementOverrideStatus.movementType;
+                return movementOverrideStatus.getMovementType();
 
         return null;
     }
@@ -76,7 +86,7 @@ public class ChessCantBeAttackedStatus : ChessStatus
 
 public class IncreaseChessMoveCostStatus : ChessStatus
 {
-    int extraCost;
+    private int extraCost;
 
     public IncreaseChessMoveCostStatus(int extraCost, int startTurn, int endTurn) : base(ChessStatusType.MOVE_COST_MODIFIER, startTurn, endTurn)
     {
@@ -88,9 +98,24 @@ public class IncreaseChessMoveCostStatus : ChessStatus
 
 public class ChessMovementOverrideStatus : ChessStatus
 {
-    public MovementType movementType;
+    private MovementType movementType;
+
     public ChessMovementOverrideStatus(MovementType movementType, int startTurn, int endTurn) : base(ChessStatusType.MOVEMENT_OVERRIDE, startTurn, endTurn)
     {
         this.movementType = movementType;
     }
+
+    public MovementType getMovementType() => movementType;
+}
+
+public class ChessCantAttackSpecificTypeStatus : ChessStatus
+{
+    private ChessType type;
+
+    public ChessCantAttackSpecificTypeStatus(ChessType type, int startTurn, int endTurn) : base(ChessStatusType.CANT_ATTACK_SPECIFIC_TYPE_CHESS, startTurn, endTurn)
+    {
+        this.type = type;
+    }
+
+    public ChessType getCantAttackType() => type;
 }

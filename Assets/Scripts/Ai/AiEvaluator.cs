@@ -55,7 +55,7 @@ public class AiEvaluator
     {
         CardEffect cardEffect = CardEffectManager.getCardEffect(card);
 
-        if (cardEffect != null && playerData.canUseCard(card, currentTurnCount))
+        if (cardEffect != null && playerData.canUseCardThisTurn(card, currentTurnCount))
             return cardEffect.getUseOptions(playerData.IsLocal(), card, currentMana, currentTurnCount);
         else
             return new List<CardUseOption>();

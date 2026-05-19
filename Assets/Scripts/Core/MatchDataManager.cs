@@ -262,9 +262,9 @@ public class MatchDataManager : MonoBehaviour
     public static bool canUseCard(bool isLocal, Card card, int currentTurnCount)
     {
         if (isLocal)
-            return instance.local.canUseCard(card, currentTurnCount);
+            return instance.local.canUseCardThisTurn(card, currentTurnCount);
         else
-            return instance.enemy.canUseCard(card, currentTurnCount);
+            return instance.enemy.canUseCardThisTurn(card, currentTurnCount);
     }
 
     public static int getExtraMoveCost(bool isLocal, int currentTurnCount)

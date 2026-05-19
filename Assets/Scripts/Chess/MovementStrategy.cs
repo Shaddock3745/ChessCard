@@ -52,7 +52,7 @@ public class PawnMovement : MovementType
 
         // Attack diagonally
         temp = new Vector2Int(currentPos.x + 1, currentPos.y + direction);
-        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)) && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount())) 
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp))  && BoardManager.getChessPieceAtPosition(temp).canBeAttacked(GameManager.getCurrentTurnCount())) 
             moves.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
 
         temp = new Vector2Int(currentPos.x - 1, currentPos.y + direction);

@@ -80,7 +80,12 @@ public class ChessPiece
 
     public bool canAttack(int currentTurnCount)
     {
-        return statusContainer.canMove(currentTurnCount) && statusContainer.canAttack(currentTurnCount);
+        return statusContainer.canAttack(currentTurnCount);
+    }
+
+    public bool canAttackSpecificTypeChess(ChessType chessType, int currentTotalTurn)
+    {
+        return statusContainer.canAttackSpecificTypeChess(chessType, currentTotalTurn);
     }
 
     public bool canBeAttacked(int currentTurnCount)
@@ -107,11 +112,13 @@ public class ChessPiece
     public void addStatus(ChessStatus status)
     {
         statusContainer.addStatus(status);
+        BoardManager.refreshPieceStatusFx(this);
     }
 
     public void cleanUpExpiredStatuses(int currentTotalTurn)
     {
         statusContainer.cleanUpExpiredStatuses(currentTotalTurn);
+        BoardManager.refreshPieceStatusFx(this);
     }
 
     public void onDeath()

@@ -4,11 +4,13 @@ using UnityEngine;
 
 public class DrawCardEffect : CardEffect
 {
-    int amout;
+    private bool isEnemy;
+    private int amount;
 
-    public DrawCardEffect(int amount)
+    public DrawCardEffect(bool isEnemy, int amount)
     {
-        amout = amount;
+        this.isEnemy = isEnemy;
+        this.amount = amount;
     }
 
     public bool canActivate(bool isLocal, int currentTurnCount, Card card)
@@ -18,10 +20,10 @@ public class DrawCardEffect : CardEffect
 
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
-        int count = MatchDataManager.getPlayerDeckCardCount(isLocal) + MatchDataManager.getPlayerWaitingCardCount(isLocal);
+        int count = MatchDataManager.getPlayerDeckCardCount(!isEnemy) + MatchDataManager.getPlayerWaitingCardCount(!isEnemy);
 
-        for (int i = 0; i < amout && count-- > 0; i++)
-            MatchDataManager.drawCard(isLocal);
+        for (int i = 0; i < amount && count-- > 0; i++)
+            MatchDataManager.drawCard(!isEnemy);
 
         return Task.CompletedTask;
     }
