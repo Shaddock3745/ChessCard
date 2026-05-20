@@ -22,13 +22,12 @@ public class AiManager : MonoBehaviour
     {
         List<AiOption> options = new List<AiOption>();
 
-        if (!playerData.chessMovedThisTurn())
+        if (!ActionValidator.reachMoveLimit(playerData))
         {
             List<ChessPiece> pieceList = BoardManager.getAllChessPieces(playerData.IsWhite());
 
             foreach (var piece in pieceList)
-                if (playerData.canMoveChessThisTurn(piece, currentTurnCount))
-                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(piece, playerData.canAttackGloballyThisTurn(currentTurnCount), currentTurnCount));
+                    options.AddRange(AiEvaluator.getMoveOptionsByChessPiece(playerData, piece, currentTurnCount));
         }
 
         List<Card> handCardList = playerData.getHandList();

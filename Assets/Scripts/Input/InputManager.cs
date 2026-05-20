@@ -14,6 +14,7 @@ public class InputManager : MonoBehaviour
     private static InputManager instance;
     private static readonly float MOVING_RELIEF = 10f;
     private static readonly int MOVING_SORTING_ORDER = 100;
+    private readonly List<MoveAction> uiMoveBuffer = new List<MoveAction>(30);
 
     private TaskCompletionSource<BoardTile> targetTileSelectionTcs;
     private TaskCompletionSource<Card> targetCardSelectionTcs;
@@ -379,9 +380,10 @@ public class InputManager : MonoBehaviour
 
     private void showHint(ChessPieceUi pieceUi)
     {
-        var tempList = pieceUi.getChess().getAvailableMoves(MatchDataManager.canAttackGloballyThisTurn(true, GameManager.getCurrentTurnCount()), GameManager.getCurrentTurnCount());
+        uiMoveBuffer.Clear();
+        ActionValidator.getLegalMoves(MatchDataManager.getPlayerData(true), pieceUi.getChess(), GameManager.getCurrentTurnCount(), uiMoveBuffer);
 
-        foreach (var move in tempList)
+        foreach (var move in uiMoveBuffer)
             switch (move.actionType)
             {
                 case ActionType.Move:

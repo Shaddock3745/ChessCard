@@ -7,6 +7,7 @@ public class AiEvaluator
     private static readonly float DISTANCE_COEFFICIENT = 1.5f;
     private static readonly float BOARD_WIDTH = 8f;
     private static readonly Vector2 CENTER_POSITION = new Vector2(3.5f, 3.5f);
+    private static readonly List<MoveAction> aiMoveBuffer = new List<MoveAction>(64);
 
     public static float getPieceValue(ChessType pieceType)
     {
@@ -39,13 +40,17 @@ public class AiEvaluator
         return score;
     }
 
-    public static List<ChessMoveOption> getMoveOptionsByChessPiece(ChessPiece piece, bool canAttack, int currentTurnCount)
+    public static List<ChessMoveOption> getMoveOptionsByChessPiece(PlayerData aiPlayerData, ChessPiece piece, int currentTurnCount)
     {
-
-        List<MoveAction> moveActions = piece.getAvailableMoves(canAttack, currentTurnCount);
         List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
 
-        foreach (MoveAction moveAction in moveActions)
+        if(ActionValidator.reachMoveLimit(aiPlayerData))
+            return moveOptions;
+
+        aiMoveBuffer.Clear();
+        ActionValidator.getLegalMoves(aiPlayerData, piece, currentTurnCount, aiMoveBuffer);
+
+        foreach (MoveAction moveAction in aiMoveBuffer)
             moveOptions.Add(new ChessMoveOption(piece, piece.getPosition(), moveAction.targetPos, evaluateChessMove(moveAction)));
 
         return moveOptions;
@@ -55,7 +60,7 @@ public class AiEvaluator
     {
         CardEffect cardEffect = CardEffectManager.getCardEffect(card);
 
-        if (cardEffect != null && playerData.canUseCardThisTurn(card, currentTurnCount))
+        if (cardEffect != null && ActionValidator.canUseCard(playerData, card, currentTurnCount))
             return cardEffect.getUseOptions(playerData.IsLocal(), card, currentMana, currentTurnCount);
         else
             return new List<CardUseOption>();

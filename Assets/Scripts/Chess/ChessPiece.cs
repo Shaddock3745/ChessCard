@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -68,14 +69,14 @@ public class ChessPiece
         return defaultMovementType.getDescription();
     }
 
-    public List<MoveAction> getAvailableMoves(bool canAttack, int currentTurnCount)
+    public List<MoveAction> getRawAvailableMoves(bool canAttack, int currentTurnCount)
     {
         MovementType overrideMovementType = statusContainer.getMovementOverride(currentTurnCount);
 
         if (overrideMovementType != null)
-            return overrideMovementType.getAvailableMoves(currentPosition, isWhiteChess, canAttack);
+            return overrideMovementType.getAvailableMoves(currentPosition, isWhiteChess);
 
-        return defaultMovementType.getAvailableMoves(currentPosition, isWhiteChess, canAttack);
+        return defaultMovementType.getAvailableMoves(currentPosition, isWhiteChess);
     }
 
     public bool canAttack(int currentTurnCount)
@@ -166,5 +167,10 @@ public class ChessPiece
             default:
                 return type.ToString();
         }
+    }
+
+    public MovementType getMovementType()
+    {
+        return defaultMovementType;
     }
 }

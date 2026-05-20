@@ -17,7 +17,7 @@ public class PlayerData
     private PlayerStatusContainer statusContainer = new PlayerStatusContainer();
     private List<Card> deck, handList, waitingList, discardList;
     private int mana = DEFAULT_MANA;
-    private bool chessMoved = false;
+    private int moveCount = 0;
 
     public static int getDefaultMana()
     {
@@ -78,52 +78,20 @@ public class PlayerData
         mana -= cost;
     }
 
-    public bool canMoveChessThisTurn(ChessPiece chess, int currentTurnCount)
-    {
-        return !chessMoved && chess.isWhite() == isWhite && statusContainer.canMoveChess(chess.getChessType(), currentTurnCount) && chess.canMove(currentTurnCount)
-            && mana >= chess.getMoveCost(currentTurnCount) + getExtraMoveCost(currentTurnCount);
-    }
+    public int getMoveCount() => moveCount;
 
-    public bool canAttackGloballyThisTurn(int currentTurnCount)
-    {
-        return !chessMoved && statusContainer.canAttack(currentTurnCount);
-    }
-
-    public bool canAttackChessThisTurn(ChessPiece attacker, ChessPiece target, int currentTurnCount)
-    {
-        return canMoveChessThisTurn(attacker, currentTurnCount) && canAttackGloballyThisTurn(currentTurnCount)
-            && attacker.canMove(currentTurnCount) && attacker.canAttack(currentTurnCount) && target.canBeAttacked(currentTurnCount) && attacker.canAttackSpecificTypeChess(target.getChessType(), currentTurnCount);
-    }
-
-    public bool chessMovedThisTurn() => chessMoved;
-
-    public bool canSummonThisTurn(int currentTurnCount) => statusContainer.canSummon(currentTurnCount);
-
-    public bool canUseCardThisTurn(Card card, int currentTurnCount)
-    {
-        return mana >= (card.getCost() + getExtraCardCost(currentTurnCount)) && statusContainer.canUseCard(card.getId(), currentTurnCount) && CardEffectManager.canActivateCard(isLocal, card, currentTurnCount);
-    }
-
-    public int getExtraMoveCost(int currentTurnCount)
-    {
-        return statusContainer.getGlobalExtraMoveCost(currentTurnCount);
-    }
-
-    public int getExtraCardCost(int currentTurnCount)
-    {
-        return statusContainer.getGlobalExtraCardCost(currentTurnCount);
-    }
+    public PlayerStatusContainer getStatusContainer() => statusContainer;
 
     public void doChessMoved(ChessPiece chess, int currentTurnCount)
     {
-        chessMoved = true;
+        moveCount++;
         mana -= chess.getMoveCost(currentTurnCount) + statusContainer.getGlobalExtraMoveCost(currentTurnCount);
     }
 
     public void resetForNewTurn(int currentTurnCount)
     {
         mana = DEFAULT_MANA + statusContainer.getBonusManaCount(currentTurnCount);
-        chessMoved = false;
+        moveCount = 0;
     }
 
     public void resetForEndTurn(int currentTurnCount)
