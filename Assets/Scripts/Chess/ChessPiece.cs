@@ -69,16 +69,6 @@ public class ChessPiece
         return defaultMovementType.getDescription();
     }
 
-    public List<MoveAction> getRawAvailableMoves(bool canAttack, int currentTurnCount)
-    {
-        MovementType overrideMovementType = statusContainer.getMovementOverride(currentTurnCount);
-
-        if (overrideMovementType != null)
-            return overrideMovementType.getAvailableMoves(currentPosition, isWhiteChess);
-
-        return defaultMovementType.getAvailableMoves(currentPosition, isWhiteChess);
-    }
-
     public bool canAttack(int currentTurnCount)
     {
         return statusContainer.canAttack(currentTurnCount);
@@ -169,8 +159,13 @@ public class ChessPiece
         }
     }
 
-    public MovementType getMovementType()
+    public MovementType getMovementType(int currentTurnCount)
     {
+        MovementType overrideMovementType = statusContainer.getMovementOverride(currentTurnCount);
+
+        if (overrideMovementType != null)
+            return overrideMovementType;
+
         return defaultMovementType;
     }
 }

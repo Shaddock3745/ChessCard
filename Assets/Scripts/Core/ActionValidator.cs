@@ -47,7 +47,7 @@ public class ActionValidator
         }
 
         rawMovesBuffer.Clear();
-        piece.getMovementType().getAvailableMoves(piece.getPosition(), piece.isWhite(), rawMovesBuffer);
+        piece.getMovementType(currentTurnCount).getAvailableMoves(piece.getPosition(), piece.isWhite(), rawMovesBuffer);
 
         foreach (var move in rawMovesBuffer)
         {
@@ -65,5 +65,7 @@ public class ActionValidator
             else
                 bufferList.Add(move);
         }
+
+        return;
     }
 }

@@ -189,4 +189,14 @@ public class PlayerData
     {
         statusContainer.Dispose();
     }
+
+    public int getExtraMoveCost(int currentTurnCount)
+    {
+        return statusContainer.getGlobalExtraMoveCost(currentTurnCount);
+    }
+
+    public int getExtraCardCost(int currentTurnCount)
+    {
+        return statusContainer.getGlobalExtraCardCost(currentTurnCount);
+    }
 }

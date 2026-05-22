@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static UnityEngine.Audio.ProcessorInstance;
+using static UnityEngine.Rendering.VolumeComponent;
 
 public class BoardManager : MonoBehaviour
 {
@@ -14,6 +15,7 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private GameObject boardOuter;
     [SerializeField] private GameObject piecePrefab;
     [SerializeField] private GameObject tilePrefab;
+    [SerializeField] private GameObject roarPrefab;
     [SerializeField] private PieceSpriteLibrary pieceSpriteLibrary;
 
     private static readonly float OUTER_ALPHA_WHEN_MOUSE_INNER = 1f, OUTER_ALPHA_WHEN_MOUSE_NOT_INNER = 0.3f;
@@ -326,7 +328,7 @@ public class BoardManager : MonoBehaviour
         InputManager.tryDetectHover();
     }
 
-    public static void movePiece(Vector2Int from, Vector2Int to)
+    private static void innerMovePiece(Vector2Int from, Vector2Int to)
     {
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         instance.boardState.moveChessPiece(from, to);
@@ -335,12 +337,17 @@ public class BoardManager : MonoBehaviour
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
         getUiOfChess(movingPiece).moveToPoint(new Vector3(x, y, 0));
+    }
 
+    public static void movePiece(Vector2Int from, Vector2Int to)
+    {
+        ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
+        innerMovePiece(from, to);
         LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
         InputManager.tryDetectHover();
     }
 
-    public static async Task movePieceWithAnimation(Vector2Int from, Vector2Int to)
+    private static async Task innerMovePieceWithAnimation(Vector2Int from, Vector2Int to)
     {
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         float x = START_OFFSET + (TILE_SIZE * to.x);
@@ -348,9 +355,37 @@ public class BoardManager : MonoBehaviour
 
         await getUiOfChess(movingPiece).moveToPointWithAnimation(new Vector3(x, y, 0));
         instance.boardState.moveChessPiece(from, to);
+    }
 
+    public static async Task movePieceWithAnimation(Vector2Int from, Vector2Int to)
+    {
+        ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
+        await innerMovePieceWithAnimation(from, to);
         LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
         InputManager.tryDetectHover();
+    }
+
+    private static async Task showRoarAnimation(Vector2Int position, Vector2Int direction)
+    {
+        float x = START_OFFSET + (TILE_SIZE * position.x);
+        float y = START_OFFSET + (TILE_SIZE * position.y);
+        RoarObject roar = GameObject.Instantiate(instance.roarPrefab, new Vector3(x, y, 0), Quaternion.LookRotation(Vector3.forward, (Vector2)direction)).GetComponent<RoarObject>();
+
+        await roar.show();
+    }
+
+    public static async Task pieceGotRoared(Vector2Int position, Vector2Int direction, bool isWhiteRoaring)
+    {
+        if (!isPositionOnBoard(position))
+            return;
+
+        Task roarTask = showRoarAnimation(position, direction);
+        Vector2Int finalPosition = position + direction;
+
+        if (!isEmpty(position) && (isWhiteRoaring ^ isWhiteAtPosition(position)) && isPositionOnBoard(finalPosition) && isEmpty(finalPosition))
+            await Task.WhenAll(roarTask, innerMovePieceWithAnimation(position, finalPosition));
+        else
+            await roarTask;
     }
 
     public static void attackPiece(Vector2Int from, Vector2Int to)

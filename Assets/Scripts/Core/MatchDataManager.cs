@@ -7,6 +7,8 @@ public class MatchDataManager : MonoBehaviour
 {
     private static MatchDataManager instance;
 
+    private readonly List<MoveAction> chessMoveBuffer = new List<MoveAction>(30);
+
     private PlayerData local, enemy;
 
     void Awake()
@@ -229,42 +231,24 @@ public class MatchDataManager : MonoBehaviour
 
     public static bool canMoveChess(bool isLocal, ChessPiece chess, int currentTurnCount)
     {
-        if (isLocal)
-            return instance.local.canMoveChessThisTurn(chess, currentTurnCount);
-        else
-            return instance.enemy.canMoveChessThisTurn(chess, currentTurnCount);
-    }
+        instance.chessMoveBuffer.Clear();
 
-    public static bool canAttackGloballyThisTurn(bool isLocal, int currentTurnCount)
-    {
         if (isLocal)
-            return instance.local.canAttackGloballyThisTurn(currentTurnCount);
+            ActionValidator.getLegalMoves(instance.local, chess, currentTurnCount, instance.chessMoveBuffer);
         else
-            return instance.enemy.canAttackGloballyThisTurn(currentTurnCount);
-    }
+            ActionValidator.getLegalMoves(instance.enemy, chess, currentTurnCount, instance.chessMoveBuffer);
 
-    public static bool canAttackChessThisTurn(bool isLocal, ChessPiece attacker, ChessPiece target, int currentTurnCount)
-    {
-        if (isLocal)
-            return instance.local.canAttackChessThisTurn(attacker, target, currentTurnCount);
-        else
-            return instance.enemy.canAttackChessThisTurn(attacker, target, currentTurnCount);
+        return instance.chessMoveBuffer.Count > 0;
     }
 
     public static bool canSummonThisTurn(bool isLocal, int currentTurnCount)
     {
-        if (isLocal)
-            return instance.local.canSummonThisTurn(currentTurnCount);
-        else
-            return instance.enemy.canSummonThisTurn(currentTurnCount);
+        return ActionValidator.canSummon(isLocal ? instance.local : instance.enemy, currentTurnCount);
     }
 
     public static bool canUseCard(bool isLocal, Card card, int currentTurnCount)
     {
-        if (isLocal)
-            return instance.local.canUseCardThisTurn(card, currentTurnCount);
-        else
-            return instance.enemy.canUseCardThisTurn(card, currentTurnCount);
+        return ActionValidator.canUseCard(isLocal ? instance.local : instance.enemy, card, currentTurnCount);
     }
 
     public static int getExtraMoveCost(bool isLocal, int currentTurnCount)

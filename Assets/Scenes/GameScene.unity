@@ -2669,6 +2669,7 @@ MonoBehaviour:
   boardOuter: {fileID: 2059199463803700684}
   piecePrefab: {fileID: 7927473904604455407, guid: 2f45a722daa5a34438af79e7ce88acc7, type: 3}
   tilePrefab: {fileID: 4752603091014767210, guid: 10529db85b3c91644a5135ada88e4e81, type: 3}
+  roarPrefab: {fileID: 8809369497533165985, guid: 1720f80c2d00b6e44b71aea0a2dd0b3d, type: 3}
   pieceSpriteLibrary: {fileID: 11400000, guid: 7087c03163401cf47a7c3237c58a7cf8, type: 2}
 --- !u!4 &1242318412
 Transform:

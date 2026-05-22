@@ -48,6 +48,10 @@ public class CardEffectManager : MonoBehaviour
         // 政教合一
         cardRegistry[8] = new AddStatusToAllMatchingTypeChessEffect(true, 1, (startTurn, endTurn) => new ChessMovementOverrideStatus(new BishopMovement(), startTurn, endTurn), true, ChessType.King);
 
+        // 咆嘯
+        cardRegistry[9] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessPiece.getAllChessTypes(false)), new RoarEffect((payload) => payload.getTargetPositions()[0],
+            Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right, new Vector2Int(1, 1), new Vector2Int(-1, 1), new Vector2Int(-1, -1), new Vector2Int(1, -1)));
+
         // 護盾
         cardRegistry[10] = new CompositeEffect(new ChessAmountCompareEffect(true, false), new AddSelectedChessSingleStatusEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn), ChessPiece.getAllChessTypes(true)));
 

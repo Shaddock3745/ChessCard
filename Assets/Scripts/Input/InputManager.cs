@@ -184,7 +184,7 @@ public class InputManager : MonoBehaviour
 
             if (GameManager.IsLocalTurn())
             {
-                if (isSelectingChess && MatchDataManager.canMoveChess(true, selectedChess.getChess(), GameManager.getCurrentTurnCount()))
+                if (isSelectingChess)
                     raiseChess();
 
                 if (isSelectingCard && MatchDataManager.canUseCard(true, selectedCard.getCard(), GameManager.getCurrentTurnCount()))
