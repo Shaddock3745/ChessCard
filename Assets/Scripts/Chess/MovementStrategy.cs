@@ -87,6 +87,147 @@ public class PawnMovement : MovementType
     }
 }
 
+public class FrontalBreakthroughPawnMovement : MovementType
+{
+    public void getAvailableMoves(Vector2Int currentPos, bool isWhite, List<MoveAction> bufferList)
+    {
+        int direction = isWhite ? 1 : -1;
+        Vector2Int temp;
+
+        temp = new Vector2Int(currentPos.x, currentPos.y + direction);
+
+        if (BoardManager.isPositionOnBoard(temp))
+        {
+            if (BoardManager.isEmpty(temp))
+            {
+                bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
+
+                if ((isWhite && currentPos.y == 1) || (!isWhite && currentPos.y == 6))
+                {
+                    Vector2Int temp2 = new Vector2Int(currentPos.x, currentPos.y + 2 * direction);
+
+                    if (BoardManager.isPositionOnBoard(temp2) && BoardManager.isEmpty(temp2))
+                        bufferList.Add(new MoveAction { targetPos = temp2, actionType = ActionType.Move });
+                }
+            }
+            else if (isWhite ^ BoardManager.isWhiteAtPosition(temp))
+                bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+        }
+
+        temp = new Vector2Int(currentPos.x + 1, currentPos.y + direction);
+
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+            bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+
+        temp = new Vector2Int(currentPos.x - 1, currentPos.y + direction);
+
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+            bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+    }
+
+    public void getProtectablePieces(Vector2Int targetPos, bool isWhite, List<ChessPiece> bufferList)
+    {
+        int direction = isWhite ? 1 : -1;
+
+        Vector2Int leftProtectPos = new Vector2Int(targetPos.x - 1, targetPos.y + direction);
+        Vector2Int rightProtectPos = new Vector2Int(targetPos.x + 1, targetPos.y + direction);
+        Vector2Int forwardProtectPos = new Vector2Int(targetPos.x, targetPos.y + direction);
+
+        if (BoardManager.isPositionOnBoard(leftProtectPos) && !BoardManager.isEmpty(leftProtectPos) && BoardManager.isWhiteAtPosition(leftProtectPos) == isWhite)
+            bufferList.Add(BoardManager.getChessPieceAtPosition(leftProtectPos));
+
+        if (BoardManager.isPositionOnBoard(rightProtectPos) && !BoardManager.isEmpty(rightProtectPos) && BoardManager.isWhiteAtPosition(rightProtectPos) == isWhite)
+            bufferList.Add(BoardManager.getChessPieceAtPosition(rightProtectPos));
+
+        if (BoardManager.isPositionOnBoard(forwardProtectPos) && !BoardManager.isEmpty(forwardProtectPos) && BoardManager.isWhiteAtPosition(forwardProtectPos) == isWhite)
+            bufferList.Add(BoardManager.getChessPieceAtPosition(forwardProtectPos));
+    }
+
+    public string getDescription()
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return "除了原有的移動與斜向攻擊外，該士兵現在可以攻擊正前方的敵方棋子。";
+            case Language.ENGLISH:
+                return "In addition to normal movement and diagonal attacks, this pawn can now attack enemy pieces directly in front of it.";
+            case Language.JAPANESE:
+                return "通常の移動と斜め攻撃に加え、このポーンは正面の敵駒を攻撃できるようになります。";
+            default:
+                return "";
+        }
+    }
+}
+
+public class BuffedPawnMovement : MovementType
+{
+    public void getAvailableMoves(Vector2Int currentPos, bool isWhite, List<MoveAction> bufferList)
+    {
+        int direction = isWhite ? 1 : -1;
+        Vector2Int temp;
+
+        temp = new Vector2Int(currentPos.x, currentPos.y + direction);
+        if (BoardManager.isPositionOnBoard(temp) && BoardManager.isEmpty(temp))
+        {
+            bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
+
+            Vector2Int temp2 = new Vector2Int(currentPos.x, currentPos.y + 2 * direction);
+            if (BoardManager.isPositionOnBoard(temp2) && BoardManager.isEmpty(temp2))
+            {
+                bufferList.Add(new MoveAction { targetPos = temp2, actionType = ActionType.Move });
+            }
+        }
+
+        Vector2Int[] sides = new Vector2Int[] { new Vector2Int(1, 0), new Vector2Int(-1, 0) };
+        foreach (var side in sides)
+        {
+            temp = currentPos + side;
+            if (BoardManager.isPositionOnBoard(temp) && BoardManager.isEmpty(temp))
+                bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
+        }
+
+        temp = new Vector2Int(currentPos.x, currentPos.y - direction);
+        if (BoardManager.isPositionOnBoard(temp) && BoardManager.isEmpty(temp))
+            bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Move });
+
+        temp = new Vector2Int(currentPos.x + 1, currentPos.y + direction);
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+            bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+
+        temp = new Vector2Int(currentPos.x - 1, currentPos.y + direction);
+        if (BoardManager.isPositionOnBoard(temp) && !BoardManager.isEmpty(temp) && (isWhite ^ BoardManager.isWhiteAtPosition(temp)))
+            bufferList.Add(new MoveAction { targetPos = temp, actionType = ActionType.Attack });
+    }
+
+    public void getProtectablePieces(Vector2Int targetPos, bool isWhite, List<ChessPiece> bufferList)
+    {
+        int direction = isWhite ? 1 : -1;
+        Vector2Int leftProtectPos = new Vector2Int(targetPos.x - 1, targetPos.y + direction);
+        Vector2Int rightProtectPos = new Vector2Int(targetPos.x + 1, targetPos.y + direction);
+
+        if (BoardManager.isPositionOnBoard(leftProtectPos) && !BoardManager.isEmpty(leftProtectPos) && BoardManager.isWhiteAtPosition(leftProtectPos) == isWhite)
+            bufferList.Add(BoardManager.getChessPieceAtPosition(leftProtectPos));
+
+        if (BoardManager.isPositionOnBoard(rightProtectPos) && !BoardManager.isEmpty(rightProtectPos) && BoardManager.isWhiteAtPosition(rightProtectPos) == isWhite)
+            bufferList.Add(BoardManager.getChessPieceAtPosition(rightProtectPos));
+    }
+
+    public string getDescription()
+    {
+        switch (GameManager.getCurrentLanguage())
+        {
+            case Language.TRADITIONAL_CHINESE:
+                return "亢奮狀態的士兵可橫向或向後移動一格，或是無條件往前移動兩格。仍保持斜向前攻擊的能力。";
+            case Language.ENGLISH:
+                return "An Adrenaline-buffed pawn can move 1 square sideways or backwards, or move 2 squares forward unconditionally. It retains its diagonal forward attack.";
+            case Language.JAPANESE:
+                return "興奮状態のポーンは、横または後ろに1マス、あるいは無条件で前に2マス動けます。斜め前への攻撃能力は維持されます。";
+            default:
+                return "";
+        }
+    }
+}
+
 public class RookMovement : MovementType
 {
     private static readonly Vector2Int[] rookMoveDirections = new Vector2Int[]

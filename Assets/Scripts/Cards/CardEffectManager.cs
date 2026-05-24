@@ -1,6 +1,22 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+public static class AreaUtils
+{
+    public static Vector2Int[] getSquareArea(int radius, bool includeCenter)
+    {
+        List<Vector2Int> dirs = new List<Vector2Int>();
+        for (int x = -radius; x <= radius; x++)
+        {
+            for (int y = -radius; y <= radius; y++)
+            {
+                if (!includeCenter && x == 0 && y == 0) continue;
+                dirs.Add(new Vector2Int(x, y));
+            }
+        }
+        return dirs.ToArray();
+    }
+}
 
 public class CardEffectManager : MonoBehaviour
 {
@@ -55,6 +71,13 @@ public class CardEffectManager : MonoBehaviour
         // 護盾
         cardRegistry[10] = new CompositeEffect(new ChessAmountCompareEffect(true, false), new AddSelectedChessSingleStatusEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn), ChessPiece.getAllChessTypes(true)));
 
+        // 亢奮
+        cardRegistry[11] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Pawn), new AddStatusToPayloadTargetChessEffect((startTurn) => new ChessMovementOverrideStatus(new BuffedPawnMovement(), startTurn, startTurn + 3)));
+
+        // 神聖加護
+        cardRegistry[12] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Bishop),
+            new AddStatusToAreaChessEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn), ChessPiece.getAllChessTypes(false), (isLocal, payload) => payload.getTargetPositions(), AreaUtils.getSquareArea(1, true)));
+
         // 蓄勢待發 (需要未移動判斷)
         cardRegistry[13] = new CompositeEffect(new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerCantMoveStatus(startTurn, endTurn)), new AddPlayerStatusEffect(false, 1, 2, (startTurn, endTurn) => new PlayerBonusManaStatus(3, startTurn, endTurn)));
 
@@ -90,6 +113,21 @@ public class CardEffectManager : MonoBehaviour
         // 御駕親征 (攻擊判定未完成)
         cardRegistry[29] = new CompositeEffect(new AddStatusToAllMatchingTypeChessEffect(true, (startTurn) => new ChessStatus[] { new ChessMovementOverrideStatus(new QueenMovement(), startTurn, startTurn + 1),
             new ChessCantAttackSpecificTypeStatus(ChessType.King, startTurn, startTurn + 1) }, true, ChessType.King));
+
+        // 防禦陣型
+        cardRegistry[31] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Pawn),
+            new AddStatusToAreaChessEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn), new ChessType[] { ChessType.Pawn }, (isLocal, payload) => payload.getTargetPositions(), AreaUtils.getSquareArea(1, true)));
+
+        // 正面突破
+        cardRegistry[32] = new AddStatusToAllMatchingTypeChessEffect(true, 1, (startTurn, endTurn) => new ChessMovementOverrideStatus(new FrontalBreakthroughPawnMovement(), startTurn, endTurn), false, ChessType.Pawn);
+
+        // 堅固壁壘
+        cardRegistry[39] = new AddStatusToAreaChessEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn),
+        ChessPiece.getAllChessTypes(false), (isLocal, payload) => { return BoardManager.getAllChessPieces(isLocal == GameManager.IsLocalWhite()).FindAll(c => c.getChessType() == ChessType.Rook).ConvertAll(c => c.getPosition()); }, AreaUtils.getSquareArea(1, false));
+
+        // 威壓
+        cardRegistry[41] = new AddStatusToAreaChessEffect(false, 2, (startTurn, endTurn) => new IncreaseChessMoveCostStatus(1, startTurn, endTurn),
+            ChessPiece.getAllChessTypes(false), (isLocal, payload) => { return BoardManager.getAllChessPieces(isLocal == GameManager.IsLocalWhite()).FindAll(c => c.getChessType() == ChessType.Queen).ConvertAll(c => c.getPosition()); }, AreaUtils.getSquareArea(2, false));
     }
 
     public static CardEffect getCardEffect(Card card)
