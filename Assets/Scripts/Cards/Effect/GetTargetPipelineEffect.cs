@@ -15,7 +15,14 @@ public class GetTargetPipelineEffect : CardEffect
 
     public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
-        return targetGatherer.canActivate(isLocal, currentTurnCount, card);
+        if (!targetGatherer.canActivate(isLocal, currentTurnCount, card))
+            return false;
+
+        foreach (CardEffect effect in executeEffects)
+            if (!effect.canActivate(isLocal, currentTurnCount, card))
+                return false;
+
+        return true;
     }
 
     public async Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)

@@ -10,6 +10,7 @@ public class AddStatusToAreaChessEffect : CardEffect
     private Func<int, int, ChessStatus> statusFactory;
     private HashSet<ChessType> validTargetTypes;
     private Func<bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory;
+    private Func<Vector2Int, Vector2Int, bool> positionFilter;
     private Vector2Int[] directions;
 
     public AddStatusToAreaChessEffect(
@@ -18,6 +19,7 @@ public class AddStatusToAreaChessEffect : CardEffect
          Func<int, int, ChessStatus> statusFactory,
          ChessType[] validTargetTypes,
          Func<bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory,
+         Func<Vector2Int, Vector2Int, bool> positionFilter,
          params Vector2Int[] directions)
     {
         this.isAlly = isAlly;
@@ -25,7 +27,19 @@ public class AddStatusToAreaChessEffect : CardEffect
         this.statusFactory = statusFactory;
         this.validTargetTypes = validTargetTypes != null ? new HashSet<ChessType>(validTargetTypes) : new HashSet<ChessType>();
         this.centerPositionsFactory = centerPositionsFactory;
+        this.positionFilter = positionFilter;
         this.directions = directions;
+    }
+
+    public AddStatusToAreaChessEffect(
+         bool isAlly,
+         int duration,
+         Func<int, int, ChessStatus> statusFactory,
+         ChessType[] validTargetTypes,
+         Func<bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory,
+         params Vector2Int[] directions)
+         : this(isAlly, duration, statusFactory, validTargetTypes, centerPositionsFactory, null, directions)
+    {
     }
 
     public bool canActivate(bool isLocal, int currentTurnCount, Card card)
@@ -50,12 +64,15 @@ public class AddStatusToAreaChessEffect : CardEffect
 
                 if (BoardManager.isPositionOnBoard(targetPos) && !BoardManager.isEmpty(targetPos))
                 {
-                    ChessPiece piece = BoardManager.getChessPieceAtPosition(targetPos);
-
-                    if (piece.isWhite() == casterIsWhite != isAlly) 
+                    if (positionFilter != null && !positionFilter.Invoke(center, targetPos))
                         continue;
 
-                    if (!validTargetTypes.Contains(piece.getChessType())) 
+                    ChessPiece piece = BoardManager.getChessPieceAtPosition(targetPos);
+
+                    if (piece.isWhite() == casterIsWhite != isAlly)
+                        continue;
+
+                    if (!validTargetTypes.Contains(piece.getChessType()))
                         continue;
 
                     piece.addStatus(statusFactory.Invoke(startTurn, endTurn));

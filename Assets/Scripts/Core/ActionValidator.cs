@@ -9,7 +9,7 @@ public class ActionValidator
     public static bool canUseCard(PlayerData player, Card card, int currentTurnCount)
     {
         int extraCost = player.getStatusContainer().getGlobalExtraCardCost(currentTurnCount);
-        int finalCost = card.getCost() + extraCost;
+        int finalCost = player.isCardNonCost(currentTurnCount) ? 0 : card.getCost() + extraCost;
 
         return player.getMana() >= finalCost
             && player.getStatusContainer().canUseCard(card.getId(), currentTurnCount)

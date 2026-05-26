@@ -36,8 +36,8 @@ public class CardUi : MonoBehaviour
         return rectTransform.DOKill();
     }
 
-    public void recalculateCost(int extraCost)
+    public void recalculateCost(bool isNonCost, int extraCost)
     {
-        this.costText.text = (card.getCost() + extraCost).ToString();
+        this.costText.text = isNonCost ? "0" : (card.getCost() + extraCost).ToString();
     }
 }

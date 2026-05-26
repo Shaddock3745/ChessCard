@@ -99,5 +99,5 @@ public class BoardTile : MonoBehaviour
     public int getX() => indexX;
     public int getY() => indexY;
 
-    public Vector2Int getPos() => pos;
+    public Vector2Int getPosition() => pos;
 }

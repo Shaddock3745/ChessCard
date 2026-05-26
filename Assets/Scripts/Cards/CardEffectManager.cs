@@ -16,6 +16,11 @@ public static class AreaUtils
         }
         return dirs.ToArray();
     }
+
+    public static bool isOppositeColor(Vector2Int posA, Vector2Int posB)
+    {
+        return Mathf.Abs(posA.x + posA.y) % 2 != Mathf.Abs(posB.x + posB.y) % 2;
+    }
 }
 
 public class CardEffectManager : MonoBehaviour
@@ -78,8 +83,12 @@ public class CardEffectManager : MonoBehaviour
         cardRegistry[12] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Bishop),
             new AddStatusToAreaChessEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn), ChessPiece.getAllChessTypes(false), (isLocal, payload) => payload.getTargetPositions(), AreaUtils.getSquareArea(1, true)));
 
-        // 蓄勢待發 (需要未移動判斷)
-        cardRegistry[13] = new CompositeEffect(new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerCantMoveStatus(startTurn, endTurn)), new AddPlayerStatusEffect(false, 1, 2, (startTurn, endTurn) => new PlayerBonusManaStatus(3, startTurn, endTurn)));
+        // 蓄勢待發
+        cardRegistry[13] = new CompositeEffect(new PlayerHadntMovedCheckEffect(false), new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerCantMoveStatus(startTurn, endTurn)),
+            new AddPlayerStatusEffect(false, 1, 2, (startTurn, endTurn) => new PlayerBonusManaStatus(3, startTurn, endTurn)));
+
+        // 遣返
+        cardRegistry[15] = new GetTargetPipelineEffect(new SelectReturnableChessEffect(false, ChessPiece.getAllChessTypes(true)), new ReturnToInitialPositionEffect());
 
         // 鐐銬
         cardRegistry[16] = new CompositeEffect(new ChessAmountCheckEffect(false, 4, false, false, ChessPiece.getAllChessTypes(false)), new ChessAmountCompareEffect(true, false),
@@ -91,14 +100,24 @@ public class CardEffectManager : MonoBehaviour
         // 施術準備
         cardRegistry[18] = new CompositeEffect(new DrawCardEffect(false, 2), new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerCantUseSpecificCardStatus(18, startTurn, endTurn)));
 
+        // 回收
+        cardRegistry[19] = new RetrieveEffect(2, 19);
+
         // 冊封
         cardRegistry[20] = new CompositeEffect(new ChessAmountCheckEffect(true, 1, true, false, ChessType.Knight), new ChessAmountCheckEffect(true, 2, false, true, ChessType.Pawn), new RemoveChessEffect(true, ChessType.Pawn), new MaterializeCardEffect(false, 3, 1, true));
 
+        // 再填充
+        cardRegistry[21] = new RedrawEffect(false);
+
         // 政治聯姻
-        cardRegistry[22] = new CompositeEffect(new MaterializeCardEffect(false, 5, 1, true), new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new PlayerCantAttackStatus(startTurn, endTurn)), new AddPlayerStatusEffect(true, 2, (startTurn, endTurn) => new PlayerBonusManaStatus(2, startTurn, endTurn)));
+        cardRegistry[22] = new CompositeEffect(new MaterializeCardEffect(false, 5, 1, true), new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new PlayerCantAttackStatus(startTurn, endTurn)),
+            new AddPlayerStatusEffect(true, 2, (startTurn, endTurn) => new PlayerBonusManaStatus(2, startTurn, endTurn)));
 
         // 停戰協議
         cardRegistry[23] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new PlayerCantAttackStatus(startTurn, endTurn)), new AddPlayerStatusEffect(true, 2, (startTurn, endTurn) => new PlayerCantAttackStatus(startTurn, endTurn)));
+
+        // 求援
+        cardRegistry[24] = new DrawRandomCardByIdsEffect(false, 1, 2, 3, 4, 5);
 
         // 大飢荒
         cardRegistry[26] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new PlayerCantSummonStatus(startTurn, endTurn)), new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new PlayerCantSummonStatus(startTurn, endTurn)));
@@ -108,11 +127,15 @@ public class CardEffectManager : MonoBehaviour
             new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new IncreasePlayerCardCostStatus(1, startTurn, endTurn)), new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new IncreasePlayerMoveCostStatus(1, startTurn, endTurn)));
 
         // 捨身取義
-        cardRegistry[28] = new CompositeEffect(new RemoveChessEffect(true, ChessType.Pawn, ChessType.Rook, ChessType.Bishop, ChessType.Knight, ChessType.Queen), new ManaChangeEffect(2), new DrawCardEffect(false, 1));
+        cardRegistry[28] = new CompositeEffect(new RemoveChessEffect(true, ChessType.Pawn, ChessType.Rook, ChessType.Bishop, ChessType.Knight, ChessType.Queen), new ManaChangeEffect(false, 2), new DrawCardEffect(false, 1));
 
-        // 御駕親征 (攻擊判定未完成)
+        // 御駕親征
         cardRegistry[29] = new CompositeEffect(new AddStatusToAllMatchingTypeChessEffect(true, (startTurn) => new ChessStatus[] { new ChessMovementOverrideStatus(new QueenMovement(), startTurn, startTurn + 1),
             new ChessCantAttackSpecificTypeStatus(ChessType.King, startTurn, startTurn + 1) }, true, ChessType.King));
+
+        // 魔力爆發
+        cardRegistry[30] = new CompositeEffect(new PlayerHadntMovedCheckEffect(false), new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerCardNonCostStatus(startTurn, endTurn)),
+            new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerDiscardAllHandCardOnTurnEndStatus(startTurn, endTurn)));
 
         // 防禦陣型
         cardRegistry[31] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Pawn),
@@ -121,13 +144,36 @@ public class CardEffectManager : MonoBehaviour
         // 正面突破
         cardRegistry[32] = new AddStatusToAllMatchingTypeChessEffect(true, 1, (startTurn, endTurn) => new ChessMovementOverrideStatus(new FrontalBreakthroughPawnMovement(), startTurn, endTurn), false, ChessType.Pawn);
 
+        // 猛撞
+        cardRegistry[33] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Pawn), new AddStatusToPayloadTargetChessEffect((startTurn) => new PawnRammingStatus(startTurn, startTurn + 1)));
+
+        // 回馬槍
+        cardRegistry[35] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Knight), new AddStatusToPayloadTargetChessEffect((startTurn) => new ChessPartingShotStatus(startTurn, startTurn + 1)));
+
+        // 招降
+        cardRegistry[36] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Bishop), new AddStatusToPayloadTargetChessEffect((startTurn) => new ChessConversionStatus(startTurn, startTurn + 1)));
+
+        // 宗教改革
+        cardRegistry[37] = new GetTargetPipelineEffect(new SelectOrthogonalMoveEffect(ChessType.Bishop), new PipelineMovementEffect());
+
+        // 異端審判
+        cardRegistry[38] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Bishop),
+            new AddStatusToAreaChessEffect(false, 2, (startTurn, endTurn) => new IncreaseChessMoveCostStatus(1, startTurn, endTurn),
+            ChessPiece.getAllChessTypes(false), (isLocal, payload) => payload.getTargetPositions(), (center, targetPosition) => AreaUtils.isOppositeColor(center, targetPosition), AreaUtils.getSquareArea(8, false)));
+
         // 堅固壁壘
         cardRegistry[39] = new AddStatusToAreaChessEffect(true, 2, (startTurn, endTurn) => new ChessCantBeAttackedStatus(startTurn, endTurn),
         ChessPiece.getAllChessTypes(false), (isLocal, payload) => { return BoardManager.getAllChessPieces(isLocal == GameManager.IsLocalWhite()).FindAll(c => c.getChessType() == ChessType.Rook).ConvertAll(c => c.getPosition()); }, AreaUtils.getSquareArea(1, false));
 
+        // 割讓土地
+        cardRegistry[40] = new GetTargetPipelineEffect(new SelectReturnableChessEffect(true, ChessType.Rook), new ReturnToInitialPositionEffect(), new AddStatusToPayloadTargetChessEffect((startTurn) => new ChessCantMoveStatus(startTurn, startTurn + 1)), new ManaChangeEffect(false, 2));
+
         // 威壓
         cardRegistry[41] = new AddStatusToAreaChessEffect(false, 2, (startTurn, endTurn) => new IncreaseChessMoveCostStatus(1, startTurn, endTurn),
             ChessPiece.getAllChessTypes(false), (isLocal, payload) => { return BoardManager.getAllChessPieces(isLocal == GameManager.IsLocalWhite()).FindAll(c => c.getChessType() == ChessType.Queen).ConvertAll(c => c.getPosition()); }, AreaUtils.getSquareArea(2, false));
+
+        // 護駕
+        cardRegistry[42] = new GetTargetPipelineEffect(new SelectOrthogonalMoveEffect(ChessType.Queen), new PipelineMovementEffect(), new ConditionalSummonEffect(ChessType.Pawn, ChessType.Pawn, 8));
     }
 
     public static CardEffect getCardEffect(Card card)
@@ -163,7 +209,7 @@ public class CardEffectManager : MonoBehaviour
             return;
         }
 
-        MatchDataManager.useCard(true, card);
+        MatchDataManager.useCard(true, card, GameManager.getCurrentTurnCount());
         HandViewManager.destroyUsingCard();
 
         await executeCardEffect(true, card, payload);
@@ -172,13 +218,13 @@ public class CardEffectManager : MonoBehaviour
 
     public static async Task processLocalAiCard(Card card, EffectTargetPayload targets)
     {
-        MatchDataManager.useCard(true, card);
+        MatchDataManager.useCard(true, card, GameManager.getCurrentTurnCount());
         await executeCardEffect(true, card, targets);
     }
 
     public static async Task processEnemyAiCard(Card card, EffectTargetPayload targets)
     {
-        MatchDataManager.useCard(false, card);
+        MatchDataManager.useCard(false, card, GameManager.getCurrentTurnCount());
         await executeCardEffect(false, card, targets);
     }
 
@@ -191,5 +237,24 @@ public class CardEffectManager : MonoBehaviour
 
         HandViewManager.recalculateCost();
         LogManager.createLog(new CardUseLog(isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite(), card));
+    }
+
+    public static int getCardIdByChessType(ChessType type)
+    {
+        switch (type)
+        {
+            case ChessType.Pawn:
+                return 1;
+            case ChessType.Bishop:
+                return 2;
+            case ChessType.Knight:
+                return 3;
+            case ChessType.Rook:
+                return 4;
+            case ChessType.Queen:
+                return 5;
+            default:
+                return -1;
+        }
     }
 }

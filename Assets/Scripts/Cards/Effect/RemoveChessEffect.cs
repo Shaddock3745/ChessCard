@@ -57,7 +57,7 @@ public class RemoveChessEffect : CardEffect
 
         List<Vector2Int> targetPositions = new List<Vector2Int>
         {
-            tile.getPos()
+            tile.getPosition()
         };
         return new EffectTargetPayload(targetPositions);
     }
@@ -77,7 +77,7 @@ public class RemoveChessEffect : CardEffect
 
             List<Vector2Int> targetPositions = new List<Vector2Int>
             {
-                tile.getPos()
+                tile.getPosition()
             };
 
             options.Add(new CardUseOption(card, AiEvaluator.getPieceValue(BoardManager.getChessPieceAtTile(tile).getChessType()), new EffectTargetPayload(targetPositions)));

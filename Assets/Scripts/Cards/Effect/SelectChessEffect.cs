@@ -32,7 +32,7 @@ public class SelectChessEffect : CardEffect
 
         BoardTile targetTile = await InputManager.waitForBoardTileSelection(tiles);
 
-        return new EffectTargetPayload(targetTile.getPos());
+        return new EffectTargetPayload(targetTile.getPosition());
     }
 
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)

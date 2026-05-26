@@ -9,7 +9,9 @@ public enum PlayerStatusType
     MOVE_COST_MODIFIER,
     CARD_COST_MODIFIER,
     BONUS_HAND_CARD,
-    BONUS_MANA
+    BONUS_MANA,
+    CARD_NON_COST,
+    DISCARD_ALL_HAND_CARD_ON_TURN_END
 }
 
 public class PlayerStatus : BaseStatus<PlayerStatusType>
@@ -100,6 +102,16 @@ public class PlayerStatusContainer : StatusContainer<PlayerStatus, PlayerStatusT
     public bool canAttack(int currentTurnCount)
     {
         return !hasActiveStatus(PlayerStatusType.CANT_ATTACK, currentTurnCount);
+    }
+
+    public bool isCardNonCost(int currentTurnCount)
+    {
+        return hasActiveStatus(PlayerStatusType.CARD_NON_COST, currentTurnCount);
+    }
+
+    public bool isDiscardAllHandCardOnTurnEnd(int currentTurnCount)
+    {
+        return hasActiveStatus(PlayerStatusType.DISCARD_ALL_HAND_CARD_ON_TURN_END, currentTurnCount);
     }
 }
 
@@ -201,4 +213,18 @@ public class PlayerBonusManaStatus : PlayerStatus
     }
 
     public int getBonusManaCount() => bonusManaCount;
+}
+
+public class PlayerCardNonCostStatus : PlayerStatus
+{
+    public PlayerCardNonCostStatus(int startTurn, int endTurn) : base(PlayerStatusType.CARD_NON_COST, startTurn, endTurn)
+    {
+    }
+}
+
+public class PlayerDiscardAllHandCardOnTurnEndStatus : PlayerStatus
+{
+    public PlayerDiscardAllHandCardOnTurnEndStatus(int startTurn, int endTurn) : base(PlayerStatusType.DISCARD_ALL_HAND_CARD_ON_TURN_END, startTurn, endTurn)
+    {
+    }
 }

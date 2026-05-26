@@ -17,6 +17,7 @@ public class ChessPiece
     private ChessType chessType;
     private bool isWhiteChess;
     private Vector2Int currentPosition;
+    private Vector2Int initialPosition;
     private MovementType defaultMovementType;
     private ChessStatusContainer statusContainer = new ChessStatusContainer();
 
@@ -48,6 +49,16 @@ public class ChessPiece
     public bool isWhite() => isWhiteChess;
 
     public Vector2Int getPosition() => currentPosition;
+
+    public void setInitialPosition(Vector2Int pos)
+    {
+        this.initialPosition = pos;
+    }
+
+    public Vector2Int getInitialPosition()
+    {
+        return initialPosition;
+    }
 
     public void setPosition(Vector2Int newPosition)
     {
@@ -167,5 +178,15 @@ public class ChessPiece
             return overrideMovementType;
 
         return defaultMovementType;
+    }
+
+    public void onMoveEnd(Vector2Int from, Vector2Int to, int currentTurnCount)
+    {
+        statusContainer.triggerPostMove(this, from, to, currentTurnCount);
+    }
+
+    public void onAttackEnd(Vector2Int from, ChessPiece target, int currentTurnCount)
+    {
+        statusContainer.triggerPostAttack(this, target, from, currentTurnCount);
     }
 }

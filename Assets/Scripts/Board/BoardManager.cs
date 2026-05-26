@@ -67,7 +67,9 @@ public class BoardManager : MonoBehaviour
 
     private void spawnPiece(ChessType chessType, bool isWhite, int indexX, int indexY)
     {
-        ChessPiece piece = new ChessPiece(chessType, isWhite, new Vector2Int(indexX, indexY));
+        Vector2Int position = new Vector2Int(indexX, indexY);
+        ChessPiece piece = new ChessPiece(chessType, isWhite, position);
+        piece.setInitialPosition(position);
         boardState.setChessPieceAtPosition(indexX, indexY, piece);
 
         float x = START_OFFSET + (TILE_SIZE * indexX);
@@ -236,7 +238,7 @@ public class BoardManager : MonoBehaviour
 
     public static ChessPieceUi GetChessPieceUiAtTile(BoardTile tile)
     {
-        ChessPiece piece = instance.boardState.getChessPieceAtPosition(tile.getPos());
+        ChessPiece piece = instance.boardState.getChessPieceAtPosition(tile.getPosition());
 
         if (piece != null)
             return instance.pieceToUiMap[piece];
@@ -343,6 +345,7 @@ public class BoardManager : MonoBehaviour
     {
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         innerMovePiece(from, to);
+        movingPiece.onMoveEnd(from, to, GameManager.getCurrentTurnCount());
         LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
         InputManager.tryDetectHover();
     }
@@ -361,6 +364,7 @@ public class BoardManager : MonoBehaviour
     {
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         await innerMovePieceWithAnimation(from, to);
+        movingPiece.onMoveEnd(from, to, GameManager.getCurrentTurnCount());
         LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
         InputManager.tryDetectHover();
     }
@@ -397,8 +401,13 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
         getUiOfChess(attacker).moveToPoint(new Vector3(x, y, 0));
+
         getUiOfChess(victim).destroy();
         instance.pieceToUiMap.Remove(victim);
+
+        int currentTurnCount = GameManager.getCurrentTurnCount();
+        attacker.onMoveEnd(from, to, currentTurnCount);
+        attacker.onAttackEnd(from, victim, currentTurnCount);
 
         LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
         InputManager.tryDetectHover();
@@ -423,6 +432,10 @@ public class BoardManager : MonoBehaviour
 
         await Task.WhenAll(moveTask, destroyTask);
         instance.pieceToUiMap.Remove(victim);
+
+        int currentTurnCount = GameManager.getCurrentTurnCount();
+        attacker.onMoveEnd(from, to, currentTurnCount);
+        attacker.onAttackEnd(from, victim, currentTurnCount);
 
         LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
         InputManager.tryDetectHover();

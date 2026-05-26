@@ -46,6 +46,10 @@ public class PlayerData
 
     public bool IsLocal() => isLocal;
 
+    public bool isCardNonCost(int curretnTurnCount) => statusContainer.isCardNonCost(curretnTurnCount);
+
+    public bool isDiscardAllHandCardOnTurnEnd(int curretnTurnCount) => statusContainer.isDiscardAllHandCardOnTurnEnd(curretnTurnCount);
+
     public int getMana() => mana;
 
     public void addMana(int amount)
@@ -158,13 +162,88 @@ public class PlayerData
         return result;
     }
 
-    public void useCard(Card card)
+    public Card retrieveCard(Card card)
     {
-        consumeMana(card.getCost());
+        if (!discardList.Contains(card))
+            return null;
+
+        handList.Add(card);
+        discardList.Remove(card);
+
+        return card;
+    }
+
+    public Card rechargeCard(Card card)
+    {
+        if (!handList.Contains(card))
+            return null;
+
+        deck.Add(card);
+        handList.Remove(card);
+
+        return card;
+    }
+
+    public Card drawRandomCardFromDeck(int[] validCardIds)
+    {
+        List<Card> validCards = new List<Card>();
+        HashSet<int> validIdSet = new HashSet<int>(validCardIds);
+
+        foreach (Card card in deck)
+            if (validIdSet.Contains(card.getId()))
+                validCards.Add(card);
+
+        if (validCards.Count == 0 && waitingList.Count > 0)
+        {
+            replenish();
+            foreach (Card card in deck)
+                if (validIdSet.Contains(card.getId()))
+                    validCards.Add(card);
+        }
+
+        if (validCards.Count == 0)
+            return null;
+
+        Card targetCard = validCards[Random.Range(0, validCards.Count)];
+
+        deck.Remove(targetCard);
+        handList.Add(targetCard);
+
+        return targetCard;
+    }
+
+    public bool hasValidCardInDeckOrWaiting(int[] validCardIds)
+    {
+        HashSet<int> validIdSet = new HashSet<int>(validCardIds);
+
+        foreach (Card card in deck)
+            if (validIdSet.Contains(card.getId()))
+                return true;
+
+        foreach (Card card in waitingList)
+            if (validIdSet.Contains(card.getId()))
+                return true;
+
+        return false;
+    }
+
+    public void useCard(Card card, int currentTurnCount)
+    {
+        if (!isCardNonCost(currentTurnCount))
+            consumeMana(card.getCost());
+
         handList.Remove(card);
 
         if (!card.isExileOnUseCard())
             discardList.Add(card);
+    }
+
+    public void discardAllHandCards()
+    {
+        foreach (Card card in handList)
+            discardList.Add(card);
+
+        handList.Clear();
     }
 
     public void flushHandCards()

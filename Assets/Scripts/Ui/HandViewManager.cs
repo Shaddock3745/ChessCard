@@ -20,6 +20,7 @@ public class HandViewManager : MonoBehaviour
     private static readonly float FLUSH_DELAY = 0.02f, DRAW_DELAY = 0.08f;
     private static readonly float SELECTING_SPACING_X = 260f;
     private static readonly float SELECTING_SPACING_Y = 350f;
+    private static readonly float SELECTING_OFFSET_Y = 800f;
     private static readonly int SELECTING_COLUMNS = 5;
     private static readonly float SELECTING_SCALE_NORMAL = 1f;
     private static readonly float SELECTING_SCALE_HOVER = 1.2f;
@@ -45,7 +46,7 @@ public class HandViewManager : MonoBehaviour
     public static void recalculateCost()
     {
         foreach (CardUi cardUi in instance.playerCardUiList)
-            cardUi.recalculateCost(MatchDataManager.getExtraCardCost(true, GameManager.getCurrentTurnCount()));
+            cardUi.recalculateCost(MatchDataManager.isCardNonCost(true, GameManager.getCurrentTurnCount()), MatchDataManager.getExtraCardCost(true, GameManager.getCurrentTurnCount()));
     }
 
     public static async Task playerDrawCard(Card card)
@@ -377,7 +378,7 @@ public class HandViewManager : MonoBehaviour
         if (n == 0) return;
 
         int totalRows = (n - 1) / SELECTING_COLUMNS + 1;
-        float startY = (totalRows - 1) * SELECTING_SPACING_Y / 2f;
+        float startY = (totalRows - 1) * SELECTING_SPACING_Y / 2f + SELECTING_OFFSET_Y;
 
         List<Task> animTasks = new List<Task>();
 
@@ -406,6 +407,91 @@ public class HandViewManager : MonoBehaviour
         }
 
         await Task.WhenAll(animTasks);
+        InputManager.tryDetectHover();
+    }
+
+    public static async Task playerRetrieveCard(Card card)
+    {
+        CardUi cardUi = Instantiate(instance.cardPrefab, instance.playerHandCardCanvas.transform).GetComponent<CardUi>();
+        cardUi.initCard(card);
+        instance.playerCardUiList.Add(cardUi);
+
+        RectTransform rect = cardUi.GetComponent<RectTransform>();
+        rect.anchoredPosition = new Vector2(Screen.width / 2f, -Screen.height / 2f);
+        rect.localScale = Vector3.zero;
+
+        instance.isPlayerAnimating = true;
+
+        await Task.WhenAll(
+            rect.DOAnchorPos(new Vector2(0, OFFSET_Y), DRAW_ANIMATION_DURATION).SetEase(Ease.OutBack).AsyncWaitForCompletion(),
+            rect.DOScale(Vector3.one, DRAW_ANIMATION_DURATION).AsyncWaitForCompletion()
+        );
+
+        await instance.sortPlayerHand();
+        instance.isPlayerAnimating = false;
+    }
+
+    public static async Task enemyRetrieveCard()
+    {
+        GameObject cardBack = GameObject.Instantiate(instance.cardBackPrefab, instance.enemyHandCardCanvas.transform);
+        instance.enemyCardBackList.Add(cardBack);
+
+        RectTransform rect = cardBack.GetComponent<RectTransform>();
+        rect.anchoredPosition = new Vector2(Screen.width / 2f, Screen.height / 2f);
+        rect.localScale = Vector3.zero;
+
+        instance.isEnemyAnimating = true;
+
+        await Task.WhenAll(
+            rect.DOAnchorPos(new Vector2(0, -OFFSET_Y), DRAW_ANIMATION_DURATION).SetEase(Ease.OutBack).AsyncWaitForCompletion(),
+            rect.DOScale(Vector3.one, DRAW_ANIMATION_DURATION).AsyncWaitForCompletion()
+        );
+
+        await instance.sortEnemyHand();
+        instance.isEnemyAnimating = false;
+    }
+
+    public static async Task playerRechargeCard(Card card)
+    {
+        CardUi targetCardUi = instance.playerCardUiList.Find(c => c.getCard() == card);
+        if (targetCardUi == null) return;
+
+        instance.isPlayerAnimating = true;
+        instance.playerCardUiList.Remove(targetCardUi);
+
+        RectTransform rect = targetCardUi.GetComponent<RectTransform>();
+        rect.DOKill();
+
+        await Task.WhenAll(
+            rect.DOAnchorPos(new Vector2(-Screen.width / 2f, -Screen.height / 2f), DISAPEAR_ANIMATION_DURATION).SetEase(Ease.InBack).AsyncWaitForCompletion(),
+            rect.DOScale(Vector3.zero, DISAPEAR_ANIMATION_DURATION).SetEase(Ease.InBack).AsyncWaitForCompletion()
+        );
+
+        Destroy(targetCardUi.gameObject);
+        await instance.sortPlayerHand();
+        instance.isPlayerAnimating = false;
+    }
+
+    public static async Task enemyRechargeCard()
+    {
+        if (instance.enemyCardBackList.Count <= 0) return;
+
+        instance.isEnemyAnimating = true;
+
+        GameObject cardBackToConsume = instance.enemyCardBackList[0];
+        instance.enemyCardBackList.RemoveAt(0);
+
+        RectTransform rect = cardBackToConsume.GetComponent<RectTransform>();
+        rect.DOKill();
+
+        await Task.WhenAll(
+            rect.DOAnchorPos(new Vector2(-Screen.width / 2f, Screen.height / 2f), DISAPEAR_ANIMATION_DURATION).SetEase(Ease.InBack).AsyncWaitForCompletion(),
+            rect.DOScale(Vector3.zero, DISAPEAR_ANIMATION_DURATION).SetEase(Ease.InBack).AsyncWaitForCompletion()
+        );
+
+        Destroy(cardBackToConsume);
+        await instance.sortEnemyHand();
+        instance.isEnemyAnimating = false;
     }
 
     public static async Task hoverSelectingCard(CardUi cardUi)

@@ -108,15 +108,15 @@
     "name_tw": "愈戰愈勇",
     "name_en": "Battle Hardened",
     "cost": 5,
-    "desc_tw": "選擇我方一枚士兵，這回合該士兵移動無須消耗AP，且我方僅能移動該士兵，若該士兵成功吃子，可繼續移動",
+    "desc_tw": "選擇我方一枚士兵，這回合該士兵移動無須消耗AP，若該士兵成功吃子，可繼續移動",
     "desc_en": "One pawn moves for 0 AP; only this pawn can move. Can move again if it captures."
   },
   {
     "id": 15,
-    "name_tw": "限制令",
+    "name_tw": "遣返",
     "name_en": "Restriction Order",
-    "cost": 4,
-    "desc_tw": "下一回合，對方若發動卡牌，該回合對方無法移動棋子",
+    "cost": 3,
+    "desc_tw": "選擇對方一枚國王以外棋子，該棋子返回初始位置",
     "desc_en": "Next turn, if opponent uses a card, they cannot move pieces."
   },
   {
@@ -164,8 +164,8 @@
     "name_tw": "再填充",
     "name_en": "Redraw",
     "cost": 1,
-    "desc_tw": "選擇我方任意數量的手牌送回牌組，之後抽出同樣數量的牌",
-    "desc_en": "Shuffle any number of hand cards into deck, then draw the same amount."
+    "desc_tw": "將我方所有手牌送回牌組，之後抽出同樣數量的牌",
+    "desc_en": "Return all hand cards into deck, then draw the same amount."
   },
   {
     "id": 22,

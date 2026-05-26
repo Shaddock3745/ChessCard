@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using UnityEngine;
+
 public enum ChessStatusType
 {
     CANT_MOVE,
@@ -5,23 +9,23 @@ public enum ChessStatusType
     CANT_BE_ATTACKED,
     MOVE_COST_MODIFIER,
     MOVEMENT_OVERRIDE,
-    CANT_ATTACK_SPECIFIC_TYPE_CHESS
+    CANT_ATTACK_SPECIFIC_TYPE_CHESS,
+    DO_ACTION_AFTER_MOVE,
+    DO_ACTION_AFTER_ATTACK
 }
 
 public class ChessStatus : BaseStatus<ChessStatusType>
 {
-    public ChessStatus(ChessStatusType status, int startTurn, int endTurn) : base(status, startTurn, endTurn)
-    {
+    public ChessStatus(ChessStatusType status, int startTurn, int endTurn) : base(status, startTurn, endTurn) { }
 
-    }
+    public virtual void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos) { }
+
+    public virtual void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos) { }
 }
 
 public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType>
 {
-    public ChessStatusContainer() : base()
-    {
-
-    }
+    public ChessStatusContainer() : base() { }
 
     public int getExtraMoveCost(int currentTotalTurn)
     {
@@ -66,7 +70,20 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
 
         return null;
     }
+
+    public void triggerPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos, int currentTotalTurn)
+    {
+        foreach (var status in GetActiveStatuses(ChessStatusType.DO_ACTION_AFTER_MOVE, currentTotalTurn))
+            status.onPostMove(owner, fromPos, toPos);
+    }
+
+    public void triggerPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos, int currentTotalTurn)
+    {
+        foreach (var status in GetActiveStatuses(ChessStatusType.DO_ACTION_AFTER_ATTACK, currentTotalTurn))
+            status.onPostAttack(owner, victim, fromPos);
+    }
 }
+
 
 public class ChessCantMoveStatus : ChessStatus
 {
@@ -118,4 +135,42 @@ public class ChessCantAttackSpecificTypeStatus : ChessStatus
     }
 
     public ChessType getCantAttackType() => type;
+}
+
+public class PawnRammingStatus : ChessStatus
+{
+    public PawnRammingStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, startTurn, endTurn) { }
+
+    public override void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos)
+    {
+        Vector2Int forwardDir = owner.isWhite() ? Vector2Int.up : Vector2Int.down;
+        Vector2Int frontPos = toPos + forwardDir;
+
+        if (!BoardManager.isEmpty(frontPos))
+            _ = BoardManager.pieceGotRoared(frontPos, forwardDir, owner.isWhite());
+    }
+}
+
+public class ChessPartingShotStatus : ChessStatus
+{
+    public ChessPartingShotStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
+
+    public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    {
+        _ = BoardManager.movePieceWithAnimation(owner.getPosition(), fromPos);
+    }
+}
+
+public class ChessConversionStatus : ChessStatus
+{
+    public ChessConversionStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
+
+    public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    {
+        ChessType victimType = victim.getChessType();
+        int cardId = CardEffectManager.getCardIdByChessType(victimType);
+
+        if (cardId != -1)
+            MatchDataManager.materializeCard(GameManager.IsLocalWhite() == owner.isWhite(), cardId, true);
+    }
 }

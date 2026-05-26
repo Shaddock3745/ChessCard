@@ -50,7 +50,7 @@ public class AddSelectedChessSingleStatusEffect : CardEffect
         if (selectTile == null)
             return null;
 
-        return new EffectTargetPayload(selectTile.getPos());
+        return new EffectTargetPayload(selectTile.getPosition());
     }
 
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)

@@ -4,10 +4,12 @@ using UnityEngine;
 
 public class ManaChangeEffect : CardEffect
 {
-    int delta;
+    private bool isEnemy;
+    private int delta;
 
-    public ManaChangeEffect(int delta)
+    public ManaChangeEffect(bool isEnemy, int delta)
     {
+        this.isEnemy = isEnemy;
         this.delta = delta;
     }
 
@@ -18,7 +20,7 @@ public class ManaChangeEffect : CardEffect
 
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
-        MatchDataManager.changePlayerMana(isLocal, delta);
+        MatchDataManager.changePlayerMana(isEnemy != isLocal, delta);
         return Task.CompletedTask;
     }
 

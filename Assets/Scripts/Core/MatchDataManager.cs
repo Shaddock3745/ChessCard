@@ -82,18 +82,92 @@ public class MatchDataManager : MonoBehaviour
                 _ = HandViewManager.enemyDrawCard();
         }
     }
-
-    public static void useCard(bool isLocal, Card card)
+    public static void retrieveCard(bool isLocal, Card card)
     {
         if (isLocal)
         {
-            instance.local.useCard(card);
+            Card result = instance.local.retrieveCard(card);
+            if (result != null)
+            {
+                _ = HandViewManager.playerRetrieveCard(result);
+                instance.updateCardCountUi();
+            }
+        }
+        else
+        {
+            Card result = instance.enemy.retrieveCard(card);
+            if (result != null)
+            {
+                _ = HandViewManager.enemyRetrieveCard();
+            }
+        }
+    }
+
+    public static void rechargeCard(bool isLocal, Card card)
+    {
+        if (isLocal)
+        {
+            Card result = instance.local.rechargeCard(card);
+            if (result != null)
+            {
+                _ = HandViewManager.playerRechargeCard(result);
+                instance.updateCardCountUi();
+            }
+        }
+        else
+        {
+            Card result = instance.enemy.rechargeCard(card);
+            if (result != null)
+            {
+                _ = HandViewManager.enemyRechargeCard();
+            }
+        }
+    }
+
+    public static Card drawRandomCardFromDeck(bool isLocal, int[] validCardIds)
+    {
+        if (isLocal)
+        {
+            Card result = instance.local.drawRandomCardFromDeck(validCardIds);
+
+            if (result != null)
+            {
+                _ = HandViewManager.playerDrawCard(result);
+                instance.updateCardCountUi();
+            }
+
+            return result;
+        }
+        else
+        {
+            Card result = instance.enemy.drawRandomCardFromDeck(validCardIds);
+
+            if (result != null)
+                _ = HandViewManager.enemyDrawCard();
+
+            return result;
+        }
+    }
+
+    public static bool hasValidCardInDeckOrWaiting(bool isLocal, int[] validCardIds)
+    {
+        if (isLocal)
+            return instance.local.hasValidCardInDeckOrWaiting(validCardIds);
+        else
+            return instance.enemy.hasValidCardInDeckOrWaiting(validCardIds);
+    }
+
+    public static void useCard(bool isLocal, Card card, int currentTurnCount)
+    {
+        if (isLocal)
+        {
+            instance.local.useCard(card, currentTurnCount);
             instance.updateCardCountUi();
             instance.updateManaUi();
         }
         else
         {
-            instance.enemy.useCard(card);
+            instance.enemy.useCard(card, currentTurnCount);
             _ = HandViewManager.enemyUseCard(card);
         }
     }
@@ -167,9 +241,19 @@ public class MatchDataManager : MonoBehaviour
         return isLocal ? instance.local.getDeckCardCount() : instance.enemy.getDeckCardCount();
     }
 
+    public static List<Card> getPlayerDeckList(bool isLocal)
+    {
+        return isLocal ? instance.local.getDeck() : instance.enemy.getDeck();
+    }
+
     public static int getPlayerHandCardCount(bool isLocal)
     {
         return isLocal ? instance.local.getHandCardCount() : instance.enemy.getHandCardCount();
+    }
+
+    public static List<Card> getPlayerHandCardList(bool isLocal)
+    {
+        return isLocal ? instance.local.getHandList() : instance.enemy.getHandList();
     }
 
     public static int getPlayerWaitingCardCount(bool isLocal)
@@ -177,9 +261,19 @@ public class MatchDataManager : MonoBehaviour
         return isLocal ? instance.local.getWaitingCardCount() : instance.enemy.getWaitingCardCount();
     }
 
+    public static List<Card> getPlayerWaitingCardList(bool isLocal)
+    {
+        return isLocal ? instance.local.getWaitingList() : instance.enemy.getWaitingList();
+    }
+
     public static int getPlayerDiscardCardCount(bool isLocal)
     {
         return isLocal ? instance.local.getDiscardCardCount() : instance.enemy.getDiscardCardCount();
+    }
+
+    public static List<Card> getPlayerDiscardCardList(bool isLocal)
+    {
+        return isLocal ? instance.local.getDiscardList() : instance.enemy.getDiscardList();
     }
 
     public static void turnStart(bool isLocalTurn)
@@ -216,7 +310,12 @@ public class MatchDataManager : MonoBehaviour
         if (isLocalTurn)
         {
             instance.local.resetForEndTurn(currentTurnCount);
-            instance.local.flushHandCards();
+
+            if (isDiscardAllHandCardOnTurnEnd(true, currentTurnCount))
+                instance.local.discardAllHandCards();
+            else
+                instance.local.flushHandCards();
+
             _ = HandViewManager.flush(true);
             instance.updateCardCountUi();
             instance.updateManaUi();
@@ -224,7 +323,12 @@ public class MatchDataManager : MonoBehaviour
         else
         {
             instance.enemy.resetForEndTurn(currentTurnCount);
-            instance.enemy.flushHandCards();
+
+            if (isDiscardAllHandCardOnTurnEnd(false, currentTurnCount))
+                instance.enemy.discardAllHandCards();
+            else
+                instance.enemy.flushHandCards();
+
             _ = HandViewManager.flush(false);
         }
     }
@@ -267,6 +371,22 @@ public class MatchDataManager : MonoBehaviour
             return instance.enemy.getExtraCardCost(currentTurnCount);
     }
 
+    public static bool isCardNonCost(bool isLocal, int currentTurnCount)
+    {
+        if (isLocal)
+            return instance.local.isCardNonCost(currentTurnCount);
+        else
+            return instance.enemy.isCardNonCost(currentTurnCount);
+    }
+
+    public static bool isDiscardAllHandCardOnTurnEnd(bool isLocal, int currentTurnCount)
+    {
+        if (isLocal)
+            return instance.local.isDiscardAllHandCardOnTurnEnd(currentTurnCount);
+        else
+            return instance.enemy.isDiscardAllHandCardOnTurnEnd(currentTurnCount);
+    }
+
     public static void doChessMoved(bool isLocal, ChessPiece chess, int currentTurnCount)
     {
         if (isLocal)
@@ -275,6 +395,14 @@ public class MatchDataManager : MonoBehaviour
             instance.enemy.doChessMoved(chess, currentTurnCount);
 
         instance.updateManaUi();
+    }
+
+    public static bool hadMovedThisTurn(bool isLocal)
+    {
+        if (isLocal)
+            return instance.local.getMoveCount() > 0;
+        else
+            return instance.enemy.getMoveCount() > 0;
     }
 
     public static void addStatus(bool isLocal, PlayerStatus status)

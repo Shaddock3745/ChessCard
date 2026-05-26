@@ -39,7 +39,7 @@ public class SummonEffect : CardEffect
 
         foreach (BoardTile tile in summonableTiles)
         {
-            Vector2Int position = tile.getPos();
+            Vector2Int position = tile.getPosition();
             float score = AiEvaluator.getPieceValue(chessType) * manaEfficiency + AiEvaluator.getPositionValue(position);
             useOptions.Add(new CardUseOption(card, score, new EffectTargetPayload(position)));
         }
@@ -70,6 +70,6 @@ public class SummonEffect : CardEffect
         if (tile == null)
             return null;
 
-        return new EffectTargetPayload(tile.getPos());
+        return new EffectTargetPayload(tile.getPosition());
     }
 }
