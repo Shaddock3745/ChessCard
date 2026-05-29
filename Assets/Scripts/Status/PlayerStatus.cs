@@ -11,7 +11,9 @@ public enum PlayerStatusType
     BONUS_HAND_CARD,
     BONUS_MANA,
     CARD_NON_COST,
-    DISCARD_ALL_HAND_CARD_ON_TURN_END
+    DISCARD_ALL_HAND_CARD_ON_TURN_END,
+    LIMITED_TO_MOVE_SPECIFIC_CHESS,
+    EXTRA_MOVE
 }
 
 public class PlayerStatus : BaseStatus<PlayerStatusType>
@@ -112,6 +114,29 @@ public class PlayerStatusContainer : StatusContainer<PlayerStatus, PlayerStatusT
     public bool isDiscardAllHandCardOnTurnEnd(int currentTurnCount)
     {
         return hasActiveStatus(PlayerStatusType.DISCARD_ALL_HAND_CARD_ON_TURN_END, currentTurnCount);
+    }
+
+    public bool isLimitedToMoveSpecificChess(int currentTurnCount)
+    {
+        return hasActiveStatus(PlayerStatusType.LIMITED_TO_MOVE_SPECIFIC_CHESS, currentTurnCount);
+    }
+
+    public ChessPiece getLimitedToMoveSpecificChess(int currentTurnCount)
+    {
+        foreach (var status in GetActiveStatuses(PlayerStatusType.LIMITED_TO_MOVE_SPECIFIC_CHESS, currentTurnCount))
+            if (status is PlayerLimitedToMoveSpecificChessStatus limitedToMoveSpecificChessStatus)
+                return limitedToMoveSpecificChessStatus.getChessPiece();
+
+        return null;
+    }
+
+    public int getExtraMoveCount(int currentTurnCount)
+    {
+        int extraMoveCount = 0;
+        foreach (var status in GetActiveStatuses(PlayerStatusType.EXTRA_MOVE, currentTurnCount))
+            if (status is PlayerExtraMoveStatus playerExtraMoveStatus)
+                extraMoveCount += playerExtraMoveStatus.getExtraMoveCount();
+        return extraMoveCount;
     }
 }
 
@@ -227,4 +252,26 @@ public class PlayerDiscardAllHandCardOnTurnEndStatus : PlayerStatus
     public PlayerDiscardAllHandCardOnTurnEndStatus(int startTurn, int endTurn) : base(PlayerStatusType.DISCARD_ALL_HAND_CARD_ON_TURN_END, startTurn, endTurn)
     {
     }
+}
+
+public class PlayerLimitedToMoveSpecificChessStatus : PlayerStatus
+{
+    private ChessPiece chessPiece;
+    public PlayerLimitedToMoveSpecificChessStatus(ChessPiece chessPiece, int startTurn, int endTurn) : base(PlayerStatusType.LIMITED_TO_MOVE_SPECIFIC_CHESS, startTurn, endTurn)
+    {
+        this.chessPiece = chessPiece;
+    }
+    public ChessPiece getChessPiece() => chessPiece;
+}
+
+public class PlayerExtraMoveStatus : PlayerStatus
+{
+    private int extraMoveCount;
+
+    public PlayerExtraMoveStatus(int extraMoveCount, int startTurn, int endTurn) : base(PlayerStatusType.EXTRA_MOVE, startTurn, endTurn)
+    {
+        this.extraMoveCount = extraMoveCount;
+    }
+
+    public int getExtraMoveCount() => extraMoveCount;
 }

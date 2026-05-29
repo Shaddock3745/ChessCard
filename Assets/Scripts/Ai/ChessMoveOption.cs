@@ -18,12 +18,16 @@ public class ChessMoveOption : AiOption
 
     public async Task execute(PlayerData ownerData)
     {
-        ownerData.doChessMoved(piece, GameManager.getCurrentTurnCount());
-
         if (BoardManager.isEmpty(targetPos))
+        {
+            ownerData.doChessMoved(piece, currentPos, targetPos, ActionType.Move, GameManager.getCurrentTurnCount());
             await BoardManager.movePieceWithAnimation(currentPos, targetPos);
+        }
         else
+        {
+            ownerData.doChessMoved(piece, currentPos, targetPos, ActionType.Attack, GameManager.getCurrentTurnCount());
             await BoardManager.attackPieceWithAnimation(currentPos, targetPos);
+        }
     }
 
     public string getChessName() => piece.getName();

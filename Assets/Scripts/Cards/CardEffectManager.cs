@@ -87,6 +87,12 @@ public class CardEffectManager : MonoBehaviour
         cardRegistry[13] = new CompositeEffect(new PlayerHadntMovedCheckEffect(false), new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerCantMoveStatus(startTurn, endTurn)),
             new AddPlayerStatusEffect(false, 1, 2, (startTurn, endTurn) => new PlayerBonusManaStatus(3, startTurn, endTurn)));
 
+        // 愈戰愈勇
+        cardRegistry[14] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Pawn),
+            new AddPlayerStatusByPayloadEffect(false, 1, (startTurn, endTurn, payload) => new PlayerLimitedToMoveSpecificChessStatus(BoardManager.getChessPieceAtPosition(payload.getTargetPositions()[0]), startTurn, endTurn)),
+            new AddStatusToPayloadTargetChessEffect((startTurn) => new ChessNonCostOnMoveStatus(startTurn, startTurn + 1)),
+            new AddStatusToPayloadTargetChessEffect((startTurn) => new BattleHardenedPostAttackStatus(startTurn, startTurn + 1)));
+
         // 遣返
         cardRegistry[15] = new GetTargetPipelineEffect(new SelectReturnableChessEffect(false, ChessPiece.getAllChessTypes(true)), new ReturnToInitialPositionEffect());
 
@@ -118,6 +124,10 @@ public class CardEffectManager : MonoBehaviour
 
         // 求援
         cardRegistry[24] = new DrawRandomCardByIdsEffect(false, 1, 2, 3, 4, 5);
+
+        // 千里馬
+        cardRegistry[25] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Knight), new AddStatusToPayloadTargetChessEffect((startTurn) => new ChessCantAttackStatus(startTurn, startTurn + 1)),
+            new AddStatusToPayloadTargetChessEffect((startTurn) => new ChessExtraMoveStatus(1, startTurn, startTurn + 1)));
 
         // 大飢荒
         cardRegistry[26] = new CompositeEffect(new AddPlayerStatusEffect(false, 3, (startTurn, endTurn) => new PlayerCantSummonStatus(startTurn, endTurn)), new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new PlayerCantSummonStatus(startTurn, endTurn)));

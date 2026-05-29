@@ -1,5 +1,22 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+
+public class ActionRecord
+{
+    public ChessPiece piece;
+    public Vector2Int fromPos;
+    public Vector2Int toPos;
+    public ActionType type;
+
+    public ActionRecord(ChessPiece piece, Vector2Int fromPos, Vector2Int toPos, ActionType type)
+    {
+        this.piece = piece;
+        this.fromPos = fromPos;
+        this.toPos = toPos;
+        this.type = type;
+    }
+}
 
 public class ActionValidator
 {
@@ -18,12 +35,54 @@ public class ActionValidator
 
     public static bool canAttackGlobally(PlayerData player, int currentTurnCount)
     {
-        return !reachMoveLimit(player) && player.getStatusContainer().canAttack(currentTurnCount);
+        return !reachMoveLimit(player, currentTurnCount) && player.getStatusContainer().canAttack(currentTurnCount);
     }
 
-    public static bool reachMoveLimit(PlayerData player)
+    private static int calculateNormalMovesUsed(List<ActionRecord> records, int currentTurnCount)
     {
-        return player.getMoveCount() >= MAX_MOVE_COUNT_PER_TURN;
+        var movesByPiece = records
+            .Where(r => r.type == ActionType.Move)
+            .GroupBy(r => r.piece);
+
+        int normalMovesUsed = 0;
+
+        foreach (var group in movesByPiece)
+            normalMovesUsed += Mathf.Max(0, group.Count() - group.Key.getExtraMoveCount(currentTurnCount));
+
+        return normalMovesUsed;
+    }
+
+    public static bool reachMoveLimit(PlayerData player, int currentTurnCount)
+    {
+        int globalMaxMoves = MAX_MOVE_COUNT_PER_TURN + player.getStatusContainer().getExtraMoveCount(currentTurnCount);
+        int normalMovesUsed = calculateNormalMovesUsed(player.getChessMoveRecords(), currentTurnCount);
+
+        return normalMovesUsed >= globalMaxMoves;
+    }
+
+    public static bool canPieceMoveThisTurn(PlayerData player, ChessPiece piece, int currentTurnCount)
+    {
+        List<ActionRecord> records = player.getChessMoveRecords();
+
+        int pieceMoves = records.Count(r => r.piece == piece);
+        int globalMaxMoves = MAX_MOVE_COUNT_PER_TURN + player.getExtraMoveCount(currentTurnCount);
+
+        if (player.getStatusContainer().isLimitedToMoveSpecificChess(currentTurnCount))
+            if (player.getStatusContainer().getLimitedToMoveSpecificChess(currentTurnCount) != piece)
+                return false;
+
+        int pieceBonusMoves = piece.getExtraMoveCount(currentTurnCount);
+        int pieceMaxMoves = MAX_MOVE_COUNT_PER_TURN + pieceBonusMoves;
+
+        if (pieceMoves >= pieceMaxMoves)
+            return false;
+
+        int normalMovesUsed = calculateNormalMovesUsed(records, currentTurnCount);
+
+        if (pieceBonusMoves > 0)
+            return normalMovesUsed < globalMaxMoves || pieceMoves > 0;
+        else
+            return normalMovesUsed < globalMaxMoves;
     }
 
     public static bool canSummon(PlayerData player, int currentTurnCount)
@@ -35,7 +94,7 @@ public class ActionValidator
     {
         bufferList.Clear();
 
-        if (reachMoveLimit(player) || piece.isWhite() != player.IsWhite())
+        if (!canPieceMoveThisTurn(player, piece, currentTurnCount) || piece.isWhite() != player.IsWhite())
             return;
 
         int finalMoveCost = piece.getMoveCost(currentTurnCount) + player.getStatusContainer().getGlobalExtraMoveCost(currentTurnCount);

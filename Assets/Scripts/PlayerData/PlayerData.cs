@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 enum PlayerType
@@ -17,7 +18,7 @@ public class PlayerData
     private PlayerStatusContainer statusContainer = new PlayerStatusContainer();
     private List<Card> deck, handList, waitingList, discardList;
     private int mana = DEFAULT_MANA;
-    private int moveCount = 0;
+    private List<ActionRecord> chessMoveRecords = new List<ActionRecord>();
 
     public static int getDefaultMana()
     {
@@ -82,20 +83,29 @@ public class PlayerData
         mana -= cost;
     }
 
-    public int getMoveCount() => moveCount;
+    public int getMoveCount() => chessMoveRecords.Count;
+
+    public int getExtraMoveCount(int currentTurnCount) => statusContainer.getExtraMoveCount(currentTurnCount);
+
+    public List<ActionRecord> getChessMoveRecords() => chessMoveRecords;
 
     public PlayerStatusContainer getStatusContainer() => statusContainer;
 
-    public void doChessMoved(ChessPiece chess, int currentTurnCount)
+    public int getPieceMoveCount(ChessPiece piece)
     {
-        moveCount++;
+        return chessMoveRecords.Count(record => record.piece == piece);
+    }
+
+    public void doChessMoved(ChessPiece chess, Vector2Int from, Vector2Int to, ActionType actionType, int currentTurnCount)
+    {
+        chessMoveRecords.Add(new ActionRecord(chess, from, to, actionType));
         mana -= chess.getMoveCost(currentTurnCount) + statusContainer.getGlobalExtraMoveCost(currentTurnCount);
     }
 
     public void resetForNewTurn(int currentTurnCount)
     {
         mana = DEFAULT_MANA + statusContainer.getBonusManaCount(currentTurnCount);
-        moveCount = 0;
+        chessMoveRecords.Clear();
     }
 
     public void resetForEndTurn(int currentTurnCount)

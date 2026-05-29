@@ -10,6 +10,8 @@ public enum ChessStatusType
     MOVE_COST_MODIFIER,
     MOVEMENT_OVERRIDE,
     CANT_ATTACK_SPECIFIC_TYPE_CHESS,
+    EXTRA_MOVE,
+    NON_COST_ON_MOVE,
     DO_ACTION_AFTER_MOVE,
     DO_ACTION_AFTER_ATTACK
 }
@@ -27,8 +29,16 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
 {
     public ChessStatusContainer() : base() { }
 
+    public bool isNonCostOnMove(int currentTotalTurn)
+    {
+        return hasActiveStatus(ChessStatusType.NON_COST_ON_MOVE, currentTotalTurn);
+    }
+
     public int getExtraMoveCost(int currentTotalTurn)
     {
+        if (isNonCostOnMove(currentTotalTurn))
+            return 0;
+
         int extraCost = 0;
 
         foreach (var status in GetActiveStatuses(ChessStatusType.MOVE_COST_MODIFIER, currentTotalTurn))
@@ -69,6 +79,17 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
                 return movementOverrideStatus.getMovementType();
 
         return null;
+    }
+
+    public int getExtraMoveCount(int currentTotalTurn)
+    {
+        int extraMoveCount = 0;
+
+        foreach (var status in GetActiveStatuses(ChessStatusType.EXTRA_MOVE, currentTotalTurn))
+            if (status is ChessExtraMoveStatus chessExtraMoveStatus)
+                extraMoveCount += chessExtraMoveStatus.getExtraMoveCount();
+
+        return extraMoveCount;
     }
 
     public void triggerPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos, int currentTotalTurn)
@@ -113,6 +134,11 @@ public class IncreaseChessMoveCostStatus : ChessStatus
     public int getValue() => extraCost;
 }
 
+public class ChessNonCostOnMoveStatus : ChessStatus
+{
+    public ChessNonCostOnMoveStatus(int startTurn, int endTurn) : base(ChessStatusType.NON_COST_ON_MOVE, startTurn, endTurn) { }
+}
+
 public class ChessMovementOverrideStatus : ChessStatus
 {
     private MovementType movementType;
@@ -135,6 +161,18 @@ public class ChessCantAttackSpecificTypeStatus : ChessStatus
     }
 
     public ChessType getCantAttackType() => type;
+}
+
+public class ChessExtraMoveStatus : ChessStatus
+{
+    private int extraMoveCount;
+
+    public ChessExtraMoveStatus(int extraMoveCount, int startTurn, int endTurn) : base(ChessStatusType.EXTRA_MOVE, startTurn, endTurn)
+    {
+        this.extraMoveCount = extraMoveCount;
+    }
+
+    public int getExtraMoveCount() => extraMoveCount;
 }
 
 public class PawnRammingStatus : ChessStatus
@@ -172,5 +210,41 @@ public class ChessConversionStatus : ChessStatus
 
         if (cardId != -1)
             MatchDataManager.materializeCard(GameManager.IsLocalWhite() == owner.isWhite(), cardId, true);
+    }
+}
+
+public class KnightTrampleStatus : ChessStatus
+{
+    public KnightTrampleStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, startTurn, endTurn) { }
+
+    public override void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos)
+    {
+        int minX = Mathf.Min(fromPos.x, toPos.x);
+        int maxX = Mathf.Max(fromPos.x, toPos.x);
+        int minY = Mathf.Min(fromPos.y, toPos.y);
+        int maxY = Mathf.Max(fromPos.y, toPos.y);
+
+        for (int x = minX; x <= maxX; x++)
+            for (int y = minY; y <= maxY; y++)
+            {
+                Vector2Int checkPos = new Vector2Int(x, y);
+
+                if (checkPos == fromPos || checkPos == toPos)
+                    continue;
+
+                if (!BoardManager.isEmpty(checkPos) && BoardManager.isWhiteAtPosition(checkPos) != owner.isWhite())
+                    _ = BoardManager.removePieceWithAnimation(checkPos);
+            }
+    }
+}
+
+public class BattleHardenedPostAttackStatus : ChessStatus
+{
+    public BattleHardenedPostAttackStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
+
+    public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    {
+        int currentTurn = GameManager.getCurrentTurnCount();
+        owner.addStatus(new ChessExtraMoveStatus(1, currentTurn, currentTurn + 1));
     }
 }

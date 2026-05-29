@@ -387,12 +387,12 @@ public class MatchDataManager : MonoBehaviour
             return instance.enemy.isDiscardAllHandCardOnTurnEnd(currentTurnCount);
     }
 
-    public static void doChessMoved(bool isLocal, ChessPiece chess, int currentTurnCount)
+    public static void doChessMoved(bool isLocal, ChessPiece chess, Vector2Int from, Vector2Int to, ActionType actionType, int currentTurnCount)
     {
         if (isLocal)
-            instance.local.doChessMoved(chess, currentTurnCount);
+            instance.local.doChessMoved(chess, from, to, actionType, currentTurnCount);
         else
-            instance.enemy.doChessMoved(chess, currentTurnCount);
+            instance.enemy.doChessMoved(chess, from, to, actionType, currentTurnCount);
 
         instance.updateManaUi();
     }

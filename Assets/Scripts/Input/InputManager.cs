@@ -400,20 +400,20 @@ public class InputManager : MonoBehaviour
         if (currentTile == null)
         {
             if (selectedChess != null && firstTile != null)
-                BoardManager.moveCanceled(selectedChess.getChess(), new Vector2Int(firstTile.getX(), firstTile.getY()));
+                BoardManager.moveCanceled(selectedChess.getChess(), firstTile.getPosition());
         }
         else if (currentTile.isMoveableTile())
         {
-            BoardManager.movePiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-            MatchDataManager.doChessMoved(true, selectedChess.getChess(), GameManager.getCurrentTurnCount());
+            BoardManager.movePiece(firstTile.getPosition(), currentTile.getPosition());
+            MatchDataManager.doChessMoved(true, selectedChess.getChess(), firstTile.getPosition(), currentTile.getPosition(), ActionType.Move, GameManager.getCurrentTurnCount());
         }
         else if (currentTile.isAttackableTile())
         {
-            BoardManager.attackPiece(new Vector2Int(firstTile.getX(), firstTile.getY()), new Vector2Int(currentTile.getX(), currentTile.getY()));
-            MatchDataManager.doChessMoved(true, selectedChess.getChess(), GameManager.getCurrentTurnCount());
+            BoardManager.attackPiece(firstTile.getPosition(), currentTile.getPosition());
+            MatchDataManager.doChessMoved(true, selectedChess.getChess(), firstTile.getPosition(), currentTile.getPosition(), ActionType.Attack, GameManager.getCurrentTurnCount());
         }
         else
-            BoardManager.moveCanceled(selectedChess.getChess(), new Vector2Int(firstTile.getX(), firstTile.getY()));
+            BoardManager.moveCanceled(selectedChess.getChess(), firstTile.getPosition());
 
         isRaisingChess = false;
         currentTile = lastTile = null;

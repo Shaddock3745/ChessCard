@@ -67,7 +67,10 @@ public class ChessPiece
 
     public int getMoveCost(int currentTurnCount)
     {
-        return 1 + statusContainer.getExtraMoveCost(currentTurnCount);
+        if (statusContainer.isNonCostOnMove(currentTurnCount))
+            return 0;
+        else
+            return 1 + statusContainer.getExtraMoveCost(currentTurnCount);
     }
 
     public string getName()
@@ -98,6 +101,11 @@ public class ChessPiece
     public bool canMove(int currentTurnCount)
     {
         return statusContainer.canMove(currentTurnCount);
+    }
+
+    public int getExtraMoveCount(int currentTurnCount)
+    {
+        return statusContainer.getExtraMoveCount(currentTurnCount);
     }
 
     private static string getChessColorName(bool isWhite)
