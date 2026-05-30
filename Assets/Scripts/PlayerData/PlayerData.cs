@@ -10,13 +10,13 @@ enum PlayerType
 
 public class PlayerData
 {
-    private static readonly int DEFAULT_MANA = 5, DEFAULT_HAND_CARD_COUNT = 5;
+    private static readonly int DEFAULT_MANA = 5, DEFAULT_HAND_CARD_COUNT = 5, DEFAULT_HOLD_COST = 1;
 
     private readonly PlayerType playerType;
     private readonly bool isWhite;
     private readonly bool isLocal;
     private PlayerStatusContainer statusContainer = new PlayerStatusContainer();
-    private List<Card> deck, handList, waitingList, discardList;
+    private List<Card> deck, handList, waitingList, discardList, holdingList;
     private int mana = DEFAULT_MANA;
     private List<ActionRecord> chessMoveRecords = new List<ActionRecord>();
 
@@ -62,6 +62,8 @@ public class PlayerData
 
     public int getDeckCardCount() => deck.Count;
 
+    public int getHoldCardCount() => holdingList.Count;
+
     public int getBonusHandCardCount(int currentTurnCount) => statusContainer.getBonusHandCardCount(currentTurnCount);
 
     public int getBonusManaCount(int currentTurnCount) => statusContainer.getBonusManaCount(currentTurnCount);
@@ -85,11 +87,9 @@ public class PlayerData
 
     public int getMoveCount() => chessMoveRecords.Count;
 
-    public int getExtraMoveCount(int currentTurnCount) => statusContainer.getExtraMoveCount(currentTurnCount);
+    public PlayerStatusContainer getStatusContainer() => statusContainer;
 
     public List<ActionRecord> getChessMoveRecords() => chessMoveRecords;
-
-    public PlayerStatusContainer getStatusContainer() => statusContainer;
 
     public int getPieceMoveCount(ChessPiece piece)
     {
@@ -119,6 +119,7 @@ public class PlayerData
         handList = new List<Card>();
         waitingList = new List<Card>();
         discardList = new List<Card>();
+        holdingList = new List<Card>();
 
         foreach (int id in cardIds)
             deck.Add(new Card(id));
@@ -148,18 +149,27 @@ public class PlayerData
     {
         Card result = null;
 
-        if (deck.Count > 0)
-            result = deck[deck.Count - 1];
-        else if (waitingList.Count > 0)
+        if (holdingList.Count > 0)
         {
-            replenish();
-            result = deck[deck.Count - 1];
-        }
-
-        if (result != null)
-        {
-            deck.RemoveAt(deck.Count - 1);
+            result = holdingList[0];
+            holdingList.Remove(result);
             handList.Add(result);
+        }
+        else
+        {
+            if (deck.Count > 0)
+                result = deck[deck.Count - 1];
+            else if (waitingList.Count > 0)
+            {
+                replenish();
+                result = deck[deck.Count - 1];
+            }
+
+            if (result != null)
+            {
+                deck.RemoveAt(deck.Count - 1);
+                handList.Add(result);
+            }
         }
 
         return result;
@@ -179,6 +189,31 @@ public class PlayerData
 
         handList.Add(card);
         discardList.Remove(card);
+
+        return card;
+    }
+
+    public void retrieveAllHoldingCard()
+    {
+        foreach (Card card in holdingList)
+            deck.Add(card);
+
+        holdingList.Clear();
+    }
+
+    public bool canHoldCard()
+    {
+        return handList.Count > 0 && mana >= DEFAULT_HOLD_COST;
+    }
+
+    public Card holdCard(Card card)
+    {
+        if (!handList.Contains(card))
+            return null;
+
+        holdingList.Add(card);
+        handList.Remove(card);
+        consumeMana(DEFAULT_HOLD_COST);
 
         return card;
     }

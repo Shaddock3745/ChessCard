@@ -44,7 +44,7 @@ public class AiEvaluator
     {
         List<ChessMoveOption> moveOptions = new List<ChessMoveOption>();
 
-        if(ActionValidator.reachMoveLimit(aiPlayerData))
+        if (ActionValidator.reachMoveLimit(aiPlayerData, currentTurnCount))
             return moveOptions;
 
         aiMoveBuffer.Clear();

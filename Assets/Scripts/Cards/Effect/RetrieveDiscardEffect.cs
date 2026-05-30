@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class RetrieveEffect : CardEffect
+public class RetrieveDiscardEffect : CardEffect
 {
     private int amount;
     private List<int> invalidCardId;
 
-    public RetrieveEffect(int amount, params int[] invalidCardId)
+    public RetrieveDiscardEffect(int amount, params int[] invalidCardId)
     {
         this.amount = amount;
         this.invalidCardId = new List<int>(invalidCardId);

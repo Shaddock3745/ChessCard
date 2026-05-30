@@ -16,7 +16,7 @@ public class HandViewManager : MonoBehaviour
     private static readonly float HIDDEN_Y = -400f;
     private static readonly float CARD_WIDTH = 240f;
     private static readonly float MAX_SPACING = CARD_WIDTH * 1.125f;
-    private static readonly float DRAW_ANIMATION_DURATION = 0.5f, SORT_ANIMATION_DURATION = 0.5f, FLUSH_ANIMATION_DURATION = 0.5f, USE_ANIMATION_DURATION = 0.5f, HIDE_ANIMATION_DURATION = 0.5f, DISAPEAR_ANIMATION_DURATION = 0.2f;
+    private static readonly float DRAW_ANIMATION_DURATION = 0.5f, SORT_ANIMATION_DURATION = 0.5f, FLUSH_ANIMATION_DURATION = 0.5f, USE_ANIMATION_DURATION = 0.5f, HIDE_ANIMATION_DURATION = 0.5f, DISAPEAR_ANIMATION_DURATION = 0.2f, HOLD_ANIMATION_DURATION = 0.2f;
     private static readonly float FLUSH_DELAY = 0.02f, DRAW_DELAY = 0.08f;
     private static readonly float SELECTING_SPACING_X = 260f;
     private static readonly float SELECTING_SPACING_Y = 350f;
@@ -198,9 +198,8 @@ public class HandViewManager : MonoBehaviour
 
     public static async Task enemyUseCard(Card card)
     {
-        if (instance.enemyCardBackList.Count <= 0) return;
-
-        UiManager.processHoveredObjectData(card, false);
+        if (card == null || instance.enemyCardBackList.Count <= 0)
+            return;
 
         GameObject cardBackToConsume = instance.enemyCardBackList[0];
         instance.enemyCardBackList.RemoveAt(0);
@@ -212,6 +211,8 @@ public class HandViewManager : MonoBehaviour
 
         Destroy(cardBackToConsume);
         await instance.sortEnemyHand();
+
+        UiManager.processHoveredObjectData(card, false);
     }
 
     public static void destroyUsingCard()
@@ -408,6 +409,41 @@ public class HandViewManager : MonoBehaviour
 
         await Task.WhenAll(animTasks);
         InputManager.tryDetectHover();
+    }
+
+    public static async Task playerHoldCard(Card card)
+    {
+        CardUi cardUi = instance.playerCardUiList.Find(c => c.getCard() == card);
+
+        instance.playerCardUiList.Remove(cardUi);
+        instance.hoveredHandCardIndex = -1;
+        cardUi.transform.SetAsLastSibling();
+
+        RectTransform rect = cardUi.GetComponent<RectTransform>();
+        rect.DOKill();
+
+        await rect.DOScale(Vector3.zero, HOLD_ANIMATION_DURATION).AsyncWaitForCompletion();
+
+        Destroy(cardUi.gameObject);
+
+        await instance.sortPlayerHand();
+    }
+
+    public static async Task enemyHoldCard()
+    {
+        if (instance.enemyCardBackList.Count <= 0)
+            return;
+
+        GameObject cardBackToConsume = instance.enemyCardBackList[0];
+        instance.enemyCardBackList.RemoveAt(0);
+
+        RectTransform rect = cardBackToConsume.GetComponent<RectTransform>();
+        rect.DOKill();
+
+        await rect.DOScale(Vector3.zero, HOLD_ANIMATION_DURATION).AsyncWaitForCompletion();
+
+        Destroy(cardBackToConsume);
+        await instance.sortEnemyHand();
     }
 
     public static async Task playerRetrieveCard(Card card)

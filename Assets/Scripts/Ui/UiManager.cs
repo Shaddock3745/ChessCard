@@ -5,9 +5,9 @@ public class UiManager : MonoBehaviour
 {
     private static UiManager instance;
 
-    [SerializeField] private TMPro.TextMeshProUGUI deckCount, waitingCount, discardCount, manaCount;
+    [SerializeField] private TMPro.TextMeshProUGUI deckCount, waitingCount, discardCount, manaCount, holdCount;
     [SerializeField] private GameObject hoveredObjectDataPanel, logPanel;
-    [SerializeField] private GameObject changeTurnButton, showLogPanelButton;
+    [SerializeField] private GameObject changeTurnButton, showLogPanelButton, holdCardButton;
     [SerializeField] private TMPro.TextMeshProUGUI hoveredObjectName, hoveredObjectDescription;
 
     private void Awake()
@@ -33,6 +33,11 @@ public class UiManager : MonoBehaviour
     public static void updateDiscardCount(int count)
     {
         instance.discardCount.text = count.ToString();
+    }
+
+    public static void updateHoldCount(int count)
+    {
+        instance.holdCount.text = count.ToString();
     }
 
     public static void updateManaCount(int count)
@@ -78,6 +83,15 @@ public class UiManager : MonoBehaviour
         }
     }
 
+    public static void showHoldCardButton()
+    {
+        instance.holdCardButton.SetActive(true);
+    }
+
+    public static void hideHoldCardButton()
+    {
+        instance.holdCardButton.SetActive(false);
+    }
 
     public static void showChangeTurnButton()
     {

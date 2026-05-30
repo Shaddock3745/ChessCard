@@ -60,6 +60,7 @@ public class GameManager : MonoBehaviour
         {
             MatchDataManager.turnStart(true);
             UiManager.showChangeTurnButton();
+            UiManager.showHoldCardButton();
         }
         else
         {
@@ -84,9 +85,15 @@ public class GameManager : MonoBehaviour
         BoardManager.refreshAllPiecesStatusFx();
 
         if (isLocalTurn)
+        {
             UiManager.showChangeTurnButton();
+            UiManager.showHoldCardButton();
+        }
         else
+        {
             UiManager.hideChangeTurnButton();
+            UiManager.hideHoldCardButton();
+        }
 
         if (MatchDataManager.isAI(isLocalTurn))
             await AiManager.doBestMove(MatchDataManager.getPlayerData(isLocalTurn), getCurrentTurnCount());

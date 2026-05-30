@@ -82,11 +82,13 @@ public class MatchDataManager : MonoBehaviour
                 _ = HandViewManager.enemyDrawCard();
         }
     }
+
     public static void retrieveCard(bool isLocal, Card card)
     {
         if (isLocal)
         {
             Card result = instance.local.retrieveCard(card);
+
             if (result != null)
             {
                 _ = HandViewManager.playerRetrieveCard(result);
@@ -96,10 +98,38 @@ public class MatchDataManager : MonoBehaviour
         else
         {
             Card result = instance.enemy.retrieveCard(card);
+
+            if (result != null)
+                _ = HandViewManager.enemyRetrieveCard();
+        }
+    }
+
+    public static void retrieveAllHoldingCard(bool isLocal)
+    {
+        if (isLocal)
+            instance.local.retrieveAllHoldingCard();
+        else
+            instance.enemy.retrieveAllHoldingCard();
+    }
+
+    public static void holdCard(bool isLocal, Card card)
+    {
+        if (isLocal)
+        {
+            Card result = instance.local.holdCard(card);
+
             if (result != null)
             {
-                _ = HandViewManager.enemyRetrieveCard();
+                _ = HandViewManager.playerHoldCard(result);
+                instance.updateCardCountUi();
             }
+        }
+        else
+        {
+            Card result = instance.enemy.retrieveCard(card);
+
+            if (result != null)
+                _ = HandViewManager.enemyHoldCard();
         }
     }
 
@@ -190,6 +220,7 @@ public class MatchDataManager : MonoBehaviour
     private void updateCardCountUi()
     {
         UiManager.updateDeckCount(instance.local.getDeckCardCount());
+        UiManager.updateHoldCount(instance.local.getHoldCardCount());
         UiManager.updateWaitingCount(instance.local.getWaitingCardCount());
         UiManager.updateDiscardCount(instance.local.getDiscardCardCount());
     }
@@ -285,8 +316,9 @@ public class MatchDataManager : MonoBehaviour
             instance.local.resetForNewTurn(currentTurnCount);
             int handCardCount = PlayerData.getDefaultHandCardCount() + instance.local.getBonusHandCardCount(currentTurnCount);
 
-            for (int i = 0; i < handCardCount; i++)
-                drawCard(true);
+            if (handCardCount > 0)
+                for (int i = 0; i < handCardCount; i++)
+                    drawCard(true);
 
             instance.updateCardCountUi();
             instance.updateManaUi();
@@ -296,8 +328,9 @@ public class MatchDataManager : MonoBehaviour
             instance.enemy.resetForNewTurn(currentTurnCount);
             int handCardCount = PlayerData.getDefaultHandCardCount() + instance.enemy.getBonusHandCardCount(currentTurnCount);
 
-            for (int i = 0; i < handCardCount; i++)
-                drawCard(false);
+            if (handCardCount > 0)
+                for (int i = 0; i < handCardCount; i++)
+                    drawCard(false);
         }
 
         LogManager.createLog(TextLog.createTurnStartLog(isLocalTurn ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite()));
@@ -331,6 +364,11 @@ public class MatchDataManager : MonoBehaviour
 
             _ = HandViewManager.flush(false);
         }
+    }
+
+    public static bool canHoldCard(bool isLocal)
+    {
+        return ActionValidator.canHoldCard(isLocal ? instance.local : instance.enemy);
     }
 
     public static bool canMoveChess(bool isLocal, ChessPiece chess, int currentTurnCount)

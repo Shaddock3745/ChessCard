@@ -195,9 +195,9 @@
     "id": 25,
     "name_tw": "千里馬",
     "name_en": "Swift Horse",
-    "cost": 2,
-    "desc_tw": "這回合我方騎士不可攻擊，可移動2次",
-    "desc_en": "Knights cannot attack this turn but can move twice."
+    "cost": 3,
+    "desc_tw": "選擇一枚我方騎士，這回合該騎士不可攻擊對方國王，移動無須消耗且可額外移動1次",
+    "desc_en": ""
   },
   {
     "id": 26,
@@ -332,7 +332,31 @@
     "name_tw": "護駕",
     "name_en": "Royal Escort",
     "cost": 2,
-    "desc_tw": "我方皇后向周圍四格移動一步(無須消耗)，若我方士兵數量<8，在該皇后原位置召喚一枚士兵",
+    "desc_tw": "選擇我方一枚皇后或國王，向周圍四格移動一步(無須消耗)，若我方士兵數量<8，在該皇后原位置召喚一枚士兵",
     "desc_en": "Queen moves 1 square (0 AP). If pawns < 8, summon a pawn at her old spot."
+  },
+  {
+    "id": 43,
+    "name_tw": "大軍壓境",
+    "name_en": "",
+    "cost": 4,
+    "desc_tw": "這回合我方可以額外移動所有士兵各一步，且所有士兵移動無須消耗",
+    "desc_en": ""
+  },
+  {
+    "id": 44,
+    "name_tw": "雙管齊下",
+    "name_en": "",
+    "cost": 2,
+    "desc_tw": "這回合我方無法攻擊，可以額外移動任意棋子一步",
+    "desc_en": ""
+  },
+  {
+    "id": 45,
+    "name_tw": "打亂",
+    "name_en": "",
+    "cost": 2,
+    "desc_tw": "對方保留區與等待區卡牌全部加入牌組並洗牌，並且下回合最大手牌數-1",
+    "desc_en": ""
   }
 ]

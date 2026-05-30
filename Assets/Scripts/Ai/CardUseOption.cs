@@ -5,18 +5,18 @@ using UnityEngine;
 
 public class CardUseOption : AiOption
 {
-    private float scroe;
+    private float score;
     private Card card;
     EffectTargetPayload targets;
 
     public CardUseOption(Card card, float scroe, EffectTargetPayload targets = null)
     {
         this.card = card;
-        this.scroe = scroe;
+        this.score = scroe;
         this.targets = targets ?? EffectTargetPayload.empty();
     }
 
-    public float getScore() => scroe;
+    public float getScore() => score;
 
     public async Task execute(PlayerData ownerData)
     {
