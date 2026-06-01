@@ -186,7 +186,7 @@ public class CardEffectManager : MonoBehaviour
             ChessPiece.getAllChessTypes(false), (isLocal, payload) => { return BoardManager.getAllChessPieces(isLocal == GameManager.IsLocalWhite()).FindAll(c => c.getChessType() == ChessType.Queen).ConvertAll(c => c.getPosition()); }, AreaUtils.getSquareArea(2, false));
 
         // 護駕
-        cardRegistry[42] = new GetTargetPipelineEffect(new SelectOrthogonalMoveEffect(ChessType.Queen), new PipelineMovementEffect(), new ConditionalSummonEffect(ChessType.Pawn, ChessType.Pawn, 8));
+        cardRegistry[42] = new GetTargetPipelineEffect(new SelectOrthogonalMoveEffect(ChessType.Queen, ChessType.King), new PipelineMovementEffect(), new ConditionalSummonEffect(ChessType.Pawn, ChessType.Pawn, 8));
 
         // 大軍壓境
         cardRegistry[43] = new AddStatusToAllMatchingTypeChessEffect(true, (startTurn) => new ChessStatus[] { new ChessNonCostOnMoveStatus(startTurn, startTurn + 1), new ChessExtraMoveStatus(1, startTurn, startTurn + 1) }, false, ChessType.Pawn);
@@ -257,8 +257,7 @@ public class CardEffectManager : MonoBehaviour
         else
             Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
 
-        HandViewManager.recalculateCost();
-        LogManager.createLog(new CardUseLog(isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite(), card));
+        HandViewManager.tryRecalculateCost();
     }
 
     public static int getCardIdByChessType(ChessType type)

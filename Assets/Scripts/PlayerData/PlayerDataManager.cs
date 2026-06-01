@@ -6,7 +6,7 @@ public class PlayerDataManager : MonoBehaviour
 {
     private static PlayerDataManager instance;
 
-    private List<int> playerDeck = new List<int>(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 45 });
+    private List<int> playerDeck = new List<int>(new int[] { 29, 29, 29, 29 });
 
     private void Awake()
     {

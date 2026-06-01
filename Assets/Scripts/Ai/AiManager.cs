@@ -7,7 +7,7 @@ public class AiManager : MonoBehaviour
 {
     private static AiManager instance;
 
-    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 4, 4, 1, 1, 1, 1, 1, 1, 1 });
+    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1 });
     private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
     void Awake()
@@ -49,7 +49,7 @@ public class AiManager : MonoBehaviour
     {
         AiOption bestMove;
 
-        while ((bestMove = getBestMove(playerData, currentTurnCount)) != null)
+        while (!GameManager.IsGameOver() && (bestMove = getBestMove(playerData, currentTurnCount)) != null)
         {
             while (HandViewManager.isPlayingAnimation())
                 await Task.Delay(100);
@@ -62,7 +62,8 @@ public class AiManager : MonoBehaviour
         while (HandViewManager.isPlayingAnimation())
             await Task.Delay(100);
 
-        GameManager.ChangeTurn();
+        if (!GameManager.IsGameOver())
+            GameManager.ChangeTurn();
     }
 
     public static PlayerData initAIPlayerData(bool isLocal, bool isWhite) => new PlayerData(true, isLocal, isWhite, DEFAULT_AI_DECK_LIST);

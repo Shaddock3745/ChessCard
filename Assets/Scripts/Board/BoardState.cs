@@ -41,6 +41,8 @@ public class BoardState
 
     public ChessPiece getKing(bool isWhite)
     {
+
+
         for (int x = 0; x < chessPieces.GetLength(0); x++)
             for (int y = 0; y < chessPieces.GetLength(1); y++)
             {

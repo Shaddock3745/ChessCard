@@ -155,6 +155,9 @@ public class InputManager : MonoBehaviour
 
     private void onMouseHeldStarted(InputAction.CallbackContext context)
     {
+        if (GameManager.IsGameOver())
+            return;
+
         if (isAwaitingCardSelection)
         {
             if (isSelectingCard && selectedCard != null)

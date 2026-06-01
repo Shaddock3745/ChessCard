@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 using UnityEngine.UI;
 
 public class LogManager : MonoBehaviour
@@ -29,6 +30,34 @@ public class LogManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    private void OnEnable()
+    {
+        BoardManager.OnChessMove += createChessMoveLog;
+        BoardManager.OnChessAttack += createChessAttackLog;
+        MatchDataManager.OnPlayerHoldCard += createCardHoldLog;
+        MatchDataManager.OnPlayerUseCard += createCardUseLog;
+        GameManager.OnTurnStart += createTurnStartLog;
+        GameManager.OnGameOver += createGameOverLog;
+        GameManager.OnResetGame += reset;
+    }
+
+    private void OnDisable()
+    {
+        BoardManager.OnChessMove -= createChessMoveLog;
+        BoardManager.OnChessAttack -= createChessAttackLog;
+        MatchDataManager.OnPlayerHoldCard -= createCardHoldLog;
+        MatchDataManager.OnPlayerUseCard -= createCardUseLog;
+        GameManager.OnTurnStart -= createTurnStartLog;
+        GameManager.OnGameOver -= createGameOverLog;
+        GameManager.OnResetGame -= reset;
+    }
+
+    public static void reset()
+    {
+        instance.logQueue.Clear();
+        instance.updateUi();
+    }
+
     public static string rigisterLogData(object data)
     {
         if (instance == null || data == null)
@@ -40,7 +69,7 @@ public class LogManager : MonoBehaviour
         return id;
     }
 
-    public static void createLog(LogData data)
+    private static void createLog(LogData data)
     {
         if (instance == null)
             return;
@@ -58,12 +87,42 @@ public class LogManager : MonoBehaviour
         instance.updateUi();
     }
 
+    private static void createChessMoveLog(ChessPiece movingPiece, Vector2Int from, Vector2Int to)
+    {
+        createLog(new ChessMoveLog(movingPiece, from, to));
+    }
+
+    private static void createChessAttackLog(ChessPiece attacker, ChessPiece target, Vector2Int from, Vector2Int to)
+    {
+        createLog(new ChessAttackLog(attacker, target, from, to));
+    }
+
+    private static void createGameOverLog(bool isWhiteWin)
+    {
+        createLog(TextLog.createGameOverLog(isWhiteWin));
+    }
+
+    private static void createTurnStartLog(int currentTurnCount, bool isWhiteTurn)
+    {
+        createLog(TextLog.createTurnStartLog(isWhiteTurn));
+    }
+
+    private static void createCardHoldLog(bool isWhite)
+    {
+        createLog(new CardHoldLog(isWhite));
+    }
+
+    private static void createCardUseLog(bool isWhite, Card card)
+    {
+        createLog(new CardUseLog(isWhite, card));
+    }
+
     public static string toChessCoord(Vector2Int pos)
     {
         return $"{(char)('A' + pos.x)}{pos.y + 1}";
     }
 
-    private System.Collections.IEnumerator scrollToBottom()
+    private System.Collections.IEnumerator innerScrollToBottom()
     {
         yield return null;
 
@@ -76,6 +135,12 @@ public class LogManager : MonoBehaviour
         logText.text = string.Join(LINE_BREAK_SINGLE, messages);
 
         if (scrollRect != null)
-            StartCoroutine(scrollToBottom());
+            StartCoroutine(innerScrollToBottom());
+    }
+
+    public static void scrollToButtom()
+    {
+        if (instance.scrollRect != null)
+            instance.StartCoroutine(instance.innerScrollToBottom());
     }
 }

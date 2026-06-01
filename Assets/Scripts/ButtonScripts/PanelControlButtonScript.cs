@@ -10,6 +10,7 @@ public class PanelControlButtonScript : MonoBehaviour
     public void showLogPanel()
     {
         UiManager.showLogPanel();
+        LogManager.scrollToButtom();
     }
 
     public void closeLogPanel()

@@ -5,17 +5,17 @@ using UnityEngine;
 
 public class SelectOrthogonalMoveEffect : CardEffect
 {
-    private ChessType targetType;
+    private List<ChessType> targetTypes;
 
-    public SelectOrthogonalMoveEffect(ChessType targetType)
+    public SelectOrthogonalMoveEffect(params ChessType[] targetType)
     {
-        this.targetType = targetType;
+        targetTypes = new List<ChessType>(targetType);
     }
 
     public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
         bool isWhite = isLocal == GameManager.IsLocalWhite();
-        List<ChessPiece> validPieces = BoardManager.getAllChessPieces(isWhite).FindAll(p => p.getChessType() == targetType);
+        List<ChessPiece> validPieces = BoardManager.getAllChessPieces(isWhite).FindAll(p => targetTypes.Contains(p.getChessType()));
 
         foreach (ChessPiece piece in validPieces)
             if (getValidOrthogonalMoves(piece.getPosition()).Count > 0)
@@ -29,7 +29,7 @@ public class SelectOrthogonalMoveEffect : CardEffect
         bool isWhite = GameManager.IsLocalWhite();
 
         List<ChessPiece> validPieces = BoardManager.getAllChessPieces(isWhite).FindAll(
-            p => p.getChessType() == targetType && getValidOrthogonalMoves(p.getPosition()).Count > 0
+            p => targetTypes.Contains(p.getChessType()) && getValidOrthogonalMoves(p.getPosition()).Count > 0
         );
 
         if (validPieces.Count == 0) return EffectTargetPayload.empty();

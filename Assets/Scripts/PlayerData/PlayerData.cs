@@ -76,6 +76,8 @@ public class PlayerData
 
     public List<Card> getHandList() => handList;
 
+    public List<Card> getHoldingList() => holdingList;
+
     public List<Card> getWaitingList() => waitingList;
 
     public List<Card> getDiscardList() => discardList;

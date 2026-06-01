@@ -45,5 +45,8 @@ TagManager:
   - name: ChessStatusIcon
     uniqueID: 59691833
     locked: 0
+  - name: UiLayer
+    uniqueID: 2573568387
+    locked: 0
   m_RenderingLayers:
   - Default

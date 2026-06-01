@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class BaseStatus<TEnum> where TEnum :Enum
+public abstract class BaseStatus<TEnum> where TEnum : Enum
 {
     public TEnum statusType;
     public int startTurn, endTurn;
@@ -31,12 +31,17 @@ public abstract class StatusContainer<TStatus, TEnum> : IDisposable
 
     public StatusContainer()
     {
-        GameManager.OnTurnStart += cleanUpExpiredStatuses;
+        GameManager.OnTurnStart += triggerOnTurnStart;
     }
 
     public void addStatus(TStatus status)
     {
         activeStatuses.Add(status);
+    }
+
+    private void triggerOnTurnStart(int currentTurnCount, bool isWhiteTurn)
+    {
+        cleanUpExpiredStatuses(currentTurnCount);
     }
 
     public void cleanUpExpiredStatuses(int currentTotalTurn)
@@ -56,7 +61,7 @@ public abstract class StatusContainer<TStatus, TEnum> : IDisposable
 
     public void Dispose()
     {
-        GameManager.OnTurnStart -= cleanUpExpiredStatuses;
+        GameManager.OnTurnStart -= triggerOnTurnStart;
         activeStatuses.Clear();
     }
 }

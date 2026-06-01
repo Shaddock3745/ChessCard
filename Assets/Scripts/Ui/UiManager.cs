@@ -5,8 +5,12 @@ public class UiManager : MonoBehaviour
 {
     private static UiManager instance;
 
+    private static readonly string WHITE_WINS_TEMPLATE = "White Wins", BLACK_WINS_TEMPLATE = "Black Wins";
+
     [SerializeField] private TMPro.TextMeshProUGUI deckCount, waitingCount, discardCount, manaCount, holdCount;
     [SerializeField] private GameObject hoveredObjectDataPanel, logPanel;
+    [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private TMPro.TextMeshProUGUI gameOverText;
     [SerializeField] private GameObject changeTurnButton, showLogPanelButton, holdCardButton;
     [SerializeField] private TMPro.TextMeshProUGUI hoveredObjectName, hoveredObjectDescription;
 
@@ -15,34 +19,73 @@ public class UiManager : MonoBehaviour
         if (instance == null)
         {
             instance = this;
+            hideGameOverPanel();
         }
         else
             Destroy(gameObject);
     }
 
-    public static void updateDeckCount(int count)
+    private void OnEnable()
     {
-        instance.deckCount.text = count.ToString();
+        MatchDataManager.OnLocalCardCountChange += updateCardCount;
+        MatchDataManager.OnLocalManaCountChange += updateManaCount;
+        GameManager.OnTurnStart += updateButtonActive;
+        GameManager.OnGameOver += showGameOverPanel;
+        GameManager.OnResetGame += resetAllUi;
     }
 
-    public static void updateWaitingCount(int count)
+    private void OnDisable()
     {
-        instance.waitingCount.text = count.ToString();
+        MatchDataManager.OnLocalCardCountChange -= updateCardCount;
+        MatchDataManager.OnLocalManaCountChange -= updateManaCount;
+        GameManager.OnTurnStart -= updateButtonActive;
+        GameManager.OnGameOver -= showGameOverPanel;
+        GameManager.OnResetGame -= resetAllUi;
     }
 
-    public static void updateDiscardCount(int count)
+    private static void showGameOverPanel(bool isWhiteWin)
     {
-        instance.discardCount.text = count.ToString();
+        instance.gameOverText.text = isWhiteWin ? WHITE_WINS_TEMPLATE : BLACK_WINS_TEMPLATE;
+        instance.gameOverPanel.SetActive(true);
     }
 
-    public static void updateHoldCount(int count)
+    private static void hideGameOverPanel()
     {
-        instance.holdCount.text = count.ToString();
+        instance.gameOverPanel.SetActive(false);
     }
 
-    public static void updateManaCount(int count)
+    private static void updateCardCount()
     {
-        instance.manaCount.text = count.ToString();
+        instance.deckCount.text = MatchDataManager.getPlayerDeckCardCount(true).ToString();
+        instance.holdCount.text = MatchDataManager.getPlayerHoldingCardCount(true).ToString();
+        instance.discardCount.text = MatchDataManager.getPlayerDiscardCardCount(true).ToString();
+        instance.waitingCount.text = MatchDataManager.getPlayerWaitingCardCount(true).ToString();
+    }
+
+    private static void updateManaCount()
+    {
+        instance.manaCount.text = MatchDataManager.getPlayerMana(true).ToString();
+    }
+
+    private static void resetAllUi()
+    {
+        updateManaCount();
+        updateCardCount();
+        hideHoveredObjectDataPanel();
+    }
+
+    private static void updateButtonActive(int currentTurnCount, bool isWhiteTurn)
+    {
+        if (GameManager.IsLocalWhite() == isWhiteTurn)
+        {
+            showHoldCardButton();
+            showChangeTurnButton();
+        }
+        else
+        {
+            hideChangeTurnButton();
+            hideHoldCardButton();
+        }
     }
 
     private static void showHoveredObjectDataPanel(string name, string description)
@@ -83,22 +126,22 @@ public class UiManager : MonoBehaviour
         }
     }
 
-    public static void showHoldCardButton()
+    private static void showHoldCardButton()
     {
         instance.holdCardButton.SetActive(true);
     }
 
-    public static void hideHoldCardButton()
+    private static void hideHoldCardButton()
     {
         instance.holdCardButton.SetActive(false);
     }
 
-    public static void showChangeTurnButton()
+    private static void showChangeTurnButton()
     {
         instance.changeTurnButton.SetActive(true);
     }
 
-    public static void hideChangeTurnButton()
+    private static void hideChangeTurnButton()
     {
         instance.changeTurnButton.SetActive(false);
     }

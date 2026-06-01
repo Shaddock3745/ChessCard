@@ -1,11 +1,8 @@
-using DG.Tweening;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEngine.Audio.ProcessorInstance;
-using static UnityEngine.Rendering.VolumeComponent;
+using static UnityEngine.GraphicsBuffer;
 
 public class BoardManager : MonoBehaviour
 {
@@ -24,6 +21,9 @@ public class BoardManager : MonoBehaviour
     private Dictionary<ChessPiece, ChessPieceUi> pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
     private BoardState boardState;
 
+    public static Action<ChessPiece, Vector2Int, Vector2Int> OnChessMove;
+    public static Action<ChessPiece, ChessPiece, Vector2Int, Vector2Int> OnChessAttack;
+
     void Awake()
     {
         if (instance == null)
@@ -34,6 +34,12 @@ public class BoardManager : MonoBehaviour
 
     public static void initBoard()
     {
+        foreach (var pieceUiItem in instance.pieceToUiMap)
+        {
+            Destroy(pieceUiItem.Value.gameObject);
+        }
+
+        instance.pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
         instance.boardState = new BoardState();
 
         for (int i = 0; i < 8; i++)
@@ -346,7 +352,7 @@ public class BoardManager : MonoBehaviour
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         innerMovePiece(from, to);
         movingPiece.onMoveEnd(from, to, GameManager.getCurrentTurnCount());
-        LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
+        OnChessMove(movingPiece, from, to);
         InputManager.tryDetectHover();
     }
 
@@ -365,7 +371,7 @@ public class BoardManager : MonoBehaviour
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         await innerMovePieceWithAnimation(from, to);
         movingPiece.onMoveEnd(from, to, GameManager.getCurrentTurnCount());
-        LogManager.createLog(new ChessMoveLog(movingPiece, from, to));
+        OnChessMove(movingPiece, from, to);
         InputManager.tryDetectHover();
     }
 
@@ -392,35 +398,48 @@ public class BoardManager : MonoBehaviour
             await roarTask;
     }
 
+    public static bool gameOverCheck(ChessPiece attackTarget)
+    {
+        if (attackTarget != null && attackTarget.getChessType() == ChessType.King)
+        {
+            GameManager.triggerOnGameOver(!attackTarget.isWhite());
+            return true;
+        }
+
+        return false;
+    }
+
     public static void attackPiece(Vector2Int from, Vector2Int to)
     {
         ChessPiece attacker = getChessPieceAtPosition(from);
-        ChessPiece victim = getChessPieceAtPosition(to);
+        ChessPiece target = getChessPieceAtPosition(to);
         instance.boardState.moveChessPiece(from, to);
 
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
         getUiOfChess(attacker).moveToPoint(new Vector3(x, y, 0));
 
-        getUiOfChess(victim).destroy();
-        instance.pieceToUiMap.Remove(victim);
+        getUiOfChess(target).destroy();
+        instance.pieceToUiMap.Remove(target);
 
         int currentTurnCount = GameManager.getCurrentTurnCount();
         attacker.onMoveEnd(from, to, currentTurnCount);
-        attacker.onAttackEnd(from, victim, currentTurnCount);
+        attacker.onAttackEnd(from, target, currentTurnCount);
 
-        LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
+        OnChessAttack(attacker, target, from, to);
         InputManager.tryDetectHover();
+
+        gameOverCheck(target);
     }
 
     public static async Task attackPieceWithAnimation(Vector2Int from, Vector2Int to)
     {
         ChessPiece attacker = getChessPieceAtPosition(from);
-        ChessPiece victim = getChessPieceAtPosition(to);
+        ChessPiece target = getChessPieceAtPosition(to);
         instance.boardState.moveChessPiece(from, to);
 
         ChessPieceUi attackerUi = getUiOfChess(attacker);
-        ChessPieceUi victimUi = getUiOfChess(victim);
+        ChessPieceUi victimUi = getUiOfChess(target);
 
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
@@ -431,14 +450,16 @@ public class BoardManager : MonoBehaviour
         Task destroyTask = victimUi.destroyWithAnimation();
 
         await Task.WhenAll(moveTask, destroyTask);
-        instance.pieceToUiMap.Remove(victim);
+        instance.pieceToUiMap.Remove(target);
 
         int currentTurnCount = GameManager.getCurrentTurnCount();
         attacker.onMoveEnd(from, to, currentTurnCount);
-        attacker.onAttackEnd(from, victim, currentTurnCount);
+        attacker.onAttackEnd(from, target, currentTurnCount);
 
-        LogManager.createLog(new ChessAttackLog(attacker, victim, from, to));
+        OnChessAttack(attacker, target, from, to);
         InputManager.tryDetectHover();
+
+        gameOverCheck(target);
     }
 
     public static void removePiece(Vector2Int position)

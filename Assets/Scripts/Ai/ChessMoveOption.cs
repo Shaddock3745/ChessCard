@@ -20,12 +20,12 @@ public class ChessMoveOption : AiOption
     {
         if (BoardManager.isEmpty(targetPos))
         {
-            ownerData.doChessMoved(piece, currentPos, targetPos, ActionType.Move, GameManager.getCurrentTurnCount());
+            MatchDataManager.doChessMoved(ownerData.IsLocal(), piece, currentPos, targetPos, ActionType.Move, GameManager.getCurrentTurnCount());
             await BoardManager.movePieceWithAnimation(currentPos, targetPos);
         }
         else
         {
-            ownerData.doChessMoved(piece, currentPos, targetPos, ActionType.Attack, GameManager.getCurrentTurnCount());
+            MatchDataManager.doChessMoved(ownerData.IsLocal(), piece, currentPos, targetPos, ActionType.Attack, GameManager.getCurrentTurnCount());
             await BoardManager.attackPieceWithAnimation(currentPos, targetPos);
         }
     }

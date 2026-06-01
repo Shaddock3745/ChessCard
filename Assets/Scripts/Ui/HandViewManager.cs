@@ -2,6 +2,7 @@ using DG.Tweening;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class HandViewManager : MonoBehaviour
@@ -20,18 +21,19 @@ public class HandViewManager : MonoBehaviour
     private static readonly float FLUSH_DELAY = 0.02f, DRAW_DELAY = 0.08f;
     private static readonly float SELECTING_SPACING_X = 260f;
     private static readonly float SELECTING_SPACING_Y = 350f;
-    private static readonly float SELECTING_OFFSET_Y = 800f;
-    private static readonly int SELECTING_COLUMNS = 5;
+    private static readonly float SELECTING_OFFSET_Y = 600f;
+    private static readonly int SELECTING_COLUMNS = 4;
     private static readonly float SELECTING_SCALE_NORMAL = 1f;
     private static readonly float SELECTING_SCALE_HOVER = 1.2f;
 
-    private Sequence playerDrawCardAnimationSequence, enemyDrawCardAnimationSequence;
+    private DG.Tweening.Sequence playerDrawCardAnimationSequence, enemyDrawCardAnimationSequence;
     private CardUi usingCard = null;
     private int usingCardIndex = -1, hoveredHandCardIndex = -1, hoveredSelectingCardIndex = -1;
     private List<CardUi> playerCardUiList = new List<CardUi>(), selectingCardUiList = new List<CardUi>();
     private List<GameObject> enemyCardBackList = new List<GameObject>();
     private bool isPlayerAnimating = false, isEnemyAnimating = false;
     private float currentDrawDelay = 0f;
+    private bool recalculateCostFlag = false;
 
     private void Awake()
     {
@@ -41,12 +43,25 @@ public class HandViewManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    private void Update()
+    {
+        if (recalculateCostFlag)
+            instance.recalculateCost();
+    }
+
     public static bool isPlayingAnimation() => instance.isPlayerAnimating || instance.isEnemyAnimating;
 
-    public static void recalculateCost()
+    public static void tryRecalculateCost()
     {
-        foreach (CardUi cardUi in instance.playerCardUiList)
+        instance.recalculateCostFlag = true;
+    }
+
+    private void recalculateCost()
+    {
+        foreach (CardUi cardUi in playerCardUiList)
             cardUi.recalculateCost(MatchDataManager.isCardNonCost(true, GameManager.getCurrentTurnCount()), MatchDataManager.getExtraCardCost(true, GameManager.getCurrentTurnCount()));
+
+        recalculateCostFlag = false;
     }
 
     public static async Task playerDrawCard(Card card)
@@ -254,7 +269,7 @@ public class HandViewManager : MonoBehaviour
     {
         isPlayerAnimating = true;
         instance.playerDrawCardAnimationSequence?.Kill();
-        Sequence seq = DOTween.Sequence();
+        DG.Tweening.Sequence seq = DOTween.Sequence();
 
         for (int i = 0; i < playerCardUiList.Count; i++)
         {
@@ -279,7 +294,7 @@ public class HandViewManager : MonoBehaviour
     {
         isEnemyAnimating = true;
         instance.enemyDrawCardAnimationSequence?.Kill();
-        Sequence seq = DOTween.Sequence();
+        DG.Tweening.Sequence seq = DOTween.Sequence();
 
         for (int i = 0; i < enemyCardBackList.Count; i++)
         {
