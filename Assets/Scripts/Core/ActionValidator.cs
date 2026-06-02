@@ -22,7 +22,7 @@ public class ActionValidator
 {
     private static readonly int MAX_MOVE_COUNT_PER_TURN = 1;
     private static readonly List<MoveAction> rawMovesBuffer = new List<MoveAction>(64);
-    
+
     public static bool canHoldCard(PlayerData playerData)
     {
         return playerData.canHoldCard();
@@ -46,7 +46,6 @@ public class ActionValidator
     private static int calculateGlobalMovesUsed(List<ActionRecord> records, int currentTurnCount)
     {
         var movesByPiece = records
-            .Where(r => r.type == ActionType.Move)
             .GroupBy(r => r.piece);
 
         int globalMovesUsed = 0;

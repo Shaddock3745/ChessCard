@@ -101,6 +101,23 @@ public class BoardState
         return tiles;
     }
 
+    public List<BoardTile> getTilesOfPromotablePawn(bool isWhite)
+    {
+        List<BoardTile> tiles = new List<BoardTile>();
+
+        int y = isWhite ? chessPieces.GetLength(1) - 1 : 0;
+
+        for (int x = 0; x < chessPieces.GetLength(0); x++)
+        {
+            ChessPiece piece = chessPieces[x, y];
+
+            if (piece != null && piece.getChessType() == ChessType.Pawn && piece.isWhite() == isWhite)
+                tiles.Add(boardTiles[x, y]);
+        }
+
+        return tiles;
+    }
+
     public void moveChessPiece(Vector2Int from, Vector2Int to)
     {
         ChessPiece pieceFrom = getChessPieceAtPosition(from);

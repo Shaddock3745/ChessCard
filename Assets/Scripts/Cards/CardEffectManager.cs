@@ -137,7 +137,7 @@ public class CardEffectManager : MonoBehaviour
             new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new IncreasePlayerCardCostStatus(1, startTurn, endTurn)), new AddPlayerStatusEffect(true, 3, (startTurn, endTurn) => new IncreasePlayerMoveCostStatus(1, startTurn, endTurn)));
 
         // 捨身取義
-        cardRegistry[28] = new CompositeEffect(new RemoveChessEffect(true, ChessType.Pawn, ChessType.Rook, ChessType.Bishop, ChessType.Knight, ChessType.Queen), new ManaChangeEffect(false, 2), new DrawCardEffect(false, 1));
+        cardRegistry[28] = new GetTargetPipelineEffect(new SelectChessEffect(true, ChessPiece.getAllChessTypes(true)), new RemoveChessAtTargetPositionEffect(), new ManaChangeEffect(false, 2), new DrawCardEffect(false, 1));
 
         // 御駕親征
         cardRegistry[29] = new CompositeEffect(new AddStatusToAllMatchingTypeChessEffect(true, (startTurn) => new ChessStatus[] { new ChessMovementOverrideStatus(new QueenMovement(), startTurn, startTurn + 1),
@@ -196,6 +196,18 @@ public class CardEffectManager : MonoBehaviour
 
         // 干擾
         cardRegistry[45] = new CompositeEffect(new RetrieveAllHoldingCardEffect(true), new PlayerReplenishAndShuffleEffect(true), new AddPlayerStatusEffect(true, 1, 1, (startTurn, endTurn) => new PlayerBonusHandCardStatus(-1, startTurn, endTurn)));
+
+        // 升變 - 騎士
+        cardRegistry[46] = new GetTargetPipelineEffect(new SelectPromotablePawnEffect(true), new RemoveChessAtTargetPositionEffect(), new SummonChessAtTargetPositionEffect(ChessType.Knight));
+
+        // 升變 - 城堡
+        cardRegistry[47] = new GetTargetPipelineEffect(new SelectPromotablePawnEffect(true), new RemoveChessAtTargetPositionEffect(), new SummonChessAtTargetPositionEffect(ChessType.Rook));
+
+        // 升變 - 主教
+        cardRegistry[48] = new GetTargetPipelineEffect(new SelectPromotablePawnEffect(true), new RemoveChessAtTargetPositionEffect(), new SummonChessAtTargetPositionEffect(ChessType.Bishop));
+
+        // 升變 - 皇后
+        cardRegistry[49] = new GetTargetPipelineEffect(new SelectPromotablePawnEffect(true), new RemoveChessAtTargetPositionEffect(), new SummonChessAtTargetPositionEffect(ChessType.Queen));
     }
 
     public static CardEffect getCardEffect(Card card)

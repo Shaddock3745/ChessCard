@@ -35,9 +35,7 @@ public class BoardManager : MonoBehaviour
     public static void initBoard()
     {
         foreach (var pieceUiItem in instance.pieceToUiMap)
-        {
             Destroy(pieceUiItem.Value.gameObject);
-        }
 
         instance.pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
         instance.boardState = new BoardState();
@@ -283,6 +281,11 @@ public class BoardManager : MonoBehaviour
     public static List<BoardTile> getTilesOfChesses(ChessType type, bool isWhite)
     {
         return instance.boardState.getTilesOfChesses(type, isWhite);
+    }
+
+    public static List<BoardTile> getTilesOfPromotablePawn(bool isWhite)
+    {
+        return instance.boardState.getTilesOfPromotablePawn(isWhite);
     }
 
     public static List<ChessPiece> getAllChessPieces(bool isWhite, params ChessType[] chessTypes)

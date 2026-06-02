@@ -7,7 +7,7 @@ public class AiManager : MonoBehaviour
 {
     private static AiManager instance;
 
-    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1 });
+    private static readonly List<int> DEFAULT_AI_DECK_LIST = new List<int>(new int[] { 1, 1, 1, 1, 1 });
     private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
     void Awake()

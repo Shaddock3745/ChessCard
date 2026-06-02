@@ -15,7 +15,6 @@ public struct MoveAction
 
 public interface MovementType
 {
-    // 改為 void，接收外部傳入的 bufferList 進行裝填
     public void getAvailableMoves(Vector2Int currentPos, bool isWhite, List<MoveAction> bufferList);
     public void getProtectablePieces(Vector2Int targetPos, bool isWhite, List<ChessPiece> bufferList);
     public string getDescription();

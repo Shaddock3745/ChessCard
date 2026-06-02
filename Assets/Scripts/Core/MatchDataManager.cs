@@ -127,8 +127,9 @@ public class MatchDataManager : MonoBehaviour
             if (result != null)
             {
                 _ = HandViewManager.playerHoldCard(result);
-                OnLocalCardCountChange?.Invoke();
                 OnPlayerHoldCard(GameManager.IsLocalWhite());
+                OnLocalCardCountChange?.Invoke();
+                OnLocalManaCountChange?.Invoke();
             }
 
         }

@@ -52,7 +52,7 @@ public class SummonEffect : CardEffect
         bool isWhite = isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite();
 
         if (isLocal)
-            processSummonWithoutAnimation(chessType, isWhite, targets.getTargetPositions()[0]);
+            await processSummonWithAnimation(chessType, isWhite, targets.getTargetPositions()[0]);
         else
         {
             await BoardManager.showTargetWithAnimation(targets.getTargetPositions());
