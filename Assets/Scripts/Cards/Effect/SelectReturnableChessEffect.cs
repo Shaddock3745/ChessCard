@@ -38,25 +38,21 @@ public class SelectReturnableChessEffect : CardEffect
             (BoardManager.isEmpty(p.getInitialPosition()) || p.getPosition() == p.getInitialPosition())
         );
 
-        if (validPieces.Count == 0) return EffectTargetPayload.empty();
+        if (validPieces.Count == 0)
+            return EffectTargetPayload.empty();
 
-        Vector2Int selectedPos;
-        if (validPieces.Count == 1)
-        {
-            selectedPos = validPieces[0].getPosition();
-        }
-        else
-        {
-            List<Vector2Int> positions = validPieces.ConvertAll(p => p.getPosition());
-            List<BoardTile> validTiles = new List<BoardTile>();
+        List<Vector2Int> positions = validPieces.ConvertAll(p => p.getPosition());
+        List<BoardTile> validTiles = new List<BoardTile>();
 
-            foreach (Vector2Int position in positions)
-                validTiles.Add(BoardManager.getTileAtPosition(position));
+        foreach (Vector2Int position in positions)
+            validTiles.Add(BoardManager.getTileAtPosition(position));
 
-            selectedPos = (await InputManager.waitForBoardTileSelection(validTiles)).getPosition();
-        }
+        BoardTile selectedTile = await InputManager.waitForBoardTileSelection(validTiles);
 
-        return new EffectTargetPayload(new List<Vector2Int> { selectedPos });
+        if (selectedTile == null)
+            return null;
+
+        return new EffectTargetPayload(new List<Vector2Int> { selectedTile.getPosition() });
     }
 
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
@@ -66,6 +62,22 @@ public class SelectReturnableChessEffect : CardEffect
 
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        List<CardUseOption> options = new List<CardUseOption>();
+        if (currentMana < card.getCost()) return options;
+
+        bool isWhite = isLocal == GameManager.IsLocalWhite();
+        bool targetIsWhite = isAlly ? isWhite : !isWhite;
+
+        List<ChessPiece> validPieces = BoardManager.getAllChessPieces(targetIsWhite).FindAll(p =>
+            (targetTypes.Length == 0 || System.Array.IndexOf(targetTypes, p.getChessType()) != -1) &&
+            (BoardManager.isEmpty(p.getInitialPosition()) || p.getPosition() == p.getInitialPosition())
+        );
+
+        foreach (ChessPiece piece in validPieces)
+        {
+            options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new List<Vector2Int> { piece.getPosition() })));
+        }
+
+        return options;
     }
 }

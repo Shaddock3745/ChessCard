@@ -35,8 +35,22 @@ public class SelectPromotablePawnEffect : CardEffect
         return new EffectTargetPayload(targetTile.getPosition());
     }
 
+    // ★ 實作 getUseOptions：收集所有可升變棋子的位置並產生選項
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        List<CardUseOption> options = new List<CardUseOption>();
+
+        if (currentMana < card.getCost() || !canActivate(isLocal, currentTurnCount, card))
+            return options;
+
+        bool targetIsWhite = isAlly ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite();
+        List<BoardTile> tiles = BoardManager.getTilesOfPromotablePawn(targetIsWhite);
+
+        foreach (BoardTile tile in tiles)
+        {
+            options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new List<Vector2Int> { tile.getPosition() })));
+        }
+
+        return options;
     }
 }

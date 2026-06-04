@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 enum PlayerType
@@ -11,13 +12,16 @@ enum PlayerType
 public class PlayerData
 {
     private static readonly int DEFAULT_MANA = 5, DEFAULT_HAND_CARD_COUNT = 5, DEFAULT_HOLD_COST = 1;
+    private static readonly AiProfile DEFAULT_AI_PROFILE = new AiProfile(AiPersonality.Aggressive, AiDifficulty.Easy);
 
+    private readonly bool isVirtual;
     private readonly PlayerType playerType;
     private readonly bool isWhite;
     private readonly bool isLocal;
+    private int mana = DEFAULT_MANA;
+    private AiProfile aiProfile;
     private PlayerStatusContainer statusContainer = new PlayerStatusContainer();
     private List<Card> deck, handList, waitingList, discardList, holdingList;
-    private int mana = DEFAULT_MANA;
     private List<ActionRecord> chessMoveRecords = new List<ActionRecord>();
 
     public static int getDefaultMana()
@@ -30,17 +34,89 @@ public class PlayerData
         return DEFAULT_HAND_CARD_COUNT;
     }
 
-    public PlayerData(bool isAI, bool isLocal, bool isWhite, List<int> cardIds)
+    public PlayerData(bool isLocal, bool isWhite, List<int> cardIds, bool isAI, bool isVirtual = false)
     {
         playerType = isAI ? PlayerType.AI : PlayerType.Human;
+        aiProfile = isAI ? DEFAULT_AI_PROFILE : null;
         this.isLocal = isLocal;
         this.isWhite = isWhite;
+        this.isVirtual = isVirtual;
         loadDeck(cardIds);
     }
+
+    public PlayerData(bool isLocal, bool isWhite, List<int> cardIds, bool isAI, AiProfile aiProfile, bool isVirtual = false)
+    {
+        playerType = isAI ? PlayerType.AI : PlayerType.Human;
+        this.aiProfile = aiProfile;
+        this.isLocal = isLocal;
+        this.isWhite = isWhite;
+        this.isVirtual = isVirtual;
+        loadDeck(cardIds);
+    }
+
+    private PlayerData(PlayerData source)
+    {
+        this.isVirtual = true;
+        this.playerType = source.playerType;
+        this.isWhite = source.isWhite;
+        this.isLocal = source.isLocal;
+        this.mana = source.mana;
+        this.aiProfile = source.aiProfile; // AiProfile 為唯讀設定，淺拷貝即可
+
+        // 注意：PlayerStatusContainer 也必須在內部實作 Clone()
+        this.statusContainer = source.statusContainer.Clone();
+
+        // 牌庫深度複製
+        this.deck = source.deck.Select(c => c.Clone()).ToList();
+        this.handList = source.handList.Select(c => c.Clone()).ToList();
+        this.waitingList = source.waitingList.Select(c => c.Clone()).ToList();
+        this.discardList = source.discardList.Select(c => c.Clone()).ToList();
+        this.holdingList = source.holdingList.Select(c => c.Clone()).ToList();
+
+        // 紀錄拷貝 (若 ActionRecord 為 struct，使用 List 建構子即可深拷貝；若為 class，則需 Select(r => r.Clone()))
+        this.chessMoveRecords = new List<ActionRecord>(source.chessMoveRecords);
+    }
+
+    // 對外開放的深度複製方法
+    public PlayerData Clone()
+    {
+        return new PlayerData(this);
+    }
+
+    public bool IsVirtual() => isVirtual;
 
     public bool isAI()
     {
         return playerType == PlayerType.AI;
+    }
+
+    public float getStatusContainerAiValue(int currentTurnCount)
+    {
+        return statusContainer.getStatusContainerAiValue(isLocal, currentTurnCount);
+    }
+
+    public AiProfile getAiProfile()
+    {
+        if (playerType != PlayerType.AI)
+            throw new System.Exception("Wrong Player Type!");
+
+        return aiProfile;
+    }
+
+    public AiPersonality getAiPersonality()
+    {
+        if (playerType != PlayerType.AI)
+            throw new System.Exception("Wrong Player Type!");
+
+        return aiProfile.getPersonality();
+    }
+
+    public AiDifficulty getAiDifficulty()
+    {
+        if (playerType != PlayerType.AI)
+            throw new System.Exception("Wrong Player Type!");
+
+        return aiProfile.getDifficulty();
     }
 
     public bool IsWhite() => isWhite;
@@ -86,6 +162,8 @@ public class PlayerData
     {
         mana -= cost;
     }
+
+    public bool canSummon(int currentTurnCount) => statusContainer.canSummon(currentTurnCount);
 
     public int getMoveCount() => chessMoveRecords.Count;
 
@@ -277,7 +355,7 @@ public class PlayerData
     public void useCard(Card card, int currentTurnCount)
     {
         if (!isCardNonCost(currentTurnCount))
-            consumeMana(card.getCost());
+            consumeMana(card.getCost() + getExtraCardCost(currentTurnCount));
 
         handList.Remove(card);
 
@@ -324,5 +402,10 @@ public class PlayerData
     public int getExtraCardCost(int currentTurnCount)
     {
         return statusContainer.getGlobalExtraCardCost(currentTurnCount);
+    }
+
+    public bool canUseHoldAction()
+    {
+        return mana > DEFAULT_HOLD_COST && handList.Count > 0;
     }
 }

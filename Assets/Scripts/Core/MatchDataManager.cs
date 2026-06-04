@@ -191,6 +191,14 @@ public class MatchDataManager : MonoBehaviour
         }
     }
 
+    public static bool reachMoveLimit(bool isLocal, int currentTurnCount)
+    {
+        if (isLocal)
+            return ActionValidator.reachMoveLimit(instance.local, currentTurnCount);
+        else
+            return ActionValidator.reachMoveLimit(instance.enemy, currentTurnCount);
+    }
+
     public static bool hasValidCardInDeckOrWaiting(bool isLocal, int[] validCardIds)
     {
         if (isLocal)
@@ -246,11 +254,6 @@ public class MatchDataManager : MonoBehaviour
     public static bool isAI(bool isLocal)
     {
         return isLocal ? instance.local.isAI() : instance.enemy.isAI();
-    }
-
-    public static PlayerData getPlayerData(bool isLocal)
-    {
-        return isLocal ? instance.local : instance.enemy;
     }
 
     public static int getPlayerMana(bool isLocal)
@@ -385,9 +388,9 @@ public class MatchDataManager : MonoBehaviour
         instance.chessMoveBuffer.Clear();
 
         if (isLocal)
-            ActionValidator.getLegalMoves(instance.local, chess, currentTurnCount, instance.chessMoveBuffer);
+            ActionValidator.getLegalMoves(BoardManager.getRealBoardState(), instance.local, chess, currentTurnCount, instance.chessMoveBuffer);
         else
-            ActionValidator.getLegalMoves(instance.enemy, chess, currentTurnCount, instance.chessMoveBuffer);
+            ActionValidator.getLegalMoves(BoardManager.getRealBoardState(), instance.enemy, chess, currentTurnCount, instance.chessMoveBuffer);
 
         return instance.chessMoveBuffer.Count > 0;
     }
@@ -470,5 +473,15 @@ public class MatchDataManager : MonoBehaviour
     public static void resetGame()
     {
 
+    }
+
+    public static PlayerData getPlayerData(bool isLocal) => isLocal ? instance.local : instance.enemy;
+
+    public static AiProfile getAiProfile(bool isLocal)
+    {
+        if (isLocal)
+            return instance.local.getAiProfile();
+        else
+            return instance.enemy.getAiProfile();
     }
 }

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class SelectOrthogonalMoveEffect : CardEffect
@@ -32,9 +31,15 @@ public class SelectOrthogonalMoveEffect : CardEffect
             p => targetTypes.Contains(p.getChessType()) && getValidOrthogonalMoves(p.getPosition()).Count > 0
         );
 
-        if (validPieces.Count == 0) return EffectTargetPayload.empty();
+        if (validPieces.Count == 0)
+            return EffectTargetPayload.empty();
 
-        Vector2Int selectedPiecePos = (await InputManager.waitForBoardTileSelection(validPieces.ConvertAll(p => BoardManager.getTileAtPosition(p.getPosition())))).getPosition();
+        BoardTile seletecTile = await InputManager.waitForBoardTileSelection(validPieces.ConvertAll(p => BoardManager.getTileAtPosition(p.getPosition())));
+
+        if (seletecTile == null)
+            return null;
+
+        Vector2Int selectedPiecePos = seletecTile.getPosition();
 
         List<Vector2Int> validMoves = getValidOrthogonalMoves(selectedPiecePos);
         List<BoardTile> validTiles = new List<BoardTile>();
@@ -42,9 +47,12 @@ public class SelectOrthogonalMoveEffect : CardEffect
         foreach (var posiotn in validMoves)
             validTiles.Add(BoardManager.getTileAtPosition(posiotn));
 
-        Vector2Int targetPos = (await InputManager.waitForBoardTileSelection(validTiles)).getPosition();
+        BoardTile targetTile = await InputManager.waitForBoardTileSelection(validTiles);
 
-        return new EffectTargetPayload(new List<Vector2Int> { selectedPiecePos, targetPos });
+        if (targetTile == null)
+            return null;
+
+        return new EffectTargetPayload(new List<Vector2Int> { selectedPiecePos, targetTile.getPosition() });
     }
 
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
@@ -52,11 +60,31 @@ public class SelectOrthogonalMoveEffect : CardEffect
         return Task.CompletedTask;
     }
 
+    // ★ 實作 getUseOptions：列舉所有起點與十字終點的組合選項
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
-    }
+        List<CardUseOption> options = new List<CardUseOption>();
 
+        if (currentMana < card.getCost() || !canActivate(isLocal, currentTurnCount, card))
+            return options;
+
+        bool isWhite = isLocal == GameManager.IsLocalWhite();
+        List<ChessPiece> validPieces = BoardManager.getAllChessPieces(isWhite).FindAll(p => targetTypes.Contains(p.getChessType()));
+
+        foreach (ChessPiece piece in validPieces)
+        {
+            Vector2Int startPos = piece.getPosition();
+            List<Vector2Int> validMoves = getValidOrthogonalMoves(startPos);
+
+            foreach (Vector2Int targetPos in validMoves)
+            {
+                List<Vector2Int> path = new List<Vector2Int> { startPos, targetPos };
+                options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(path)));
+            }
+        }
+
+        return options;
+    }
 
     private List<Vector2Int> getValidOrthogonalMoves(Vector2Int startPos)
     {
@@ -66,6 +94,7 @@ public class SelectOrthogonalMoveEffect : CardEffect
         foreach (Vector2Int dir in dirs)
         {
             Vector2Int target = startPos + dir;
+
             if (BoardManager.isPositionOnBoard(target) && BoardManager.isEmpty(target))
                 validMoves.Add(target);
         }

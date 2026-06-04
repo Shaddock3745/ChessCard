@@ -47,9 +47,10 @@ public class CompositeEffect : CardEffect
         return payload;
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章：將 BoardState state 一路往下傳遞給所有的子效果
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        if (currentMana < card.getCost() || !canActivate(isLocal, currentTurnCount, card))
+        if (!canActivate(isLocal, currentTurnCount, card))
             return new List<CardUseOption>();
 
         List<CardUseOption> options = new List<CardUseOption>();
@@ -57,12 +58,13 @@ public class CompositeEffect : CardEffect
         if (effects == null || effects.Count == 0)
             return options;
 
-        buildOptionsRecursive(0, new CompositePayload(), 0, options, isLocal, card, currentMana, currentTurnCount);
+        buildOptionsRecursive(state, 0, new CompositePayload(), 0f, options, isLocal, card, currentMana, currentTurnCount);
 
         return options;
     }
 
-    private void buildOptionsRecursive(int effectIndex, CompositePayload currentPayload, float currentScore, List<CardUseOption> result, bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 遞迴函式也加上 BoardState state 參數
+    private void buildOptionsRecursive(BoardState state, int effectIndex, CompositePayload currentPayload, float currentScore, List<CardUseOption> result, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         if (effectIndex >= effects.Count)
         {
@@ -70,7 +72,7 @@ public class CompositeEffect : CardEffect
             return;
         }
 
-        List<CardUseOption> effectOptions = effects[effectIndex].getUseOptions(isLocal, card, currentMana, currentTurnCount);
+        List<CardUseOption> effectOptions = effects[effectIndex].getUseOptions(state, isLocal, card, currentMana, currentTurnCount);
 
         if (effectOptions.Count == 0)
             return;
@@ -79,7 +81,31 @@ public class CompositeEffect : CardEffect
         {
             CompositePayload newPayload = new CompositePayload(currentPayload);
             newPayload.addPayload(option.getTargets());
-            buildOptionsRecursive(effectIndex + 1, newPayload, currentScore + option.getScore(), result, isLocal, card, currentMana, currentTurnCount);
+
+            // 由於子效果現在都回傳 0f，這裡的 currentScore 加總實質上只是個保險機制，最終會帶 0f 丟給 DFS 評估
+            buildOptionsRecursive(state, effectIndex + 1, newPayload, currentScore + option.getScore(), result, isLocal, card, currentMana, currentTurnCount);
         }
+    }
+
+    // ★ DFS 虛擬執行實作：依序呼叫所有子效果的虛擬執行，並分發對應的 Payload
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        CompositePayload payload = targets as CompositePayload;
+
+        if (payload == null || payload.getPayLoads().Count != effects.Count)
+        {
+            return; // 虛擬推演中若發生例外，直接中斷該分支即可，不拋出 Error
+        }
+
+        for (int i = 0; i < effects.Count; i++)
+        {
+            // 將虛擬盤面、資源與拆解後的 payload 丟給對應的子效果依序執行
+            effects[i].executeVirtually(clonedState, clonedAlly, clonedEnemy, payload.getPayLoad(i), currentTurnCount);
+        }
+    }
+    public bool isRandomEffect()
+    {
+        // 只要子效果中，有任何一個是隨機效果，這個複合效果就是隨機的！
+        return effects.Exists(effect => effect.isRandomEffect());
     }
 }

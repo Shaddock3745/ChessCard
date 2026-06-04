@@ -29,8 +29,31 @@ public class PlayerReplenishAndShuffleEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 新增這段：標記為隨機效果，告訴 DFS 引擎洗牌後未來的抽牌不可測，在此中斷深搜
+    public bool isRandomEffect()
     {
-        throw new System.NotImplementedException();
+        return true;
+    }
+
+    // ★ 更新簽章並實作原本未完成的方法，給予 0f 讓 DFS 結算
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
+    {
+        List<CardUseOption> options = new List<CardUseOption>();
+
+        if (card != null)
+        {
+            options.Add(new CardUseOption(card, 0f));
+        }
+
+        return options;
+    }
+
+    // ★ DFS 虛擬執行實作：在虛擬玩家資料中執行資源回收與洗牌
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        PlayerData targetPlayer = isEnemy ? clonedEnemy : clonedAlly;
+
+        // 呼叫你在 PlayerData 中寫好的 replenish 方法 (內部已包含 waitingList 回收與 shuffleDeck)
+        targetPlayer.replenish();
     }
 }

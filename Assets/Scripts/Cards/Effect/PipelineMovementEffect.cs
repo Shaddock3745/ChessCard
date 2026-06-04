@@ -11,7 +11,7 @@ public class PipelineMovementEffect : CardEffect
 
     public async Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
-        if (targets == null || targets.getTargetPositions().Count < 2) 
+        if (targets == null || targets.getTargetPositions().Count < 2)
             return;
 
         Vector2Int startPos = targets.getTargetPositions()[0];
@@ -26,8 +26,24 @@ public class PipelineMovementEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章，管線後端不自行產生選項
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        return new List<CardUseOption>();
+    }
+
+    // ★ DFS 虛擬執行實作：直接在虛擬盤面上呼叫移動方法
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        if (targets == null || targets.getTargetPositions() == null || targets.getTargetPositions().Count < 2)
+            return;
+
+        Vector2Int startPos = targets.getTargetPositions()[0];
+        Vector2Int endPos = targets.getTargetPositions()[1];
+
+        if (clonedState.getChessPieceAtPosition(startPos) != null)
+        {
+            clonedState.moveChessPiece(startPos, endPos);
+        }
     }
 }

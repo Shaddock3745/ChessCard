@@ -21,6 +21,9 @@ public abstract class BaseStatus<TEnum> where TEnum : Enum
     public int getEndTurn() => endTurn;
 
     public bool isActive(int currentTurn) => currentTurn >= startTurn && currentTurn < endTurn;
+
+
+    public abstract BaseStatus<TEnum> Clone();
 }
 
 public abstract class StatusContainer<TStatus, TEnum> : IDisposable
@@ -57,6 +60,15 @@ public abstract class StatusContainer<TStatus, TEnum> : IDisposable
     public List<TStatus> GetActiveStatuses(TEnum type, int currentTotalTurn)
     {
         return activeStatuses.FindAll(s => s.getStatusType().Equals(type) && s.isActive(currentTotalTurn));
+    }
+
+    public void DeepCopyStatuses(StatusContainer<TStatus, TEnum> source)
+    {
+        this.activeStatuses = new List<TStatus>();
+        foreach (var status in source.activeStatuses)
+        {
+            this.activeStatuses.Add((TStatus)status.Clone());
+        }
     }
 
     public void Dispose()

@@ -28,6 +28,11 @@ public class InputManager : MonoBehaviour
     private int originalSortingOrder;
     private bool isAwaitingChessSelection = false;
     private bool isAwaitingCardSelection = false;
+
+    // --- 新增：用來記錄目前是否強制選擇 ---
+    private bool isChessSelectionForced = false;
+    private bool isCardSelectionForced = false;
+
     private bool externalCallDetectHoverFlag = false;
 
     void Awake()
@@ -58,9 +63,10 @@ public class InputManager : MonoBehaviour
         positionReference.action.Disable();
     }
 
-    public static async Task<BoardTile> waitForBoardTileSelection(List<BoardTile> validTiles)
+    public static async Task<BoardTile> waitForBoardTileSelection(List<BoardTile> validTiles, bool forcedToSelect = false)
     {
         instance.isAwaitingChessSelection = true;
+        instance.isChessSelectionForced = forcedToSelect; // --- 修改：記錄是否強制選擇 ---
         instance.targetTileSelectionTcs = new TaskCompletionSource<BoardTile>();
 
         foreach (BoardTile tile in validTiles)
@@ -71,7 +77,13 @@ public class InputManager : MonoBehaviour
 
     public static async Task<Card> waitForCardSelection(List<Card> validCards, params int[] excludedIds)
     {
+        return await waitForCardSelection(validCards, false, excludedIds);
+    }
+
+    public static async Task<Card> waitForCardSelection(List<Card> validCards, bool forcedToSelect, params int[] excludedIds)
+    {
         instance.isAwaitingCardSelection = true;
+        instance.isCardSelectionForced = forcedToSelect; // --- 修改：記錄是否強制選擇 ---
         instance.targetCardSelectionTcs = new TaskCompletionSource<Card>();
 
         await HandViewManager.hidePlayerHandCards();
@@ -88,18 +100,21 @@ public class InputManager : MonoBehaviour
     private void selectCard()
     {
         instance.isAwaitingCardSelection = false;
+        instance.isCardSelectionForced = false; // 安全起見，完成後重置狀態
         instance.targetCardSelectionTcs?.TrySetResult(selectedCard.getCard());
     }
 
     private void cancelCardSelection()
     {
         instance.isAwaitingCardSelection = false;
+        instance.isCardSelectionForced = false; // 安全起見，完成後重置狀態
         instance.targetCardSelectionTcs?.TrySetResult(null);
     }
 
     private void selectBoardTile()
     {
         instance.isAwaitingChessSelection = false;
+        instance.isChessSelectionForced = false; // 安全起見，完成後重置狀態
         BoardManager.removeAllHint();
         instance.targetTileSelectionTcs?.TrySetResult(currentTile);
     }
@@ -107,6 +122,7 @@ public class InputManager : MonoBehaviour
     private void cancelBoardTileSelection()
     {
         instance.isAwaitingChessSelection = false;
+        instance.isChessSelectionForced = false; // 安全起見，完成後重置狀態
         BoardManager.removeAllHint();
         instance.targetTileSelectionTcs?.TrySetResult(null);
     }
@@ -162,7 +178,7 @@ public class InputManager : MonoBehaviour
         {
             if (isSelectingCard && selectedCard != null)
                 selectCard();
-            else
+            else if (!isCardSelectionForced) // --- 修改：只有在「非強制選擇」時才允許取消 ---
                 cancelCardSelection();
 
             return;
@@ -171,13 +187,15 @@ public class InputManager : MonoBehaviour
         {
             BoardTile tile = getHoveredTile();
 
-            if (tile != null)
-                if (tile.isSelectableTile())
-                    selectBoardTile();
-                else
-                    cancelBoardTileSelection();
-            else
+            // --- 修改：簡化邏輯，並且在「非強制選擇」時才允許取消 ---
+            if (tile != null && tile.isSelectableTile())
+            {
+                selectBoardTile();
+            }
+            else if (!isChessSelectionForced)
+            {
                 cancelBoardTileSelection();
+            }
 
             return;
         }
@@ -384,7 +402,7 @@ public class InputManager : MonoBehaviour
     private void showHint(ChessPieceUi pieceUi)
     {
         uiMoveBuffer.Clear();
-        ActionValidator.getLegalMoves(MatchDataManager.getPlayerData(true), pieceUi.getChess(), GameManager.getCurrentTurnCount(), uiMoveBuffer);
+        ActionValidator.getLegalMoves(BoardManager.getRealBoardState(), MatchDataManager.getPlayerData(true), pieceUi.getChess(), GameManager.getCurrentTurnCount(), uiMoveBuffer);
 
         foreach (var move in uiMoveBuffer)
             switch (move.actionType)

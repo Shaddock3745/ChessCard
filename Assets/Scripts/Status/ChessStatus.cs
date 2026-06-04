@@ -16,18 +16,39 @@ public enum ChessStatusType
     DO_ACTION_AFTER_ATTACK
 }
 
-public class ChessStatus : BaseStatus<ChessStatusType>
+public abstract class ChessStatus : BaseStatus<ChessStatusType>
 {
     public ChessStatus(ChessStatusType status, int startTurn, int endTurn) : base(status, startTurn, endTurn) { }
 
-    public virtual void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos) { }
+    public virtual float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f;
 
+    public virtual void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos) { }
     public virtual void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos) { }
+
+    public abstract override BaseStatus<ChessStatusType> Clone();
 }
 
 public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType>
 {
     public ChessStatusContainer() : base() { }
+
+    public ChessStatusContainer Clone()
+    {
+        ChessStatusContainer clone = new ChessStatusContainer();
+        clone.DeepCopyStatuses(this);
+        return clone;
+    }
+
+    public float getStatusContainerAiValue(bool isLocal, ChessPiece owner, int currentTurnCount)
+    {
+        float result = 0f;
+
+        foreach (var status in activeStatuses)
+            if (status.isActive(currentTurnCount))
+                result += status.getAiValue(isLocal, owner, currentTurnCount);
+
+        return result;
+    }
 
     public bool isNonCostOnMove(int currentTotalTurn)
     {
@@ -40,7 +61,6 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
             return 0;
 
         int extraCost = 0;
-
         foreach (var status in GetActiveStatuses(ChessStatusType.MOVE_COST_MODIFIER, currentTotalTurn))
             if (status is IncreaseChessMoveCostStatus increaseChessMoveCostStatus)
                 extraCost += increaseChessMoveCostStatus.getValue();
@@ -84,7 +104,6 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
     public int getExtraMoveCount(int currentTotalTurn)
     {
         int extraMoveCount = 0;
-
         foreach (var status in GetActiveStatuses(ChessStatusType.EXTRA_MOVE, currentTotalTurn))
             if (status is ChessExtraMoveStatus chessExtraMoveStatus)
                 extraMoveCount += chessExtraMoveStatus.getExtraMoveCount();
@@ -105,22 +124,32 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
     }
 }
 
-
 public class ChessCantMoveStatus : ChessStatus
 {
     public ChessCantMoveStatus(int startTurn, int endTurn) : base(ChessStatusType.CANT_MOVE, startTurn, endTurn) { }
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => -20f;
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessCantMoveStatus(this.startTurn, this.endTurn);
 }
 
 public class ChessCantAttackStatus : ChessStatus
 {
     public ChessCantAttackStatus(int startTurn, int endTurn) : base(ChessStatusType.CANT_ATTACK, startTurn, endTurn) { }
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => -20f;
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessCantAttackStatus(this.startTurn, this.endTurn);
 }
 
 public class ChessCantBeAttackedStatus : ChessStatus
 {
     public ChessCantBeAttackedStatus(int startTurn, int endTurn) : base(ChessStatusType.CANT_BE_ATTACKED, startTurn, endTurn) { }
-}
 
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 40f;
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessCantBeAttackedStatus(this.startTurn, this.endTurn);
+}
 
 public class IncreaseChessMoveCostStatus : ChessStatus
 {
@@ -132,11 +161,19 @@ public class IncreaseChessMoveCostStatus : ChessStatus
     }
 
     public int getValue() => extraCost;
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => -5f * extraCost;
+
+    public override BaseStatus<ChessStatusType> Clone() => new IncreaseChessMoveCostStatus(this.extraCost, this.startTurn, this.endTurn);
 }
 
 public class ChessNonCostOnMoveStatus : ChessStatus
 {
     public ChessNonCostOnMoveStatus(int startTurn, int endTurn) : base(ChessStatusType.NON_COST_ON_MOVE, startTurn, endTurn) { }
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 15f;
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessNonCostOnMoveStatus(this.startTurn, this.endTurn);
 }
 
 public class ChessMovementOverrideStatus : ChessStatus
@@ -149,6 +186,17 @@ public class ChessMovementOverrideStatus : ChessStatus
     }
 
     public MovementType getMovementType() => movementType;
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount)
+    {
+        float baseValue = movementType.getAiValue();
+        if (getStartTurn() == currentTurnCount && MatchDataManager.hadMovedThisTurn(isLocal))
+            return baseValue * 0.1f;
+
+        return baseValue;
+    }
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessMovementOverrideStatus(this.movementType, this.startTurn, this.endTurn);
 }
 
 public class ChessCantAttackSpecificTypeStatus : ChessStatus
@@ -161,6 +209,10 @@ public class ChessCantAttackSpecificTypeStatus : ChessStatus
     }
 
     public ChessType getCantAttackType() => type;
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => -5f;
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessCantAttackSpecificTypeStatus(this.type, this.startTurn, this.endTurn);
 }
 
 public class ChessExtraMoveStatus : ChessStatus
@@ -173,11 +225,17 @@ public class ChessExtraMoveStatus : ChessStatus
     }
 
     public int getExtraMoveCount() => extraMoveCount;
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 20f * extraMoveCount;
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessExtraMoveStatus(this.extraMoveCount, this.startTurn, this.endTurn);
 }
 
 public class PawnRammingStatus : ChessStatus
 {
     public PawnRammingStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, startTurn, endTurn) { }
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 15f;
 
     public override void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos)
     {
@@ -187,21 +245,29 @@ public class PawnRammingStatus : ChessStatus
         if (!BoardManager.isEmpty(frontPos))
             _ = BoardManager.pieceGotRoared(frontPos, forwardDir, owner.isWhite());
     }
+
+    public override BaseStatus<ChessStatusType> Clone() => new PawnRammingStatus(this.startTurn, this.endTurn);
 }
 
 public class ChessPartingShotStatus : ChessStatus
 {
     public ChessPartingShotStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
 
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 20f;
+
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
         _ = BoardManager.movePieceWithAnimation(owner.getPosition(), fromPos);
     }
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessPartingShotStatus(this.startTurn, this.endTurn);
 }
 
 public class ChessConversionStatus : ChessStatus
 {
     public ChessConversionStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 30f;
 
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
@@ -211,11 +277,15 @@ public class ChessConversionStatus : ChessStatus
         if (cardId != -1)
             MatchDataManager.materializeCard(GameManager.IsLocalWhite() == owner.isWhite(), cardId, true);
     }
+
+    public override BaseStatus<ChessStatusType> Clone() => new ChessConversionStatus(this.startTurn, this.endTurn);
 }
 
 public class KnightTrampleStatus : ChessStatus
 {
     public KnightTrampleStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, startTurn, endTurn) { }
+
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 25f;
 
     public override void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos)
     {
@@ -236,15 +306,21 @@ public class KnightTrampleStatus : ChessStatus
                     _ = BoardManager.removePieceWithAnimation(checkPos);
             }
     }
+
+    public override BaseStatus<ChessStatusType> Clone() => new KnightTrampleStatus(this.startTurn, this.endTurn);
 }
 
 public class BattleHardenedPostAttackStatus : ChessStatus
 {
     public BattleHardenedPostAttackStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
 
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 25f;
+
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
         int currentTurn = GameManager.getCurrentTurnCount();
-        owner.addStatus(new ChessExtraMoveStatus(1, currentTurn, currentTurn + 1));
+        BoardManager.addStatus(owner, new ChessExtraMoveStatus(1, currentTurn, currentTurn + 1));
     }
+
+    public override BaseStatus<ChessStatusType> Clone() => new BattleHardenedPostAttackStatus(this.startTurn, this.endTurn);
 }

@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class SummonChessAtTargetPositionEffect : CardEffect
+public class SummonChessAtTargetPositionEffect : CardEffect, PayloadScoreEvaluator
 {
     private static void processSummonWithoutAnimation(ChessType type, bool isWhite, Vector2Int position)
     {
@@ -54,6 +55,24 @@ public class SummonChessAtTargetPositionEffect : CardEffect
 
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        return new List<CardUseOption>();
+    }
+
+    // ★ 修正實作評分介面：不考慮原本格子上的棋子狀態，純粹評估新棋子放置於此的價值
+    public float evaluatePayloadScore(bool isLocal, EffectTargetPayload targets, int currentTurnCount)
+    {
+        if (targets == null || targets.getTargetPositions().Count == 0)
+            return 0f;
+
+        Vector2Int pos = targets.getTargetPositions()[0];
+        bool isCasterWhite = isLocal == GameManager.IsLocalWhite();
+        AiProfile profile = MatchDataManager.getPlayerData(isLocal).getAiProfile();
+
+        // 計算新棋子進場的總價值 (本體分 + 位置分)
+        float newPieceValue = AiEvaluator.getPieceValue(chessType);
+        ChessPiece tempChess = new ChessPiece(chessType, isCasterWhite, pos, true); ;
+        float newPiecePosValue = AiEvaluator.getPositionalValue(tempChess, pos, isCasterWhite, profile, currentTurnCount);
+
+        return newPieceValue + newPiecePosValue;
     }
 }

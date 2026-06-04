@@ -23,7 +23,7 @@ public class AddStatusToPayloadTargetChessEffect : CardEffect
         ChessPiece targetPiece = BoardManager.getChessPieceAtPosition(targets.getTargetPositions()[0]);
 
         if (targetPiece != null)
-            targetPiece.addStatus(factory.Invoke(startTurn));
+            BoardManager.addStatus(targetPiece, factory.Invoke(startTurn));
 
         return Task.CompletedTask;
     }
@@ -33,8 +33,26 @@ public class AddStatusToPayloadTargetChessEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章。作為管線後端元件，不由它自己產生選項，交由複合卡片組合
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        return new List<CardUseOption>();
+    }
+
+    // ★ DFS 虛擬執行實作：直接將狀態掛載到虛擬盤面中 payload 指定的棋子身上
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        if (targets == null || targets.getTargetPositions() == null || targets.getTargetPositions().Count == 0)
+            return;
+
+        Vector2Int targetPos = targets.getTargetPositions()[0];
+
+        // 透過座標從虛擬盤面上抓出對應的虛擬棋子
+        ChessPiece virtualPiece = clonedState.getChessPieceAtPosition(targetPos);
+
+        if (virtualPiece != null)
+        {
+            virtualPiece.addStatus(factory.Invoke(currentTurnCount));
+        }
     }
 }

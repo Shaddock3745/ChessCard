@@ -22,11 +22,19 @@ public class RemoveChessAtTargetPositionEffect : CardEffect
         }
 
         if (isLocal)
-            await BoardManager.removePieceWithAnimation(targets.getTargetPositions()[0]);
+            foreach (Vector2Int pos in targets.getTargetPositions())
+                await BoardManager.removePieceWithAnimation(pos);
         else
         {
             await BoardManager.showTargetWithAnimation(targets.getTargetPositions());
-            await BoardManager.removePieceWithAnimation(targets.getTargetPositions()[0]);
+
+            List<Task> task = new List<Task>();
+
+            foreach (Vector2Int pos in targets.getTargetPositions())
+                task.Add(BoardManager.removePieceWithAnimation(pos));
+
+            await Task.WhenAll(task);
+
             BoardManager.removeAllHint();
         }
 
@@ -38,8 +46,22 @@ public class RemoveChessAtTargetPositionEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章。作為 Pipeline 後端，不自行產生選項
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        return new List<CardUseOption>();
+    }
+
+    // ★ DFS 虛擬執行實作：直接在虛擬盤面上將目標位置的棋子移除
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        if (targets == null || targets.getTargetPositions() == null || targets.getTargetPositions().Count == 0)
+            return;
+
+        foreach (Vector2Int pos in targets.getTargetPositions())
+        {
+            // 呼叫虛擬盤面的移除方法
+            clonedState.removeChessPieceAtPosition(pos);
+        }
     }
 }

@@ -101,7 +101,7 @@ public class CardEffectManager : MonoBehaviour
             new AddSelectedChessMultipleStatusEffect(false, (startTurn) => new ChessStatus[] { new ChessCantMoveStatus(startTurn, startTurn + 2), new ChessCantBeAttackedStatus(startTurn, startTurn + 3) }, ChessPiece.getAllChessTypes(true)));
 
         // 一換一
-        cardRegistry[17] = new SequentialCompositeEffect(new RemoveChessEffect(true, ChessPiece.getAllChessTypes(true)), (firstPayload) => new RemoveChessEffect(false, BoardManager.getChessPieceAtPosition(firstPayload.getTargetPositions()[0]).getChessType()));
+        cardRegistry[17] = new GetTargetPipelineEffect(new SelectEqualButDifferentTeamChessEffect(ChessPiece.getAllChessTypes(true)), new RemoveChessAtTargetPositionEffect());
 
         // 施術準備
         cardRegistry[18] = new CompositeEffect(new DrawCardEffect(false, 2), new AddPlayerStatusEffect(false, 1, (startTurn, endTurn) => new PlayerCantUseSpecificCardStatus(18, startTurn, endTurn)));
@@ -110,7 +110,8 @@ public class CardEffectManager : MonoBehaviour
         cardRegistry[19] = new RetrieveDiscardEffect(2, 19);
 
         // 冊封
-        cardRegistry[20] = new CompositeEffect(new ChessAmountCheckEffect(true, 1, true, false, ChessType.Knight), new ChessAmountCheckEffect(true, 2, false, true, ChessType.Pawn), new RemoveChessEffect(true, ChessType.Pawn), new MaterializeCardEffect(false, 3, 1, true));
+        cardRegistry[20] = new CompositeEffect(new ChessAmountCheckEffect(true, 1, true, false, ChessType.Knight), new ChessAmountCheckEffect(true, 2, false, true, ChessType.Pawn),
+            new GetTargetPipelineEffect(new SelectChessEffect(true, ChessType.Pawn), new RemoveChessAtTargetPositionEffect(), new MaterializeCardEffect(false, 3, 1, true)));
 
         // 再填充
         cardRegistry[21] = new RedrawEffect(false);
@@ -270,6 +271,15 @@ public class CardEffectManager : MonoBehaviour
             Debug.LogWarning("未註冊的卡片 ID: " + card.getId());
 
         HandViewManager.tryRecalculateCost();
+    }
+
+    public static bool isRandomEffect(int cardId)
+    {
+        if (cardRegistry.TryGetValue(cardId, out CardEffect effect))
+        {
+            return effect.isRandomEffect();
+        }
+        return false;
     }
 
     public static int getCardIdByChessType(ChessType type)

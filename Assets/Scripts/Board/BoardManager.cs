@@ -18,6 +18,8 @@ public class BoardManager : MonoBehaviour
     private static readonly float OUTER_ALPHA_WHEN_MOUSE_INNER = 1f, OUTER_ALPHA_WHEN_MOUSE_NOT_INNER = 0.3f;
     private static readonly float TILE_SIZE = 0.64f;
     private static readonly float START_OFFSET = -2.24f;
+
+    private BoardTile[,] boardTiles;
     private Dictionary<ChessPiece, ChessPieceUi> pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
     private BoardState boardState;
 
@@ -37,6 +39,7 @@ public class BoardManager : MonoBehaviour
         foreach (var pieceUiItem in instance.pieceToUiMap)
             Destroy(pieceUiItem.Value.gameObject);
 
+        instance.boardTiles = new BoardTile[8, 8];
         instance.pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
         instance.boardState = new BoardState();
 
@@ -47,6 +50,10 @@ public class BoardManager : MonoBehaviour
         instance.spawnPiece(ChessType.King, true, 4, 0); // White King
         instance.spawnPiece(ChessType.King, false, 4, 7); // Black King
     }
+
+    public static BoardState getRealBoardState() => instance.boardState;
+
+    public static BoardState getCloneBoardState() => instance.boardState.Clone();
 
     public static void hideBoard()
     {
@@ -66,7 +73,7 @@ public class BoardManager : MonoBehaviour
         BoardTile tile = GameObject.Instantiate(tilePrefab, new Vector3(x, y, 0), Quaternion.identity).GetComponent<BoardTile>();
         tile.transform.SetParent(chessBoard.transform);
         tile.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
-        boardState.setBoardTileAtPosition(indexX, indexY, tile);
+        setBoardTileAtPosition(indexX, indexY, tile);
     }
 
     private void spawnPiece(ChessType chessType, bool isWhite, int indexX, int indexY)
@@ -262,30 +269,59 @@ public class BoardManager : MonoBehaviour
 
     public static ChessPieceUi getUiOfChess(ChessPiece piece)
     {
-        if (piece == null)
+        if (piece == null || piece.IsVirtual())
             return null;
 
         return instance.pieceToUiMap[piece];
     }
 
-    public static BoardTile getTileAtPosition(Vector2Int position)
+    private static void setBoardTileAtPosition(int x, int y, BoardTile tile)
     {
-        return instance.boardState.getBoardTileAtPosition(position);
+        instance.boardTiles[x, y] = tile;
+        tile.initPos(x, y);
     }
 
     public static BoardTile getTileAtPosition(int x, int y)
     {
-        return instance.boardState.getBoardTileAtPosition(x, y);
+        return instance.boardTiles[x, y];
     }
 
-    public static List<BoardTile> getTilesOfChesses(ChessType type, bool isWhite)
+    public static BoardTile getTileAtPosition(Vector2Int position)
     {
-        return instance.boardState.getTilesOfChesses(type, isWhite);
+        return instance.boardTiles[position.x, position.y];
+    }
+
+    public static List<BoardTile> getTilesOfChesses(ChessType chessType, bool isWhite)
+    {
+        List<BoardTile> tiles = new List<BoardTile>();
+
+        for (int x = 0; x < instance.boardTiles.GetLength(0); x++)
+            for (int y = 0; y < instance.boardTiles.GetLength(1); y++)
+            {
+                ChessPiece piece = getChessPieceAtPosition(x, y);
+
+                if (piece != null && piece.getChessType() == chessType && piece.isWhite() == isWhite)
+                    tiles.Add(instance.boardTiles[x, y]);
+            }
+
+        return tiles;
     }
 
     public static List<BoardTile> getTilesOfPromotablePawn(bool isWhite)
     {
-        return instance.boardState.getTilesOfPromotablePawn(isWhite);
+        List<BoardTile> tiles = new List<BoardTile>();
+
+        int y = isWhite ? instance.boardTiles.GetLength(1) - 1 : 0;
+
+        for (int x = 0; x < instance.boardTiles.GetLength(0); x++)
+        {
+            ChessPiece piece = getChessPieceAtPosition(x, y);
+
+            if (piece != null && piece.getChessType() == ChessType.Pawn && piece.isWhite() == isWhite)
+                tiles.Add(instance.boardTiles[x, y]);
+        }
+
+        return tiles;
     }
 
     public static List<ChessPiece> getAllChessPieces(bool isWhite, params ChessType[] chessTypes)
@@ -602,10 +638,17 @@ public class BoardManager : MonoBehaviour
         instance.boardOuter.SetActive(false);
     }
 
-    public void addStatus(Vector2Int position, ChessStatus status)
+    public static void addStatus(Vector2Int position, ChessStatus status)
     {
         ChessPiece targetPiece = getChessPieceAtPosition(position);
         targetPiece.addStatus(status);
+        refreshPieceStatusFx(targetPiece);
+    }
+
+    public static void addStatus(ChessPiece targetPiece, ChessStatus status)
+    {
+        targetPiece.addStatus(status);
+        refreshPieceStatusFx(targetPiece);
         refreshPieceStatusFx(targetPiece);
     }
 
@@ -614,7 +657,12 @@ public class BoardManager : MonoBehaviour
         for (int i = 0; i < 8; i++)
             for (int j = 0; j < 8; j++)
                 if (getChessPieceAtPosition(i, j) != null)
-                    getChessPieceAtPosition(i, j).cleanUpExpiredStatuses(currentTotalTurn);
+                {
+                    ChessPiece chess = getChessPieceAtPosition(i, j);
+                    chess.cleanUpExpiredStatuses(currentTotalTurn);
+                    refreshPieceStatusFx(chess);
+                }
+
     }
 
     public static void refreshAllPiecesStatusFx()
@@ -627,6 +675,7 @@ public class BoardManager : MonoBehaviour
 
     public static void refreshPieceStatusFx(ChessPiece piece)
     {
-        getUiOfChess(piece).UpdateStatusFx(GameManager.getCurrentTurnCount());
+        if (!piece.IsVirtual())
+            getUiOfChess(piece).UpdateStatusFx(GameManager.getCurrentTurnCount());
     }
 }

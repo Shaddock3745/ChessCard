@@ -75,7 +75,7 @@ public class AddStatusToAreaChessEffect : CardEffect
                     if (!validTargetTypes.Contains(piece.getChessType()))
                         continue;
 
-                    piece.addStatus(statusFactory.Invoke(startTurn, endTurn));
+                    BoardManager.addStatus(piece, statusFactory.Invoke(startTurn, endTurn));
                 }
             }
         }
@@ -88,8 +88,47 @@ public class AddStatusToAreaChessEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章。由於是管線後端元件，直接回傳空清單，交由複合卡片組合產生選項
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new NotImplementedException();
+        return new List<CardUseOption>();
+    }
+
+    // ★ DFS 虛擬執行實作：直接在虛擬盤面上進行範圍判定與掛載狀態
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        int startTurn = currentTurnCount;
+        int endTurn = startTurn + duration;
+        bool casterIsWhite = clonedAlly.IsWhite();
+
+        List<Vector2Int> centerPositions = centerPositionsFactory.Invoke(clonedAlly.IsLocal(), targets);
+
+        foreach (Vector2Int center in centerPositions)
+        {
+            foreach (Vector2Int dir in directions)
+            {
+                Vector2Int targetPos = center + dir;
+
+                // 基礎邊界過濾 (替代 BoardManager.isPositionOnBoard)
+                if (targetPos.x < 0 || targetPos.x >= 8 || targetPos.y < 0 || targetPos.y >= 8)
+                    continue;
+
+                ChessPiece virtualPiece = clonedState.getChessPieceAtPosition(targetPos);
+
+                if (virtualPiece != null)
+                {
+                    if (positionFilter != null && !positionFilter.Invoke(center, targetPos))
+                        continue;
+
+                    if (virtualPiece.isWhite() == casterIsWhite != isAlly)
+                        continue;
+
+                    if (!validTargetTypes.Contains(virtualPiece.getChessType()))
+                        continue;
+
+                    virtualPiece.addStatus(statusFactory.Invoke(startTurn, endTurn));
+                }
+            }
+        }
     }
 }

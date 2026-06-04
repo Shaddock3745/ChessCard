@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -38,8 +37,8 @@ public class AddStatusToAllMatchingTypeChessEffect : CardEffect
         List<ChessPiece> playerChessList = BoardManager.getAllChessPieces(isAlly == (isLocal == GameManager.IsLocalWhite()), targetTypes);
 
         foreach (var chess in playerChessList)
-            foreach (var satus in statusFactory.Invoke(currentTurnCount))
-                chess.addStatus(satus);
+            foreach (var status in statusFactory.Invoke(currentTurnCount))
+                BoardManager.addStatus(chess, status);
 
         return Task.CompletedTask;
     }
@@ -49,8 +48,62 @@ public class AddStatusToAllMatchingTypeChessEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章，並完全改用傳入的 state 來搜查虛擬盤面
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        List<CardUseOption> options = new List<CardUseOption>();
+
+        bool isWhite = isLocal == GameManager.IsLocalWhite();
+        bool targetIsWhite = isAlly == isWhite;
+        HashSet<ChessType> typeSet = new HashSet<ChessType>(targetTypes);
+        bool hasTarget = false;
+
+        // 在虛擬盤面上確認是否有目標
+        for (int x = 0; x < 8; x++)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                ChessPiece piece = state.getChessPieceAtPosition(x, y);
+                if (piece != null && piece.isWhite() == targetIsWhite && typeSet.Contains(piece.getChessType()))
+                {
+                    hasTarget = true;
+                    break;
+                }
+            }
+            if (hasTarget) break;
+        }
+
+        // 如果是硬性限制且沒有目標，則不產生出牌選項
+        if (hardConstraint && !hasTarget)
+            return options;
+
+        // ★ 拔除原有的計分邏輯，給予初始分數 0f，讓 DFS 透過虛擬推演後的盤面來決定真正的價值
+        options.Add(new CardUseOption(card, 0f, EffectTargetPayload.empty()));
+        return options;
+    }
+
+    // ★ DFS 虛擬執行實作：遍歷虛擬盤面，對所有符合條件的虛擬棋子掛載狀態
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        bool isWhite = clonedAlly.IsWhite();
+        bool targetIsWhite = isAlly == isWhite;
+        HashSet<ChessType> typeSet = new HashSet<ChessType>(targetTypes);
+
+        for (int x = 0; x < 8; x++)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                ChessPiece virtualPiece = clonedState.getChessPieceAtPosition(x, y);
+
+                if (virtualPiece != null && virtualPiece.isWhite() == targetIsWhite && typeSet.Contains(virtualPiece.getChessType()))
+                {
+                    IEnumerable<ChessStatus> targetStatuses = statusFactory.Invoke(currentTurnCount);
+                    foreach (ChessStatus status in targetStatuses)
+                    {
+                        virtualPiece.addStatus(status);
+                    }
+                }
+            }
+        }
     }
 }

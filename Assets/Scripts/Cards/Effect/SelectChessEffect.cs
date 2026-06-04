@@ -15,7 +15,8 @@ public class SelectChessEffect : CardEffect
 
     public bool canActivate(bool isLocal, int currentTurnCount, Card card)
     {
-        return BoardManager.getChessAmount(isAlly ? isLocal == GameManager.IsLocalWhite() : isLocal != GameManager.IsLocalWhite(), validTypes) > 0;
+        bool isWhite = isLocal == GameManager.IsLocalWhite();
+        return BoardManager.getChessAmount(isAlly ? isWhite : !isWhite, validTypes) > 0;
     }
 
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
@@ -25,18 +26,40 @@ public class SelectChessEffect : CardEffect
 
     public async Task<EffectTargetPayload> gatherTargets()
     {
+        bool isWhite = GameManager.IsLocalWhite();
         List<BoardTile> tiles = new List<BoardTile>();
 
         foreach (ChessType type in validTypes)
-            tiles.AddRange(BoardManager.getTilesOfChesses(type, GameManager.IsLocalWhite()));
+            tiles.AddRange(BoardManager.getTilesOfChesses(type, isAlly ? isWhite : !isWhite));
 
         BoardTile targetTile = await InputManager.waitForBoardTileSelection(tiles);
+
+        if (targetTile == null)
+            return null;
 
         return new EffectTargetPayload(targetTile.getPosition());
     }
 
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        List<CardUseOption> options = new List<CardUseOption>();
+
+        if (!canActivate(isLocal, currentTurnCount, card))
+            return options;
+
+        bool isWhite = isLocal == GameManager.IsLocalWhite();
+        bool targetIsWhite = isAlly ? isWhite : !isWhite;
+
+        // 將所有符合條件的棋子轉化為 Option (基礎分數 0)
+        foreach (ChessType type in validTypes)
+        {
+            List<BoardTile> tiles = BoardManager.getTilesOfChesses(type, targetIsWhite);
+            foreach (BoardTile tile in tiles)
+            {
+                options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(tile.getPosition())));
+            }
+        }
+
+        return options;
     }
 }

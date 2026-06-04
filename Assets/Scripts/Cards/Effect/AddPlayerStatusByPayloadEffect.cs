@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using UnityEngine;
 
 public class AddPlayerStatusByPayloadEffect : CardEffect
 {
@@ -42,8 +41,15 @@ public class AddPlayerStatusByPayloadEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章，加入 BoardState
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        return new List<CardUseOption> { new CardUseOption(card, 1, EffectTargetPayload.empty()) };
+        return new List<CardUseOption>();
+    }
+
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        PlayerData targetPlayer = isEnemy ? clonedEnemy : clonedAlly;
+        targetPlayer.addStatus(statusFactory.Invoke(currentTurnCount + delay, currentTurnCount + duration + delay, targets));
     }
 }

@@ -43,7 +43,7 @@ public class GameManager : MonoBehaviour
         BoardManager.initBoard();
 
         MatchDataManager.initLocal(PlayerDataManager.initLocalPlayerData(false, true));
-        MatchDataManager.initEnemy(AiManager.initAIPlayerData(false, false));
+        MatchDataManager.initEnemy(AiManager.initAiPlayerData(false, false, PlayerDataManager.getEnemyAiPersonality(), PlayerDataManager.getEnemyAiDifficulty()));
 
         startFirstTurn();
     }
@@ -65,7 +65,7 @@ public class GameManager : MonoBehaviour
         else
         {
             MatchDataManager.turnStart(false);
-            _ = AiManager.doBestMove(MatchDataManager.getPlayerData(false), getCurrentTurnCount());
+            _ = AiManager.doBestMove(false, getCurrentTurnCount());
         }
     }
 
@@ -85,7 +85,7 @@ public class GameManager : MonoBehaviour
         BoardManager.refreshAllPiecesStatusFx();
 
         if (MatchDataManager.isAI(isLocalTurn))
-            await AiManager.doBestMove(MatchDataManager.getPlayerData(isLocalTurn), getCurrentTurnCount());
+            await AiManager.doBestMove(isLocalTurn, getCurrentTurnCount());
     }
 
     private void resetGame()
@@ -124,10 +124,10 @@ public class GameManager : MonoBehaviour
 
     public static void triggerOnResetGame()
     {
-        instance.resetGame(); 
+        instance.resetGame();
         BoardManager.initBoard();
         MatchDataManager.initLocal(PlayerDataManager.initLocalPlayerData(false, true));
-        MatchDataManager.initEnemy(AiManager.initAIPlayerData(false, false));
+        MatchDataManager.initEnemy(AiManager.initAiPlayerData(false, false, PlayerDataManager.getEnemyAiPersonality(), PlayerDataManager.getEnemyAiDifficulty()));
         OnResetGame?.Invoke();
     }
 }

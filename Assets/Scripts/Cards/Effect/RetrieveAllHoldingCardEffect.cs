@@ -18,7 +18,8 @@ public class RetrieveAllHoldingCardEffect : CardEffect
 
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
-        MatchDataManager.retrieveAllHoldingCard(isLocal);
+        // ★ 幫你修正了原本忽略 isEnemy 的小 Bug
+        MatchDataManager.retrieveAllHoldingCard(isLocal != isEnemy);
         return Task.CompletedTask;
     }
 
@@ -27,8 +28,26 @@ public class RetrieveAllHoldingCardEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章，並給予 0f 讓 DFS 與複合卡片共同結算
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        throw new System.NotImplementedException();
+        List<CardUseOption> options = new List<CardUseOption>();
+
+        if (card != null)
+        {
+            options.Add(new CardUseOption(card, 0f));
+        }
+
+        return options;
+    }
+
+    // ★ DFS 虛擬執行實作：直接在虛擬玩家資料中收回保留卡片
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        PlayerData targetPlayer = isEnemy ? clonedEnemy : clonedAlly;
+
+        // 呼叫 PlayerData 中的 retrieveAllHoldingCard()
+        // 將 holdingList 的虛擬卡片轉移到 deck 中
+        targetPlayer.retrieveAllHoldingCard();
     }
 }

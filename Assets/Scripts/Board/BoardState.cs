@@ -5,18 +5,32 @@ using UnityEngine.UIElements;
 
 public class BoardState
 {
+    private readonly bool isVirtual;
     private ChessPiece[,] chessPieces;
-    private BoardTile[,] boardTiles;
 
-    public BoardState()
+    public BoardState(bool isVirtual = false)
     {
         initializeBoard();
+        this.isVirtual = isVirtual;
     }
+
+    public BoardState Clone()
+    {
+        BoardState clone = new BoardState(true);
+
+        for (int x = 0; x < chessPieces.GetLength(0); x++)
+            for (int y = 0; y < chessPieces.GetLength(1); y++)
+                if (this.chessPieces[x, y] != null)
+                    clone.chessPieces[x, y] = this.chessPieces[x, y].Clone();
+
+        return clone;
+    }
+
+    public bool IsVirtual() => isVirtual;
 
     private void initializeBoard()
     {
         chessPieces = new ChessPiece[8, 8];
-        boardTiles = new BoardTile[8, 8];
     }
 
     public void setChessPieceAtPosition(int x, int y, ChessPiece piece)
@@ -67,55 +81,6 @@ public class BoardState
             }
 
         return new Vector2Int(0, 0);
-    }
-
-    public void setBoardTileAtPosition(int x, int y, BoardTile tile)
-    {
-        boardTiles[x, y] = tile;
-        tile.initPos(x, y);
-    }
-
-    public BoardTile getBoardTileAtPosition(int x, int y)
-    {
-        return boardTiles[x, y];
-    }
-
-    public BoardTile getBoardTileAtPosition(Vector2Int position)
-    {
-        return boardTiles[position.x, position.y];
-    }
-
-    public List<BoardTile> getTilesOfChesses(ChessType chessType, bool isWhite)
-    {
-        List<BoardTile> tiles = new List<BoardTile>();
-
-        for (int x = 0; x < chessPieces.GetLength(0); x++)
-            for (int y = 0; y < chessPieces.GetLength(1); y++)
-            {
-                ChessPiece piece = chessPieces[x, y];
-
-                if (piece != null && piece.getChessType() == chessType && piece.isWhite() == isWhite)
-                    tiles.Add(boardTiles[x, y]);
-            }
-
-        return tiles;
-    }
-
-    public List<BoardTile> getTilesOfPromotablePawn(bool isWhite)
-    {
-        List<BoardTile> tiles = new List<BoardTile>();
-
-        int y = isWhite ? chessPieces.GetLength(1) - 1 : 0;
-
-        for (int x = 0; x < chessPieces.GetLength(0); x++)
-        {
-            ChessPiece piece = chessPieces[x, y];
-
-            if (piece != null && piece.getChessType() == ChessType.Pawn && piece.isWhite() == isWhite)
-                tiles.Add(boardTiles[x, y]);
-        }
-
-        return tiles;
     }
 
     public void moveChessPiece(Vector2Int from, Vector2Int to)

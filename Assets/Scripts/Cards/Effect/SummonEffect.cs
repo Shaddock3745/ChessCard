@@ -30,17 +30,27 @@ public class SummonEffect : CardEffect
 
     public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
-        if (currentMana < card.getCost() || !canActivate(isLocal, currentTurnCount, card))
+        if (!canActivate(isLocal, currentTurnCount, card))
             return new List<CardUseOption>();
 
         List<CardUseOption> useOptions = new List<CardUseOption>();
-        List<BoardTile> summonableTiles = BoardManager.getSummonableTiles(chessType, isLocal ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite());
-        float manaEfficiency = card.getCost() == 0 ? 2.0f : (float)currentMana / card.getCost();
+        bool isWhite = isLocal == GameManager.IsLocalWhite();
+        List<BoardTile> summonableTiles = BoardManager.getSummonableTiles(chessType, isWhite);
+
+        // 取得實際花費 (確保有計算全域卡片消耗狀態)
+        int extraCost = MatchDataManager.getExtraCardCost(isLocal, currentTurnCount);
+        int finalCost = MatchDataManager.isCardNonCost(isLocal, currentTurnCount) ? 0 : card.getCost() + extraCost;
+
+        float manaEfficiency = finalCost == 0 ? 2.0f : (float)currentMana / finalCost;
 
         foreach (BoardTile tile in summonableTiles)
         {
             Vector2Int position = tile.getPosition();
-            float score = AiEvaluator.getPieceValue(chessType) * manaEfficiency + AiEvaluator.getPositionValue(position);
+
+            // 由於召喚時棋子尚未實體化，單純用距離中心的基礎座標價值來評估
+            float basePosValue = (8f - Vector2.Distance(position, new Vector2(3.5f, 3.5f))) * 1.5f;
+            float score = AiEvaluator.getPieceValue(chessType) * manaEfficiency + basePosValue;
+
             useOptions.Add(new CardUseOption(card, score, new EffectTargetPayload(position)));
         }
 

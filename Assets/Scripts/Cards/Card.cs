@@ -1,8 +1,7 @@
-using UnityEngine;
-
 [System.Serializable]
 public class Card
 {
+    private readonly bool isVirtual;
     private int id;
     private bool isExileOnUse = false;
     private int currentCost;
@@ -13,14 +12,15 @@ public class Card
         currentCost = JsonReader.getCardCost(id);
     }
 
-    public Card(int id, bool isExileOnUse)
+    public Card(int id, bool isExileOnUse, bool isVirtual = false)
     {
         this.id = id;
         this.isExileOnUse = isExileOnUse;
         currentCost = JsonReader.getCardCost(id);
+        this.isVirtual = isVirtual;
     }
 
-    public Card(int id, bool isExileOnUse, bool noConsumption)
+    public Card(int id, bool isExileOnUse, bool noConsumption, bool isVirtual = false)
     {
         this.id = id;
         this.isExileOnUse = isExileOnUse;
@@ -29,9 +29,13 @@ public class Card
             currentCost = 0;
         else
             currentCost = JsonReader.getCardCost(id);
+
+        this.isVirtual = isVirtual;
     }
 
-    public void resentCost()
+    public bool IsVirtual() => isVirtual;
+
+    public void resetCost()
     {
         currentCost = JsonReader.getCardCost(id);
     }
@@ -55,8 +59,16 @@ public class Card
     {
         return isExileOnUse;
     }
+
     public int getId()
     {
         return id;
+    }
+
+    public Card Clone()
+    {
+        Card clone = new Card(this.id, this.isExileOnUse, true);
+        clone.currentCost = this.currentCost;
+        return clone;
     }
 }

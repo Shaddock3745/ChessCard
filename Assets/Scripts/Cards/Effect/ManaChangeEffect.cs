@@ -29,13 +29,24 @@ public class ManaChangeEffect : CardEffect
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章，拔除對真實 MatchDataManager 的依賴與複雜算分
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         List<CardUseOption> options = new List<CardUseOption>();
 
-        if (currentMana >= card.getCost())
-            options.Add(new CardUseOption(card, 1));
+        if (card != null)
+        {
+            // 給予 0f，交由 DFS 推演後面的動作來決定這張卡帶來的實質效益
+            options.Add(new CardUseOption(card, 0f, EffectTargetPayload.empty()));
+        }
 
         return options;
+    }
+
+    // ★ DFS 虛擬執行實作：直接修改虛擬玩家資料的魔力值
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        PlayerData targetPlayer = isEnemy ? clonedEnemy : clonedAlly;
+        targetPlayer.addMana(delta);
     }
 }

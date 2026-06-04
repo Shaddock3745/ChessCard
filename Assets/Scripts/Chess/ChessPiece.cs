@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum ChessType
@@ -14,6 +13,7 @@ public enum ChessType
 
 public class ChessPiece
 {
+    private readonly bool isVirtual;
     private ChessType chessType;
     private bool isWhiteChess;
     private Vector2Int currentPosition;
@@ -26,11 +26,12 @@ public class ChessPiece
 
     public static ChessType[] getAllChessTypes(bool exceptKing) => exceptKing ? ALL_TYPES_EXCEPT_KING : ALL_TYPES;
 
-    public ChessPiece(ChessType chessType, bool isWhite, Vector2Int currentPosition)
+    public ChessPiece(ChessType chessType, bool isWhite, Vector2Int currentPosition, bool isVirtual = false)
     {
         this.chessType = chessType;
         this.isWhiteChess = isWhite;
         this.currentPosition = currentPosition;
+        this.isVirtual = isVirtual;
 
         defaultMovementType = chessType switch
         {
@@ -43,6 +44,19 @@ public class ChessPiece
             _ => null
         };
     }
+
+    public ChessPiece Clone()
+    {
+        ChessPiece clone = new ChessPiece(this.chessType, this.isWhiteChess, this.currentPosition, true);
+        clone.initialPosition = this.initialPosition;
+
+        // 注意：ChessStatusContainer 也必須在內部實作 Clone() 才能達到完全深拷貝
+        clone.statusContainer = this.statusContainer.Clone();
+
+        return clone;
+    }
+
+    public bool IsVirtual() => isVirtual;
 
     public ChessType getChessType() => chessType;
 
@@ -119,16 +133,19 @@ public class ChessPiece
         };
     }
 
+    public float getStatusContainerAiValue(bool isLocal, int currentTurnCount)
+    {
+        return statusContainer.getStatusContainerAiValue(isLocal, this, currentTurnCount);
+    }
+
     public void addStatus(ChessStatus status)
     {
         statusContainer.addStatus(status);
-        BoardManager.refreshPieceStatusFx(this);
     }
 
     public void cleanUpExpiredStatuses(int currentTotalTurn)
     {
         statusContainer.cleanUpExpiredStatuses(currentTotalTurn);
-        BoardManager.refreshPieceStatusFx(this);
     }
 
     public void onDeath()
