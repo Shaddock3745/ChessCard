@@ -22,8 +22,13 @@ public abstract class ChessStatus : BaseStatus<ChessStatusType>
 
     public virtual float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f;
 
+    // 真實遊戲執行
     public virtual void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos) { }
     public virtual void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos) { }
+
+    // ★ 虛擬沙盒執行：專供 DFS 推演使用，只修改虛擬盤面
+    public virtual void virtualOnPostMove(BoardState state, ChessPiece owner, Vector2Int fromPos, Vector2Int toPos) { }
+    public virtual void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos) { }
 
     public abstract override BaseStatus<ChessStatusType> Clone();
 }
@@ -121,6 +126,19 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
     {
         foreach (var status in GetActiveStatuses(ChessStatusType.DO_ACTION_AFTER_ATTACK, currentTotalTurn))
             status.onPostAttack(owner, victim, fromPos);
+    }
+
+    // ★ 提供給 ChessMoveOption 虛擬執行的觸發介面
+    public void virtualTriggerPostMove(BoardState state, ChessPiece owner, Vector2Int fromPos, Vector2Int toPos, int currentTotalTurn)
+    {
+        foreach (var status in GetActiveStatuses(ChessStatusType.DO_ACTION_AFTER_MOVE, currentTotalTurn))
+            status.virtualOnPostMove(state, owner, fromPos, toPos);
+    }
+
+    public void virtualTriggerPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos, int currentTotalTurn)
+    {
+        foreach (var status in GetActiveStatuses(ChessStatusType.DO_ACTION_AFTER_ATTACK, currentTotalTurn))
+            status.virtualOnPostAttack(state, owner, victim, fromPos);
     }
 }
 
@@ -246,6 +264,26 @@ public class PawnRammingStatus : ChessStatus
             _ = BoardManager.pieceGotRoared(frontPos, forwardDir, owner.isWhite());
     }
 
+    public override void virtualOnPostMove(BoardState state, ChessPiece owner, Vector2Int fromPos, Vector2Int toPos)
+    {
+        Vector2Int forwardDir = owner.isWhite() ? Vector2Int.up : Vector2Int.down;
+        Vector2Int frontPos = toPos + forwardDir;
+
+        if (frontPos.x >= 0 && frontPos.x < 8 && frontPos.y >= 0 && frontPos.y < 8)
+        {
+            ChessPiece affectedPiece = state.getChessPieceAtPosition(frontPos.x, frontPos.y);
+            if (affectedPiece != null && affectedPiece.isWhite() != owner.isWhite())
+            {
+                Vector2Int pushedPos = frontPos + forwardDir;
+                if (pushedPos.x >= 0 && pushedPos.x < 8 && pushedPos.y >= 0 && pushedPos.y < 8)
+                {
+                    if (state.getChessPieceAtPosition(pushedPos.x, pushedPos.y) == null)
+                        state.moveChessPiece(frontPos, pushedPos);
+                }
+            }
+        }
+    }
+
     public override BaseStatus<ChessStatusType> Clone() => new PawnRammingStatus(this.startTurn, this.endTurn);
 }
 
@@ -258,6 +296,11 @@ public class ChessPartingShotStatus : ChessStatus
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
         _ = BoardManager.movePieceWithAnimation(owner.getPosition(), fromPos);
+    }
+
+    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    {
+        state.moveChessPiece(owner.getPosition(), fromPos);
     }
 
     public override BaseStatus<ChessStatusType> Clone() => new ChessPartingShotStatus(this.startTurn, this.endTurn);
@@ -276,6 +319,11 @@ public class ChessConversionStatus : ChessStatus
 
         if (cardId != -1)
             MatchDataManager.materializeCard(GameManager.IsLocalWhite() == owner.isWhite(), cardId, true);
+    }
+
+    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    {
+        // 虛擬環境中不直接改變手牌資料 (PlayerData)，單純完成盤面戰略分數評估即可
     }
 
     public override BaseStatus<ChessStatusType> Clone() => new ChessConversionStatus(this.startTurn, this.endTurn);
@@ -307,6 +355,30 @@ public class KnightTrampleStatus : ChessStatus
             }
     }
 
+    public override void virtualOnPostMove(BoardState state, ChessPiece owner, Vector2Int fromPos, Vector2Int toPos)
+    {
+        int minX = Mathf.Min(fromPos.x, toPos.x);
+        int maxX = Mathf.Max(fromPos.x, toPos.x);
+        int minY = Mathf.Min(fromPos.y, toPos.y);
+        int maxY = Mathf.Max(fromPos.y, toPos.y);
+
+        for (int x = minX; x <= maxX; x++)
+            for (int y = minY; y <= maxY; y++)
+            {
+                Vector2Int checkPos = new Vector2Int(x, y);
+
+                if (checkPos == fromPos || checkPos == toPos)
+                    continue;
+
+                ChessPiece target = state.getChessPieceAtPosition(checkPos.x, checkPos.y);
+                if (target != null && target.isWhite() != owner.isWhite())
+                {
+                    // 虛擬移除：只修改虛擬盤面，絕對不能呼叫 BoardManager
+                    state.setChessPieceAtPosition(checkPos.x, checkPos.y, null);
+                }
+            }
+    }
+
     public override BaseStatus<ChessStatusType> Clone() => new KnightTrampleStatus(this.startTurn, this.endTurn);
 }
 
@@ -320,6 +392,12 @@ public class BattleHardenedPostAttackStatus : ChessStatus
     {
         int currentTurn = GameManager.getCurrentTurnCount();
         BoardManager.addStatus(owner, new ChessExtraMoveStatus(1, currentTurn, currentTurn + 1));
+    }
+
+    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    {
+        int currentTurn = GameManager.getCurrentTurnCount();
+        owner.addStatus(new ChessExtraMoveStatus(1, currentTurn, currentTurn + 1));
     }
 
     public override BaseStatus<ChessStatusType> Clone() => new BattleHardenedPostAttackStatus(this.startTurn, this.endTurn);

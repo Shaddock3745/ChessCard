@@ -40,26 +40,35 @@ public class SelectChessEffect : CardEffect
         return new EffectTargetPayload(targetTile.getPosition());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章，並完全改用 BoardState 遍歷棋子
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         List<CardUseOption> options = new List<CardUseOption>();
 
-        if (!canActivate(isLocal, currentTurnCount, card))
-            return options;
-
         bool isWhite = isLocal == GameManager.IsLocalWhite();
         bool targetIsWhite = isAlly ? isWhite : !isWhite;
+        HashSet<ChessType> typeSet = new HashSet<ChessType>(validTypes);
 
-        // 將所有符合條件的棋子轉化為 Option (基礎分數 0)
-        foreach (ChessType type in validTypes)
+        // 在虛擬盤面上遍歷找棋子
+        for (int x = 0; x < 8; x++)
         {
-            List<BoardTile> tiles = BoardManager.getTilesOfChesses(type, targetIsWhite);
-            foreach (BoardTile tile in tiles)
+            for (int y = 0; y < 8; y++)
             {
-                options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(tile.getPosition())));
+                ChessPiece piece = state.getChessPieceAtPosition(x, y);
+                if (piece != null && piece.isWhite() == targetIsWhite && typeSet.Contains(piece.getChessType()))
+                {
+                    // 這裡給 0f，由後續的複合效果 (Pipeline) 或卡片本身決定該位置的戰略價值
+                    options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new Vector2Int(x, y))));
+                }
             }
         }
 
         return options;
+    }
+
+    // ★ DFS 虛擬執行：選棋效果本質上是對後續操作的「指定」，本身不改變棋盤，留空即可
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        // Do nothing.
     }
 }

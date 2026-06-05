@@ -35,8 +35,8 @@ public class SelectPromotablePawnEffect : CardEffect
         return new EffectTargetPayload(targetTile.getPosition());
     }
 
-    // ★ 實作 getUseOptions：收集所有可升變棋子的位置並產生選項
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章，改由 BoardState 遍歷虛擬棋盤列舉可升變的士兵位置
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         List<CardUseOption> options = new List<CardUseOption>();
 
@@ -44,13 +44,31 @@ public class SelectPromotablePawnEffect : CardEffect
             return options;
 
         bool targetIsWhite = isAlly ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite();
-        List<BoardTile> tiles = BoardManager.getTilesOfPromotablePawn(targetIsWhite);
+        int promotionRow = targetIsWhite ? 7 : 0; // 白兵在第 7 列升變，黑兵在第 0 列升變
 
-        foreach (BoardTile tile in tiles)
+        // 遍歷虛擬棋盤尋找符合陣營且位於底線的兵
+        for (int x = 0; x < 8; x++)
         {
-            options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new List<Vector2Int> { tile.getPosition() })));
+            for (int y = 0; y < 8; y++)
+            {
+                ChessPiece piece = state.getChessPieceAtPosition(x, y);
+                if (piece != null && piece.getChessType() == ChessType.Pawn && piece.isWhite() == targetIsWhite)
+                {
+                    if (y == promotionRow)
+                    {
+                        // 產生 Option (基礎分數 0f，交由後續管線效果如移除與生成來決定權重)
+                        options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new List<Vector2Int> { new Vector2Int(x, y) })));
+                    }
+                }
+            }
         }
 
         return options;
+    }
+
+    // ★ DFS 虛擬執行：目標選擇節點本身不改變盤面狀態，留空即可
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        // Do nothing.
     }
 }

@@ -55,15 +55,15 @@ public class ChessMoveOption : AiOption
         // 4. 在虛擬盤面上執行移動 (這會自動觸發目標格上棋子的 onDeath() 並清空舊座標)
         clonedState.moveChessPiece(currentPos, targetPos);
 
-        // 5. 觸發移動後的狀態檢測 (例如騎士踐踏、愈戰愈勇)
+        // 5. ★ 核心修正：不呼叫會觸發真實動畫的 onMoveEnd / onAttackEnd
+        // 直接改為呼叫 StatusContainer 的「虛擬」觸發介面，將虛擬盤面 (clonedState) 傳入狀態中
         if (isAttack)
         {
-            // 注意：由於 virtualVictim 已經被吃掉，有些狀態需要知道受害者是誰
-            virtualPiece.onAttackEnd(currentPos, virtualVictim, currentTurnCount);
+            virtualPiece.getStatusContainer().virtualTriggerPostAttack(clonedState, virtualPiece, virtualVictim, currentPos, currentTurnCount);
         }
         else
         {
-            virtualPiece.onMoveEnd(currentPos, targetPos, currentTurnCount);
+            virtualPiece.getStatusContainer().virtualTriggerPostMove(clonedState, virtualPiece, currentPos, targetPos, currentTurnCount);
         }
     }
 

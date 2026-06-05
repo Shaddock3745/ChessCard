@@ -171,4 +171,9 @@ public class BoardState
 
         return count;
     }
+
+    public bool isPositionOnBoard(Vector2Int position)
+    {
+        return position.x >= 0 && position.x < chessPieces.GetLength(0) && position.y >= 0 && position.y < chessPieces.GetLength(1);
+    }
 }

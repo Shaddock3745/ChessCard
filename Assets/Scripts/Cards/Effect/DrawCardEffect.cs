@@ -21,10 +21,11 @@ public class DrawCardEffect : CardEffect
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
         // 真實遊戲執行
-        int count = MatchDataManager.getPlayerDeckCardCount(!isEnemy) + MatchDataManager.getPlayerWaitingCardCount(!isEnemy);
+        bool targetIsLocal = isEnemy ? !isLocal : isLocal;
+        int count = MatchDataManager.getPlayerDeckCardCount(targetIsLocal) + MatchDataManager.getPlayerWaitingCardCount(targetIsLocal);
 
         for (int i = 0; i < amount && count-- > 0; i++)
-            MatchDataManager.drawCard(!isEnemy);
+            MatchDataManager.drawCard(targetIsLocal);
 
         return Task.CompletedTask;
     }

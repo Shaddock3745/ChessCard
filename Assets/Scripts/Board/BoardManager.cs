@@ -359,7 +359,7 @@ public class BoardManager : MonoBehaviour
 
     public static bool isPositionOnBoard(Vector2Int position)
     {
-        return position.x >= 0 && position.x < 8 && position.y >= 0 && position.y < 8;
+        return instance.boardState.isPositionOnBoard(position);
     }
 
     public static bool isWhiteAtPosition(Vector2Int position)

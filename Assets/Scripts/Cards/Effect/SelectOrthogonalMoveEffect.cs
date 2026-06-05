@@ -60,8 +60,8 @@ public class SelectOrthogonalMoveEffect : CardEffect
         return Task.CompletedTask;
     }
 
-    // ★ 實作 getUseOptions：列舉所有起點與十字終點的組合選項
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章，改由 BoardState 遍歷虛擬棋盤列舉十字移動選項
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         List<CardUseOption> options = new List<CardUseOption>();
 
@@ -69,23 +69,56 @@ public class SelectOrthogonalMoveEffect : CardEffect
             return options;
 
         bool isWhite = isLocal == GameManager.IsLocalWhite();
-        List<ChessPiece> validPieces = BoardManager.getAllChessPieces(isWhite).FindAll(p => targetTypes.Contains(p.getChessType()));
+        HashSet<ChessType> typeSet = new HashSet<ChessType>(targetTypes);
 
-        foreach (ChessPiece piece in validPieces)
+        // 遍歷虛擬棋盤尋找符合條件的起點棋子
+        for (int x = 0; x < 8; x++)
         {
-            Vector2Int startPos = piece.getPosition();
-            List<Vector2Int> validMoves = getValidOrthogonalMoves(startPos);
-
-            foreach (Vector2Int targetPos in validMoves)
+            for (int y = 0; y < 8; y++)
             {
-                List<Vector2Int> path = new List<Vector2Int> { startPos, targetPos };
-                options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(path)));
+                ChessPiece piece = state.getChessPieceAtPosition(x, y);
+                if (piece != null && piece.isWhite() == isWhite && typeSet.Contains(piece.getChessType()))
+                {
+                    Vector2Int startPos = new Vector2Int(x, y);
+                    List<Vector2Int> validMoves = getValidOrthogonalMoves(state, startPos);
+
+                    // 為每個合法的十字空位終點產生 Option (基礎分數 0f，交由後續管線或 DFS 結算)
+                    foreach (Vector2Int targetPos in validMoves)
+                    {
+                        List<Vector2Int> path = new List<Vector2Int> { startPos, targetPos };
+                        options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(path)));
+                    }
+                }
             }
         }
 
         return options;
     }
 
+    // 虛擬環境專用的十字空位檢查
+    private List<Vector2Int> getValidOrthogonalMoves(BoardState state, Vector2Int startPos)
+    {
+        List<Vector2Int> validMoves = new List<Vector2Int>();
+        Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        foreach (Vector2Int dir in dirs)
+        {
+            Vector2Int target = startPos + dir;
+
+            // 進行虛擬棋盤邊界檢查與空位檢查
+            if (target.x >= 0 && target.x < 8 && target.y >= 0 && target.y < 8)
+            {
+                if (state.getChessPieceAtPosition(target) == null)
+                {
+                    validMoves.Add(target);
+                }
+            }
+        }
+
+        return validMoves;
+    }
+
+    // 真實環境使用的十字空位檢查 (維持原樣)
     private List<Vector2Int> getValidOrthogonalMoves(Vector2Int startPos)
     {
         List<Vector2Int> validMoves = new List<Vector2Int>();
@@ -100,5 +133,11 @@ public class SelectOrthogonalMoveEffect : CardEffect
         }
 
         return validMoves;
+    }
+
+    // ★ DFS 虛擬執行：目標選擇節點本身不改變盤面狀態，留空即可
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
+    {
+        // Do nothing.
     }
 }

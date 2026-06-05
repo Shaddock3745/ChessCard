@@ -10,25 +10,21 @@ public class AiEvaluator
     private const float SCORE_LOSE = -99999f;
     private const float SCORE_CHECKED_PENALTY = -5000f;
 
-    // 基礎權重乘數 (將由 AiProfile 進行倍率放大/縮小)
-    private const float BASE_WEIGHT_MANA = 2f;
-    private const float BASE_WEIGHT_HAND_CARD = 3f;
+    // 資源資產權重平衡 (解決守財奴與不打牌問題)
+    private const float BASE_WEIGHT_MANA = 0.5f;      // 魔力不跨回合留存，降低保留價值以鼓勵消耗
+    private const float BASE_WEIGHT_HAND_CARD = 2.0f; // 手牌基礎保留分
+    private const float BASE_WEIGHT_HOLD_CARD = 3.5f; // 保留區資產價值 (高於手牌，鼓勵多餘魔力跨回合蓄水)
     private const float BASE_WEIGHT_MOBILITY = 0.5f;
 
-    // 避免重複 new 的共用快取容器 (由於推演是循序發生，靜態快取可大幅降低 GC)
     private static readonly List<MoveAction> threatCheckBuffer = new List<MoveAction>(64);
     private static readonly List<MoveAction> legalMoveBuffer = new List<MoveAction>(64);
 
-    /// <summary>
-    /// 終極狀態評估函式：給定一個盤面與雙方資料，回傳該盤面對 Ally 而言的總體分數。
-    /// 分數越高，代表此盤面/路徑越值得選擇。
-    /// </summary>
     public static float EvaluateBoardState(BoardState state, PlayerData allyData, PlayerData enemyData, int currentTurnCount)
     {
         bool allyIsWhite = allyData.IsWhite();
-        AiProfile profile = allyData.getAiProfile(); // ★ 取得個性權重
+        AiProfile profile = allyData.getAiProfile();
 
-        // 1. 【第一層級：神聖級 (Absolute)】生死交關
+        // 1. 【第一層級：神聖級】生死與解將判定
         float absoluteScore = EvaluateAbsoluteTier(state, allyIsWhite, currentTurnCount);
         if (Mathf.Abs(absoluteScore) >= 90000f) return absoluteScore;
 
@@ -37,27 +33,18 @@ public class AiEvaluator
 
         float totalScore = absoluteScore;
 
-        // 2. 【第二層級：核心戰略級 (Strategic)】- 物質實力與靜態交換(SEE)
-        // ★ 傳入 profile，讓個性影響攻守判斷
+        // 2. 【第二層級：核心戰略級】物資、單向曝險防守、微量進攻火網
         totalScore += EvaluateStrategicTier(state, allyPieces, enemyPieces, allyData, enemyData, currentTurnCount, profile);
 
-        // 3. 【第三層級：戰術陣地級 (Tactical)】- 位置、護衛、推進潛力
+        // 3. 【第三層級：戰術陣地級】中心控制、大子滲透、國王安全網
         totalScore += EvaluateTacticalTier(state, allyPieces, enemyPieces, allyIsWhite, profile);
 
-        // 4. 【第四層級：運營微調級 (Operational)】- 機動力、殘餘資源、狀態
+        // 4. 【第四層級：運營微調級】時效狀態核銷、機動力、資源留存清算
         totalScore += EvaluateOperationalTier(state, allyPieces, enemyPieces, allyData, enemyData, currentTurnCount, profile);
 
         return totalScore;
     }
 
-
-    // ==========================================
-    // 模組化層級實作 (Tier Implementations)
-    // ==========================================
-
-    /// <summary>
-    /// 第一層級：判斷生死與將軍的絕對狀態
-    /// </summary>
     private static float EvaluateAbsoluteTier(BoardState state, bool allyIsWhite, int currentTurnCount)
     {
         ChessPiece allyKing = state.getKing(allyIsWhite);
@@ -72,35 +59,83 @@ public class AiEvaluator
         return 0f;
     }
 
-    /// <summary>
-    /// 第二層級：計算雙方動態棋力值與火力交換威脅 (SEE)
-    /// </summary>
     private static float EvaluateStrategicTier(BoardState state, List<ChessPiece> allyPieces, List<ChessPiece> enemyPieces, PlayerData allyData, PlayerData enemyData, int currentTurnCount, AiProfile profile)
     {
         float strategicScore = 0f;
 
-        // 計算我方實力與威脅 (加分)
         foreach (var piece in allyPieces)
         {
             float dynamicValue = GetPieceDynamicValue(piece, allyData.IsLocal(), currentTurnCount, profile);
             strategicScore += dynamicValue;
-            strategicScore += EvaluatePieceThreatsAndProtection(state, piece, dynamicValue, allyData.IsWhite(), currentTurnCount, profile);
+            // 扣除我方棋子暴露在危險中的風險分數 (防禦與直接擊殺誘因)
+            strategicScore -= EvaluatePieceRisk(state, piece, dynamicValue, allyData.IsWhite(), currentTurnCount, profile);
         }
 
-        // 計算敵方實力與威脅 (扣分)
         foreach (var piece in enemyPieces)
         {
             float dynamicValue = GetPieceDynamicValue(piece, enemyData.IsLocal(), currentTurnCount, profile);
             strategicScore -= dynamicValue;
-            strategicScore -= EvaluatePieceThreatsAndProtection(state, piece, dynamicValue, !allyData.IsWhite(), currentTurnCount, profile);
+            // 給予瞄準敵軍的微量進攻紅利 (走位包圍與鋪墊誘因，設有嚴格上限防止只看不如吃)
+            strategicScore += EvaluateThreateningBonus(state, piece, dynamicValue, !allyData.IsWhite(), currentTurnCount, profile);
         }
 
         return strategicScore;
     }
 
-    /// <summary>
-    /// 第三層級：計算陣地控制、士兵推進指數、國王護衛網
-    /// </summary>
+    private static float EvaluateThreateningBonus(BoardState state, ChessPiece enemyPiece, float enemyPieceValue, bool isEnemyWhite, int currentTurnCount, AiProfile profile)
+    {
+        if (IsSquareThreatened(state, enemyPiece.getPosition(), !isEnemyWhite, currentTurnCount))
+        {
+            return (enemyPieceValue * 0.25f) * profile.getAttackWeight();
+        }
+        return 0f;
+    }
+
+    private static float EvaluatePieceRisk(BoardState state, ChessPiece piece, float pieceValue, bool isWhite, int currentTurnCount, AiProfile profile)
+    {
+        if (!IsSquareThreatened(state, piece.getPosition(), !isWhite, currentTurnCount)) return 0f;
+
+        bool isProtectedByAlly = IsSquareThreatened(state, piece.getPosition(), isWhite, currentTurnCount);
+
+        if (!isProtectedByAlly)
+        {
+            // 無保護白給棋子 (Hanging piece)：扣除幾乎全額戰力分值
+            return (pieceValue * 0.9f) * profile.getProtectWeight();
+        }
+        else
+        {
+            // 有友軍保護，檢查敵方是否能以小博大進行不對等交換
+            float lowestAttackerValue = GetLowestAttackerValue(state, piece.getPosition(), !isWhite, currentTurnCount);
+            if (lowestAttackerValue < pieceValue)
+            {
+                return ((pieceValue - lowestAttackerValue) * 0.8f) * profile.getProtectWeight();
+            }
+        }
+        return 0f;
+    }
+
+    private static float GetLowestAttackerValue(BoardState state, Vector2Int targetPos, bool byWhite, int currentTurnCount)
+    {
+        float lowestValue = 9999f;
+        List<ChessPiece> attackers = GetAllPieces(state, byWhite);
+        foreach (var p in attackers)
+        {
+            if (!p.canAttack(currentTurnCount)) continue;
+            threatCheckBuffer.Clear();
+            p.getMovementType(currentTurnCount).getAvailableMoves(state, p.getPosition(), byWhite, threatCheckBuffer);
+            foreach (var move in threatCheckBuffer)
+            {
+                if (move.targetPos == targetPos && move.actionType == ActionType.Attack)
+                {
+                    float val = GetPieceBaseValue(p.getChessType());
+                    if (val < lowestValue) lowestValue = val;
+                    break;
+                }
+            }
+        }
+        return lowestValue;
+    }
+
     private static float EvaluateTacticalTier(BoardState state, List<ChessPiece> allyPieces, List<ChessPiece> enemyPieces, bool allyIsWhite, AiProfile profile)
     {
         float tacticalScore = 0f;
@@ -111,38 +146,43 @@ public class AiEvaluator
         foreach (var piece in enemyPieces)
             tacticalScore -= GetPositionalValue(piece, !allyIsWhite);
 
-        // ★ 防守權重 (protectWeight) 極大影響國王安全評分
         tacticalScore += EvaluateKingSafety(state, state.getKing(allyIsWhite), allyIsWhite) * profile.getProtectWeight();
-        tacticalScore -= EvaluateKingSafety(state, state.getKing(!allyIsWhite), !allyIsWhite) * profile.getAttackWeight(); // 敵方國王不安全，對激進 AI 來說是好事
+        tacticalScore -= EvaluateKingSafety(state, state.getKing(!allyIsWhite), !allyIsWhite) * profile.getAttackWeight();
 
         return tacticalScore;
     }
 
-    /// <summary>
-    /// 第四層級：計算全體機動性、殘餘魔力與手牌、全域玩家狀態
-    /// </summary>
     private static float EvaluateOperationalTier(BoardState state, List<ChessPiece> allyPieces, List<ChessPiece> enemyPieces, PlayerData allyData, PlayerData enemyData, int currentTurnCount, AiProfile profile)
     {
         float opScore = 0f;
 
-        // 1. 機動力 ★ 乘上 mobilityWeight
         opScore += GetTotalMobility(state, allyPieces, currentTurnCount) * BASE_WEIGHT_MOBILITY * profile.getMobilityWeight();
         opScore -= GetTotalMobility(state, enemyPieces, currentTurnCount) * BASE_WEIGHT_MOBILITY * profile.getMobilityWeight();
 
-        // 2. 殘餘經濟資源 ★ 乘上 resourceWeight (決定 AI 是吝嗇還是揮霍)
-        opScore += ((allyData.getMana() * BASE_WEIGHT_MANA) + (allyData.getHandCardCount() * BASE_WEIGHT_HAND_CARD)) * profile.getResourceWeight();
-        opScore -= ((enemyData.getMana() * BASE_WEIGHT_MANA) + (enemyData.getHandCardCount() * BASE_WEIGHT_HAND_CARD)) * profile.getResourceWeight();
+        // 剩餘物資清算
+        float allyResourceScore = (allyData.getMana() * BASE_WEIGHT_MANA)
+                                + (allyData.getHandCardCount() * BASE_WEIGHT_HAND_CARD)
+                                + (allyData.getHoldingList().Count * BASE_WEIGHT_HOLD_CARD);
+        opScore += allyResourceScore * profile.getResourceWeight();
 
-        // 3. 玩家全域狀態 ★ 乘上 cardPreference (因為全域狀態通常由強大魔法卡產生，奇招型極愛)
-        opScore += allyData.getStatusContainer().getStatusContainerAiValue(allyData.IsLocal(), currentTurnCount) * profile.getCardPreference();
-        opScore -= enemyData.getStatusContainer().getStatusContainerAiValue(enemyData.IsLocal(), currentTurnCount) * profile.getCardPreference();
+        float enemyResourceScore = (enemyData.getMana() * BASE_WEIGHT_MANA)
+                                 + (enemyData.getHandCardCount() * BASE_WEIGHT_HAND_CARD)
+                                 + (enemyData.getHoldingList().Count * BASE_WEIGHT_HOLD_CARD);
+        opScore -= enemyResourceScore * profile.getResourceWeight();
+
+        // 時效性狀態核銷：若全域移動步數已耗盡，卡片給予的全域戰鬥狀態評估分值打一折 (杜絕空發法術)
+        float allyStatusVal = allyData.getStatusContainer().getStatusContainerAiValue(allyData.IsLocal(), currentTurnCount);
+        int allyMoveLimit = 1 + allyData.getStatusContainer().getExtraMoveCount(currentTurnCount);
+        if (allyData.getMoveCount() >= allyMoveLimit) allyStatusVal *= 0.1f;
+        opScore += allyStatusVal * profile.getCardPreference();
+
+        float enemyStatusVal = enemyData.getStatusContainer().getStatusContainerAiValue(enemyData.IsLocal(), currentTurnCount);
+        int enemyMoveLimit = 1 + enemyData.getStatusContainer().getExtraMoveCount(currentTurnCount);
+        if (enemyData.getMoveCount() >= enemyMoveLimit) enemyStatusVal *= 0.1f;
+        opScore -= enemyStatusVal * profile.getCardPreference();
 
         return opScore;
     }
-
-    // ==========================================
-    // 底層細節輔助方法 (Low-Level Helpers)
-    // ==========================================
 
     public static float GetPieceBaseValue(ChessType type) => type switch
     {
@@ -160,91 +200,45 @@ public class AiEvaluator
         float baseVal = GetPieceBaseValue(piece.getChessType());
         if (baseVal == 0) return 0;
 
-        // ★ 棋子身上的狀態價值乘上 cardPreference (奇招型會把帶 Buff 的棋子當成寶貝)
-        float statusModifiers = piece.getStatusContainerAiValue(isLocal, currentTurnCount) * profile.getCardPreference();
+        float statusModifiers = piece.getStatusContainer().getStatusContainerAiValue(isLocal, piece, currentTurnCount);
 
+        // 時效性狀態核銷：若棋子本身已無行動/攻擊能力，附帶的增益狀態分值打一折
+        if (!piece.canMove(currentTurnCount) && !piece.canAttack(currentTurnCount))
+        {
+            statusModifiers *= 0.1f;
+        }
+
+        statusModifiers *= profile.getCardPreference();
         return Mathf.Max(1f, baseVal + statusModifiers);
     }
 
-    /// <summary>
-    /// 靜態交換評估 (SEE) 與保護網計算
-    /// </summary>
-    private static float EvaluatePieceThreatsAndProtection(BoardState state, ChessPiece attacker, float attackerValue, bool isWhite, int currentTurnCount, AiProfile profile)
-    {
-        float score = 0f;
-        if (!attacker.canAttack(currentTurnCount)) return 0f;
-
-        legalMoveBuffer.Clear();
-        attacker.getMovementType(currentTurnCount).getAvailableMoves(state, attacker.getPosition(), isWhite, legalMoveBuffer);
-
-        foreach (var move in legalMoveBuffer)
-        {
-            ChessPiece target = state.getChessPieceAtPosition(move.targetPos);
-
-            if (target != null)
-            {
-                if (target.isWhite() != isWhite)
-                {
-                    // === 攻擊敵方 ===
-                    float targetValue = GetPieceBaseValue(target.getChessType());
-                    if (targetValue == 0) continue;
-
-                    bool isTargetProtected = IsSquareThreatened(state, move.targetPos, target.isWhite(), currentTurnCount);
-
-                    if (!isTargetProtected)
-                    {
-                        // ★ 白嫖敵軍：激進型給予更高評價
-                        score += (targetValue * 0.8f) * profile.getAttackWeight();
-                    }
-                    else
-                    {
-                        // 目標有保護，計算換子虧盈
-                        if (attackerValue <= targetValue)
-                            score += ((targetValue - attackerValue * 0.5f) * 0.5f) * profile.getAttackWeight();
-                        else
-                            score -= ((attackerValue - targetValue) * 0.8f) * profile.getProtectWeight(); // ★ 虧本生意：保守型嚴格避免
-                    }
-                }
-                else
-                {
-                    // === 友軍保護網 ===
-                    if (target.getChessType() != ChessType.King)
-                    {
-                        // ★ 友軍互保：保守型給予極高評價
-                        score += (GetPieceBaseValue(target.getChessType()) * 0.1f) * profile.getProtectWeight();
-                    }
-                }
-            }
-        }
-        return score;
-    }
-
-    /// <summary>
-    /// 計算陣地、中心控制與士兵推進潛力
-    /// </summary>
     private static float GetPositionalValue(ChessPiece piece, bool isWhite)
     {
         float score = 0f;
         Vector2Int pos = piece.getPosition();
 
-        // 1. 中心控制 (越靠近中心 3.5, 3.5 越高分)
+        // 1. 中心控制力 (全棋子通用)
         float distToCenter = Vector2.Distance(pos, new Vector2(3.5f, 3.5f));
         score += (8f - distToCenter) * 0.5f;
 
-        // 2. 士兵推進指數 (越靠近底線分數成指數上升)
+        // 2. 推進與領地滲透指數 (解決召喚後原地發呆問題)
         if (piece.getChessType() == ChessType.Pawn)
         {
+            // 士兵：底線指數推進分
             int rankAdvancement = isWhite ? pos.y - 1 : 6 - pos.y;
             if (rankAdvancement > 0)
                 score += Mathf.Pow(1.8f, rankAdvancement);
+        }
+        else if (piece.getChessType() != ChessType.King)
+        {
+            // 大子 (車/馬/象/象/后)：敵方半場領地滲透分，驅使進場後向前壓制火網
+            int penetration = isWhite ? pos.y : 7 - pos.y;
+            score += penetration * 0.3f;
         }
 
         return score;
     }
 
-    /// <summary>
-    /// 評估國王護衛網 (周圍八格的安全程度)
-    /// </summary>
     private static float EvaluateKingSafety(BoardState state, ChessPiece king, bool isWhite)
     {
         if (king == null) return 0f;
@@ -258,21 +252,19 @@ public class AiEvaluator
                 if (dx == 0 && dy == 0) continue;
 
                 Vector2Int checkPos = new Vector2Int(kPos.x + dx, kPos.y + dy);
-                if (checkPos.x < 0 || checkPos.x > 7 || checkPos.y < 0 || checkPos.y > 7) continue;
-
-                ChessPiece neighbor = state.getChessPieceAtPosition(checkPos);
-                if (neighbor != null && neighbor.isWhite() == isWhite)
+                if (checkPos.x >= 0 && checkPos.x < 8 && checkPos.y >= 0 && checkPos.y < 8)
                 {
-                    safetyScore += 5f; // 友軍駐守加分
+                    ChessPiece neighbor = state.getChessPieceAtPosition(checkPos.x, checkPos.y);
+                    if (neighbor != null && neighbor.isWhite() == isWhite)
+                    {
+                        safetyScore += 5f;
+                    }
                 }
             }
         }
         return safetyScore;
     }
 
-    /// <summary>
-    /// 判定指定格子是否正處於某方陣營的火力威脅之下
-    /// </summary>
     private static bool IsSquareThreatened(BoardState state, Vector2Int targetPos, bool byWhite, int currentTurnCount)
     {
         List<ChessPiece> threatPieces = GetAllPieces(state, byWhite);
@@ -281,7 +273,6 @@ public class AiEvaluator
             if (!piece.canAttack(currentTurnCount)) continue;
 
             threatCheckBuffer.Clear();
-            // 修正：依照新的 MovementType 介面，傳入 state
             piece.getMovementType(currentTurnCount).getAvailableMoves(state, piece.getPosition(), byWhite, threatCheckBuffer);
             foreach (var move in threatCheckBuffer)
             {
@@ -292,9 +283,6 @@ public class AiEvaluator
         return false;
     }
 
-    /// <summary>
-    /// 計算機動性總和 (合法步數)
-    /// </summary>
     private static int GetTotalMobility(BoardState state, List<ChessPiece> pieces, int currentTurnCount)
     {
         int totalMoves = 0;
@@ -303,16 +291,12 @@ public class AiEvaluator
             if (!piece.canMove(currentTurnCount)) continue;
 
             legalMoveBuffer.Clear();
-            // 修正：依照新的 MovementType 介面，傳入 state
             piece.getMovementType(currentTurnCount).getAvailableMoves(state, piece.getPosition(), piece.isWhite(), legalMoveBuffer);
             totalMoves += legalMoveBuffer.Count;
         }
         return totalMoves;
     }
 
-    /// <summary>
-    /// 取得場上某陣營的所有存活棋子
-    /// </summary>
     private static List<ChessPiece> GetAllPieces(BoardState state, bool isWhite)
     {
         List<ChessPiece> pieces = new List<ChessPiece>();

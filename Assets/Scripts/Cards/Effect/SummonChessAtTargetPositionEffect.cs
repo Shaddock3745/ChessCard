@@ -1,9 +1,8 @@
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class SummonChessAtTargetPositionEffect : CardEffect, PayloadScoreEvaluator
+public class SummonChessAtTargetPositionEffect : CardEffect
 {
     private static void processSummonWithoutAnimation(ChessType type, bool isWhite, Vector2Int position)
     {
@@ -53,26 +52,22 @@ public class SummonChessAtTargetPositionEffect : CardEffect, PayloadScoreEvaluat
         return Task.FromResult(EffectTargetPayload.empty());
     }
 
-    public List<CardUseOption> getUseOptions(bool isLocal, Card card, int currentMana, int currentTurnCount)
+    // ★ 更新簽章。作為 Pipeline 後端效果，不自行產生選項
+    public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         return new List<CardUseOption>();
     }
 
-    // ★ 修正實作評分介面：不考慮原本格子上的棋子狀態，純粹評估新棋子放置於此的價值
-    public float evaluatePayloadScore(bool isLocal, EffectTargetPayload targets, int currentTurnCount)
+    // ★ DFS 虛擬執行實作：在虛擬盤面的目標位置上直接放入新棋子
+    public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
     {
-        if (targets == null || targets.getTargetPositions().Count == 0)
-            return 0f;
+        if (targets == null || targets.getTargetPositions() == null || targets.getTargetPositions().Count == 0)
+            return;
 
         Vector2Int pos = targets.getTargetPositions()[0];
-        bool isCasterWhite = isLocal == GameManager.IsLocalWhite();
-        AiProfile profile = MatchDataManager.getPlayerData(isLocal).getAiProfile();
+        bool isWhite = clonedAlly.IsWhite();
 
-        // 計算新棋子進場的總價值 (本體分 + 位置分)
-        float newPieceValue = AiEvaluator.getPieceValue(chessType);
-        ChessPiece tempChess = new ChessPiece(chessType, isCasterWhite, pos, true); ;
-        float newPiecePosValue = AiEvaluator.getPositionalValue(tempChess, pos, isCasterWhite, profile, currentTurnCount);
-
-        return newPieceValue + newPiecePosValue;
+        // 直接在虛擬盤面上放置新棋子，後續交由 DFS 結算該棋子進場後的盤面戰略價值
+        clonedState.setChessPieceAtPosition(pos, new ChessPiece(chessType, isWhite, pos, true));
     }
 }

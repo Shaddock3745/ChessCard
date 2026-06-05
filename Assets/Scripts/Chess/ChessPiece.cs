@@ -214,4 +214,9 @@ public class ChessPiece
     {
         statusContainer.triggerPostAttack(this, target, from, currentTurnCount);
     }
+
+    public ChessStatusContainer getStatusContainer()
+    {
+        return statusContainer;
+    }
 }
