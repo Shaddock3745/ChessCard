@@ -46,10 +46,9 @@ public class RetrieveDiscardEffect : CardEffect
     public Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
         if (targets != null && targets.getTargetCards().Count > 0)
-        {
             foreach (Card c in targets.getTargetCards())
                 MatchDataManager.retrieveCard(isLocal, c);
-        }
+
         return Task.CompletedTask;
     }
 
@@ -77,9 +76,7 @@ public class RetrieveDiscardEffect : CardEffect
 
         // 2. 貪婪選出當前動態價值最高的前 N 張卡片組合
         for (int i = 0; i < actualRetrieveCount; i++)
-        {
             selectedCards.Add(validCards[i]);
-        }
 
         // 3. 拔除手動算分給予 0f，由 DFS 取得卡片後在接下來的推演決定實質價值
         options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(selectedCards)));
@@ -107,11 +104,10 @@ public class RetrieveDiscardEffect : CardEffect
         {
             // 因為 PlayerData.Clone() 做了深度拷貝，虛擬棄牌堆裡的 Card 物件與 realCard 記憶體位置不同
             // 我們必須透過 ID 找到對應的虛擬卡片來執行回收
-            Card virtualCard = clonedAlly.getDiscardList().Find(c => c.getId() == realCard.getId());
+            Card virtualCard = clonedAlly.getDiscardList().Find(c => c.getUniqueId() == realCard.getUniqueId());
+
             if (virtualCard != null)
-            {
                 clonedAlly.retrieveCard(virtualCard);
-            }
         }
     }
 }

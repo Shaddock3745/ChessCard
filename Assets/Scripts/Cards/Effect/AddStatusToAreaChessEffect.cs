@@ -9,7 +9,7 @@ public class AddStatusToAreaChessEffect : CardEffect
     private int duration;
     private Func<int, int, ChessStatus> statusFactory;
     private HashSet<ChessType> validTargetTypes;
-    private Func<bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory;
+    private Func<BoardState, bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory;
     private Func<Vector2Int, Vector2Int, bool> positionFilter;
     private Vector2Int[] directions;
 
@@ -18,7 +18,7 @@ public class AddStatusToAreaChessEffect : CardEffect
          int duration,
          Func<int, int, ChessStatus> statusFactory,
          ChessType[] validTargetTypes,
-         Func<bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory,
+         Func<BoardState, bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory,
          Func<Vector2Int, Vector2Int, bool> positionFilter,
          params Vector2Int[] directions)
     {
@@ -36,7 +36,7 @@ public class AddStatusToAreaChessEffect : CardEffect
          int duration,
          Func<int, int, ChessStatus> statusFactory,
          ChessType[] validTargetTypes,
-         Func<bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory,
+        Func<BoardState, bool, EffectTargetPayload, List<Vector2Int>> centerPositionsFactory,
          params Vector2Int[] directions)
          : this(isAlly, duration, statusFactory, validTargetTypes, centerPositionsFactory, null, directions)
     {
@@ -54,7 +54,7 @@ public class AddStatusToAreaChessEffect : CardEffect
 
         bool casterIsWhite = isLocal == GameManager.IsLocalWhite();
 
-        List<Vector2Int> centerPositions = centerPositionsFactory.Invoke(isLocal, targets);
+        List<Vector2Int> centerPositions = centerPositionsFactory.Invoke(BoardManager.getCloneBoardState(), isLocal, targets);
 
         foreach (Vector2Int center in centerPositions)
         {
@@ -101,7 +101,7 @@ public class AddStatusToAreaChessEffect : CardEffect
         int endTurn = startTurn + duration;
         bool casterIsWhite = clonedAlly.IsWhite();
 
-        List<Vector2Int> centerPositions = centerPositionsFactory.Invoke(clonedAlly.IsLocal(), targets);
+        List<Vector2Int> centerPositions = centerPositionsFactory.Invoke(clonedState, clonedAlly.IsLocal(), targets);
 
         foreach (Vector2Int center in centerPositions)
         {

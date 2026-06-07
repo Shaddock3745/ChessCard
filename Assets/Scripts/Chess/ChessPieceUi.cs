@@ -16,7 +16,7 @@ public class ChessPieceUi : MonoBehaviour
     private static readonly float STATUS_MAX_ALPHA = 0.9f;
 
     private ChessPiece data;
-    private Coroutine currentFxCoroutine;
+    private Sequence iconSequence; // 用來存儲輪播動畫序列
 
     public void initChessUi(ChessPiece data, Sprite sprite)
     {
@@ -27,8 +27,7 @@ public class ChessPieceUi : MonoBehaviour
 
     public void UpdateStatusFx(int currentTurnCount)
     {
-        StopAllCoroutines();
-        currentFxCoroutine = null;
+        iconSequence?.Kill();
 
         setIconAlpha(cantMoveIcon, 0f);
         setIconAlpha(cantAttackIcon, 0f);
@@ -46,38 +45,17 @@ public class ChessPieceUi : MonoBehaviour
             activeIcons.Add(cantBeAttackedIcon);
 
         if (activeIcons.Count > 0)
-            currentFxCoroutine = StartCoroutine(playIconSequence(activeIcons));
-    }
-
-    private IEnumerator playIconSequence(List<SpriteRenderer> icons)
-    {
-        int currentIndex = 0;
-
-        while (true)
         {
-            SpriteRenderer currentIcon = icons[currentIndex];
-            yield return StartCoroutine(fadeIconAlpha(currentIcon, 0f, STATUS_MAX_ALPHA, STATUS_FADE_DURATION));
-            yield return new WaitForSeconds(STATUS_HOLD_DURATION);
-            yield return StartCoroutine(fadeIconAlpha(currentIcon, STATUS_MAX_ALPHA, 0f, STATUS_FADE_DURATION));
-            currentIndex = (currentIndex + 1) % icons.Count;
+            // 使用 DOTween 建立無限輪播序列
+            iconSequence = DOTween.Sequence();
+            foreach (var icon in activeIcons)
+            {
+                iconSequence.Append(icon.DOFade(STATUS_MAX_ALPHA, STATUS_FADE_DURATION));
+                iconSequence.AppendInterval(STATUS_HOLD_DURATION);
+                iconSequence.Append(icon.DOFade(0f, STATUS_FADE_DURATION));
+            }
+            iconSequence.SetLoops(-1); // -1 代表無限迴圈
         }
-    }
-
-    private IEnumerator fadeIconAlpha(SpriteRenderer icon, float start, float end, float duration)
-    {
-        Color c = icon.color;
-        float elapsed = 0;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            c.a = Mathf.Lerp(start, end, elapsed / duration);
-            icon.color = c;
-            yield return null;
-        }
-
-        c.a = end;
-        icon.color = c;
     }
 
     private void setIconAlpha(SpriteRenderer icon, float alpha)

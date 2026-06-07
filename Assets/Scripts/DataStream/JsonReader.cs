@@ -40,13 +40,13 @@ public class JsonReader : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     private void loadCardData()
@@ -65,6 +65,11 @@ public class JsonReader : MonoBehaviour
         }
     }
 
+    public static List<int> getCardIdList()
+    {
+        return instance.cardTable.Keys.ToList();
+    }
+
     public static int getCardCost(int id)
     {
         if (instance.cardTable.TryGetValue(id, out CardTextData cardData))
@@ -78,7 +83,7 @@ public class JsonReader : MonoBehaviour
 
     public static string getCardName(int id)
     {
-        switch(GameManager.getCurrentLanguage())
+        switch (GameManager.getCurrentLanguage())
         {
             case Language.TRADITIONAL_CHINESE: // Traditional Chinese
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataTw))
@@ -98,7 +103,7 @@ public class JsonReader : MonoBehaviour
 
     public static string getCardDescription(int id)
     {
-        switch(GameManager.getCurrentLanguage())
+        switch (GameManager.getCurrentLanguage())
         {
             case Language.TRADITIONAL_CHINESE: // Traditional Chinese
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataTw))

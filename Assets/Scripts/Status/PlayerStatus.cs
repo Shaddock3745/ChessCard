@@ -21,7 +21,7 @@ public enum PlayerStatusType
 
 public abstract class PlayerStatus : BaseStatus<PlayerStatusType>
 {
-    public PlayerStatus(PlayerStatusType status, int startTurn, int endTurn) : base(status, startTurn, endTurn) { }
+    public PlayerStatus(PlayerStatusType status, bool isPermanetStatus, int startTurn, int endTurn) : base(status, isPermanetStatus, startTurn, endTurn) { }
 
     public virtual float getAiValue(bool isLocal, int currentTurnCount) => 0f;
 
@@ -137,11 +137,11 @@ public class PlayerStatusContainer : StatusContainer<PlayerStatus, PlayerStatusT
         return hasActiveStatus(PlayerStatusType.LIMITED_TO_MOVE_SPECIFIC_CHESS, currentTurnCount);
     }
 
-    public ChessPiece getLimitedToMoveSpecificChess(int currentTurnCount)
+    public int? getLimitedToMoveSpecificChessUniqueId(int currentTurnCount)
     {
         foreach (var status in GetActiveStatuses(PlayerStatusType.LIMITED_TO_MOVE_SPECIFIC_CHESS, currentTurnCount))
-            if (status is PlayerLimitedToMoveSpecificChessStatus limitedToMoveSpecificChessStatus)
-                return limitedToMoveSpecificChessStatus.getChessPiece();
+            if (status is PlayerLimitedToMoveSpecificChessStatus s)
+                return s.getChessUniqueId();
 
         return null;
     }
@@ -160,7 +160,7 @@ public class IncreasePlayerCardCostStatus : PlayerStatus
 {
     private int extraCost;
 
-    public IncreasePlayerCardCostStatus(int extraCost, int startTurn, int endTurn) : base(PlayerStatusType.CARD_COST_MODIFIER, startTurn, endTurn)
+    public IncreasePlayerCardCostStatus(int extraCost, bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.CARD_COST_MODIFIER, isPermanetStatus, startTurn, endTurn)
     {
         this.extraCost = extraCost;
     }
@@ -169,14 +169,14 @@ public class IncreasePlayerCardCostStatus : PlayerStatus
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -10f * extraCost;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new IncreasePlayerCardCostStatus(this.extraCost, this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new IncreasePlayerCardCostStatus(this.extraCost, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class IncreasePlayerMoveCostStatus : PlayerStatus
 {
     private int extraCost;
 
-    public IncreasePlayerMoveCostStatus(int extraCost, int startTurn, int endTurn) : base(PlayerStatusType.MOVE_COST_MODIFIER, startTurn, endTurn)
+    public IncreasePlayerMoveCostStatus(int extraCost, bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.MOVE_COST_MODIFIER, isPermanetStatus, startTurn, endTurn)
     {
         this.extraCost = extraCost;
     }
@@ -185,12 +185,12 @@ public class IncreasePlayerMoveCostStatus : PlayerStatus
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -10f * extraCost;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new IncreasePlayerMoveCostStatus(this.extraCost, this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new IncreasePlayerMoveCostStatus(this.extraCost, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerCantMoveStatus : PlayerStatus
 {
-    public PlayerCantMoveStatus(int startTurn, int endTurn) : base(PlayerStatusType.CANT_MOVE, startTurn, endTurn) { }
+    public PlayerCantMoveStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.CANT_MOVE, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, int currentTurnCount)
     {
@@ -199,41 +199,41 @@ public class PlayerCantMoveStatus : PlayerStatus
         return -40f;
     }
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantMoveStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantMoveStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerCantSummonStatus : PlayerStatus
 {
-    public PlayerCantSummonStatus(int startTurn, int endTurn) : base(PlayerStatusType.CANT_SUMMON, startTurn, endTurn) { }
+    public PlayerCantSummonStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.CANT_SUMMON, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -20f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantSummonStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantSummonStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerCantAttackStatus : PlayerStatus
 {
-    public PlayerCantAttackStatus(int startTurn, int endTurn) : base(PlayerStatusType.CANT_ATTACK, startTurn, endTurn) { }
+    public PlayerCantAttackStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.CANT_ATTACK, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -40f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantAttackStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantAttackStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerCantUseAllCardStatus : PlayerStatus
 {
-    public PlayerCantUseAllCardStatus(int startTurn, int endTurn) : base(PlayerStatusType.CANT_USE_ALL_CARD, startTurn, endTurn) { }
+    public PlayerCantUseAllCardStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.CANT_USE_ALL_CARD, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -40f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantUseAllCardStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantUseAllCardStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerCantMoveSpecificChessTypeStatus : PlayerStatus
 {
     private ChessType chessType;
 
-    public PlayerCantMoveSpecificChessTypeStatus(ChessType chessType, int startTurn, int endTurn) : base(PlayerStatusType.CANT_MOVE_SPECIFIC_CHESS_TYPE, startTurn, endTurn)
+    public PlayerCantMoveSpecificChessTypeStatus(ChessType chessType, bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.CANT_MOVE_SPECIFIC_CHESS_TYPE, isPermanetStatus, startTurn, endTurn)
     {
         this.chessType = chessType;
     }
@@ -242,14 +242,14 @@ public class PlayerCantMoveSpecificChessTypeStatus : PlayerStatus
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -15f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantMoveSpecificChessTypeStatus(this.chessType, this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantMoveSpecificChessTypeStatus(this.chessType, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerCantUseSpecificCardStatus : PlayerStatus
 {
     private int cardId;
 
-    public PlayerCantUseSpecificCardStatus(int cardId, int startTurn, int endTurn) : base(PlayerStatusType.CANT_USE_SPECIFIC_CARD, startTurn, endTurn)
+    public PlayerCantUseSpecificCardStatus(int cardId, bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.CANT_USE_SPECIFIC_CARD, isPermanetStatus, startTurn, endTurn)
     {
         this.cardId = cardId;
     }
@@ -258,14 +258,14 @@ public class PlayerCantUseSpecificCardStatus : PlayerStatus
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -5f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantUseSpecificCardStatus(this.cardId, this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCantUseSpecificCardStatus(this.cardId, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerBonusHandCardStatus : PlayerStatus
 {
     private int bonusHandCardCount;
 
-    public PlayerBonusHandCardStatus(int bonusHandCardCount, int startTurn, int endTurn) : base(PlayerStatusType.BONUS_HAND_CARD, startTurn, endTurn)
+    public PlayerBonusHandCardStatus(int bonusHandCardCount, bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.BONUS_HAND_CARD, isPermanetStatus, startTurn, endTurn)
     {
         this.bonusHandCardCount = bonusHandCardCount;
     }
@@ -281,14 +281,14 @@ public class PlayerBonusHandCardStatus : PlayerStatus
         return baseValue;
     }
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerBonusHandCardStatus(this.bonusHandCardCount, this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerBonusHandCardStatus(this.bonusHandCardCount, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerBonusManaStatus : PlayerStatus
 {
     private int bonusManaCount;
 
-    public PlayerBonusManaStatus(int bonusManaCount, int startTurn, int endTurn) : base(PlayerStatusType.BONUS_MANA, startTurn, endTurn)
+    public PlayerBonusManaStatus(int bonusManaCount, bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.BONUS_MANA, isPermanetStatus, startTurn, endTurn)
     {
         this.bonusManaCount = bonusManaCount;
     }
@@ -304,53 +304,57 @@ public class PlayerBonusManaStatus : PlayerStatus
         return baseValue;
     }
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerBonusManaStatus(this.bonusManaCount, this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerBonusManaStatus(this.bonusManaCount, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerCardNonCostStatus : PlayerStatus
 {
-    public PlayerCardNonCostStatus(int startTurn, int endTurn) : base(PlayerStatusType.CARD_NON_COST, startTurn, endTurn) { }
+    public PlayerCardNonCostStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.CARD_NON_COST, isPermanetStatus, startTurn, endTurn) { }
 
-    public override float getAiValue(bool isLocal, int currentTurnCount) => 40f;
+    public override float getAiValue(bool isLocal, int currentTurnCount) => 0f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCardNonCostStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerCardNonCostStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerDiscardAllHandCardOnTurnEndStatus : PlayerStatus
 {
-    public PlayerDiscardAllHandCardOnTurnEndStatus(int startTurn, int endTurn) : base(PlayerStatusType.DISCARD_ALL_HAND_CARD_ON_TURN_END, startTurn, endTurn) { }
+    public PlayerDiscardAllHandCardOnTurnEndStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.DISCARD_ALL_HAND_CARD_ON_TURN_END, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -25f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerDiscardAllHandCardOnTurnEndStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerDiscardAllHandCardOnTurnEndStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerLimitedToMoveSpecificChessStatus : PlayerStatus
 {
-    private ChessPiece chessPiece;
-    public PlayerLimitedToMoveSpecificChessStatus(ChessPiece chessPiece, int startTurn, int endTurn) : base(PlayerStatusType.LIMITED_TO_MOVE_SPECIFIC_CHESS, startTurn, endTurn)
+    private int chessUniqueId;
+
+    public PlayerLimitedToMoveSpecificChessStatus(int chessUniqueId, bool isPermanetStatus, int startTurn, int endTurn)
+        : base(PlayerStatusType.LIMITED_TO_MOVE_SPECIFIC_CHESS, isPermanetStatus, startTurn, endTurn)
     {
-        this.chessPiece = chessPiece;
+        this.chessUniqueId = chessUniqueId;
     }
-    public ChessPiece getChessPiece() => chessPiece;
+
+    public int getChessUniqueId() => chessUniqueId;
 
     public override float getAiValue(bool isLocal, int currentTurnCount) => -20f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerLimitedToMoveSpecificChessStatus(this.chessPiece, this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone()
+        => new PlayerLimitedToMoveSpecificChessStatus(this.chessUniqueId, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PlayerExtraMoveStatus : PlayerStatus
 {
     private int extraMoveCount;
 
-    public PlayerExtraMoveStatus(int extraMoveCount, int startTurn, int endTurn) : base(PlayerStatusType.EXTRA_MOVE, startTurn, endTurn)
+    public PlayerExtraMoveStatus(int extraMoveCount, bool isPermanetStatus, int startTurn, int endTurn) : base(PlayerStatusType.EXTRA_MOVE, isPermanetStatus, startTurn, endTurn)
     {
         this.extraMoveCount = extraMoveCount;
     }
 
     public int getExtraMoveCount() => extraMoveCount;
 
-    public override float getAiValue(bool isLocal, int currentTurnCount) => 30f * extraMoveCount;
+    public override float getAiValue(bool isLocal, int currentTurnCount) => 0f;
 
-    public override BaseStatus<PlayerStatusType> Clone() => new PlayerExtraMoveStatus(this.extraMoveCount, this.startTurn, this.endTurn);
+    public override BaseStatus<PlayerStatusType> Clone() => new PlayerExtraMoveStatus(this.extraMoveCount, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }

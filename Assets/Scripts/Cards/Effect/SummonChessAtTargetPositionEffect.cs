@@ -4,11 +4,6 @@ using UnityEngine;
 
 public class SummonChessAtTargetPositionEffect : CardEffect
 {
-    private static void processSummonWithoutAnimation(ChessType type, bool isWhite, Vector2Int position)
-    {
-        BoardManager.summonChessPiece(type, isWhite, position);
-    }
-
     private static async Task processSummonWithAnimation(ChessType type, bool isWhite, Vector2Int position)
     {
         await BoardManager.summonChessPieceWithAnimation(type, isWhite, position);

@@ -23,7 +23,7 @@ public class SelectReturnableChessEffect : CardEffect
             {
                 Vector2Int initPos = piece.getInitialPosition();
 
-                if (BoardManager.isEmpty(initPos) || piece.getPosition() == initPos)
+                if (BoardManager.isEmpty(initPos) && piece.getPosition() != initPos)
                     return true;
             }
         }
@@ -35,7 +35,7 @@ public class SelectReturnableChessEffect : CardEffect
         bool targetIsWhite = isAlly ? GameManager.IsLocalWhite() : !GameManager.IsLocalWhite();
         List<ChessPiece> validPieces = BoardManager.getAllChessPieces(targetIsWhite).FindAll(p =>
             (targetTypes.Length == 0 || System.Array.IndexOf(targetTypes, p.getChessType()) != -1) &&
-            (BoardManager.isEmpty(p.getInitialPosition()) || p.getPosition() == p.getInitialPosition())
+            (BoardManager.isEmpty(p.getInitialPosition()) || p.getPosition() != p.getInitialPosition())
         );
 
         if (validPieces.Count == 0)
@@ -83,8 +83,8 @@ public class SelectReturnableChessEffect : CardEffect
                     {
                         Vector2Int initPos = piece.getInitialPosition();
 
-                        // 在虛擬盤面上確認：初始位置為空，或者該棋子目前就在初始位置
-                        if (state.getChessPieceAtPosition(initPos) == null || piece.getPosition() == initPos)
+                        // 在虛擬盤面上確認：初始位置為空，且該棋子目前不在初始位置
+                        if (state.getChessPieceAtPosition(initPos) == null && piece.getPosition() != initPos)
                         {
                             // 產生 Option (基礎分數 0f，交由後續管線或 DFS 結算)
                             options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new List<Vector2Int> { piece.getPosition() })));

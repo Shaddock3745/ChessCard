@@ -12,7 +12,8 @@ enum PlayerType
 public class PlayerData
 {
     private static readonly int DEFAULT_MANA = 5, DEFAULT_HAND_CARD_COUNT = 5, DEFAULT_HOLD_COST = 1;
-    private static readonly AiProfile DEFAULT_AI_PROFILE = new AiProfile(AiPersonality.Aggressive, AiDifficulty.Easy);
+    private static readonly AiProfile DEFAULT_AI_PROFILE = new AiProfile(AiPersonality.Balanced, AiDifficulty.Easy);
+    private static readonly System.Threading.ThreadLocal<System.Random> THREAD_SAVE_RNG = new System.Threading.ThreadLocal<System.Random>(() => new System.Random());
 
     private readonly bool isVirtual;
     private readonly PlayerType playerType;
@@ -37,7 +38,7 @@ public class PlayerData
     public PlayerData(bool isLocal, bool isWhite, List<int> cardIds, bool isAI, bool isVirtual = false)
     {
         playerType = isAI ? PlayerType.AI : PlayerType.Human;
-        aiProfile = isAI ? DEFAULT_AI_PROFILE : null;
+        aiProfile = DEFAULT_AI_PROFILE;
         this.isLocal = isLocal;
         this.isWhite = isWhite;
         this.isVirtual = isVirtual;
@@ -97,24 +98,24 @@ public class PlayerData
 
     public AiProfile getAiProfile()
     {
-        if (playerType != PlayerType.AI)
-            throw new System.Exception("Wrong Player Type!");
+        //if (playerType != PlayerType.AI)
+        //    throw new System.Exception("Wrong Player Type!");
 
         return aiProfile;
     }
 
     public AiPersonality getAiPersonality()
     {
-        if (playerType != PlayerType.AI)
-            throw new System.Exception("Wrong Player Type!");
+        //if (playerType != PlayerType.AI)
+        //    throw new System.Exception("Wrong Player Type!");
 
         return aiProfile.getPersonality();
     }
 
     public AiDifficulty getAiDifficulty()
     {
-        if (playerType != PlayerType.AI)
-            throw new System.Exception("Wrong Player Type!");
+        //if (playerType != PlayerType.AI)
+        //    throw new System.Exception("Wrong Player Type!");
 
         return aiProfile.getDifficulty();
     }
@@ -209,9 +210,11 @@ public class PlayerData
 
     public void shuffleDeck()
     {
+        System.Random rnd = THREAD_SAVE_RNG.Value;
+
         for (int i = 0; i < deck.Count; i++)
         {
-            int randomIndex = Random.Range(i, deck.Count);
+            int randomIndex = rnd.Next(i, deck.Count);
             Card temp = deck[i];
             deck[i] = deck[randomIndex];
             deck[randomIndex] = temp;
@@ -329,7 +332,7 @@ public class PlayerData
         if (validCards.Count == 0)
             return null;
 
-        Card targetCard = validCards[Random.Range(0, validCards.Count)];
+        Card targetCard = validCards[THREAD_SAVE_RNG.Value.Next(0, validCards.Count)];
 
         deck.Remove(targetCard);
         handList.Add(targetCard);

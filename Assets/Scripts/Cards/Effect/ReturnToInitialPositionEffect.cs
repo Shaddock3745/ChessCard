@@ -19,10 +19,7 @@ public class ReturnToInitialPositionEffect : CardEffect
             Vector2Int initPosition = piece.getInitialPosition();
 
             if (currentPosition != initPosition)
-            {
-                await BoardManager.movePieceWithAnimation(currentPosition, initPosition);
-                targets.getTargetPositions()[0] = initPosition;
-            }
+                await BoardManager.movePieceWithAnimationByEffect(currentPosition, initPosition);
         }
     }
 
@@ -51,9 +48,6 @@ public class ReturnToInitialPositionEffect : CardEffect
             {
                 // 呼叫虛擬盤面的移動方法
                 clonedState.moveChessPiece(currentPosition, initPosition);
-
-                // 仿照真實執行，將 payload 中的座標更新為新的位置，以供後續複合管線效果使用
-                targets.getTargetPositions()[0] = initPosition;
             }
         }
     }

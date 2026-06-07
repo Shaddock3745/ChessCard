@@ -176,4 +176,32 @@ public class BoardState
     {
         return position.x >= 0 && position.x < chessPieces.GetLength(0) && position.y >= 0 && position.y < chessPieces.GetLength(1);
     }
+
+    public List<ChessPiece> getAllChessPieces(bool isWhite, params ChessType[] chessTypes)
+    {
+        return getAllChessPieces(isWhite, new List<ChessType>(chessTypes));
+    }
+
+    public List<ChessPiece> getAllChessPieces(bool isWhite, List<ChessType> vaildTypes)
+    {
+        bool checkSpecificType = vaildTypes.Count > 0;
+        List<ChessPiece> pieces = new List<ChessPiece>();
+
+        for (int i = 0; i < 8; i++)
+            for (int j = 0; j < 8; j++)
+            {
+                ChessPiece piece = chessPieces[i, j];
+
+                if (piece != null && piece.isWhite() == isWhite)
+                    if (checkSpecificType)
+                    {
+                        if (vaildTypes.Contains(piece.getChessType()))
+                            pieces.Add(piece);
+                    }
+                    else
+                        pieces.Add(piece);
+            }
+
+        return pieces;
+    }
 }

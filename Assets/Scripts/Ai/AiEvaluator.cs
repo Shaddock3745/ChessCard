@@ -3,312 +3,234 @@ using UnityEngine;
 
 public class AiEvaluator
 {
-    // ==========================================
-    // 權重常數定義 (Weights & Constants)
-    // ==========================================
     private const float SCORE_WIN = 99999f;
     private const float SCORE_LOSE = -99999f;
-    private const float SCORE_CHECKED_PENALTY = -5000f;
 
-    // 資源資產權重平衡 (解決守財奴與不打牌問題)
-    private const float BASE_WEIGHT_MANA = 0.5f;      // 魔力不跨回合留存，降低保留價值以鼓勵消耗
-    private const float BASE_WEIGHT_HAND_CARD = 2.0f; // 手牌基礎保留分
-    private const float BASE_WEIGHT_HOLD_CARD = 3.5f; // 保留區資產價值 (高於手牌，鼓勵多餘魔力跨回合蓄水)
-    private const float BASE_WEIGHT_MOBILITY = 0.5f;
+    // 會被個性 attack/defend 縮放的基準值
+    private const float BASE_THREAT_PRESSURE_W = 0.2f;
+    private const float BASE_KING_ZONE_W = 10f;
+    private const float BASE_KING_HARASS = 60f;
 
-    private static readonly List<MoveAction> threatCheckBuffer = new List<MoveAction>(64);
-    private static readonly List<MoveAction> legalMoveBuffer = new List<MoveAction>(64);
+    // 非 AI 呼叫(例如 Calculate Score 按鈕)用的中庸權重
+    private static readonly AiWeights DEFAULT_WEIGHTS = new AiWeights
+    { attack = 1f, defend = 1f, mobilityW = 3f, handCardW = 20f, ownerReactDiscount = 0.4f, statusWeight = 5f, cardPreference = 0f };
 
-    public static float EvaluateBoardState(BoardState state, PlayerData allyData, PlayerData enemyData, int currentTurnCount)
+    private static float GetPieceValue(ChessType type) => type switch
     {
-        bool allyIsWhite = allyData.IsWhite();
-        AiProfile profile = allyData.getAiProfile();
-
-        // 1. 【第一層級：神聖級】生死與解將判定
-        float absoluteScore = EvaluateAbsoluteTier(state, allyIsWhite, currentTurnCount);
-        if (Mathf.Abs(absoluteScore) >= 90000f) return absoluteScore;
-
-        List<ChessPiece> allyPieces = GetAllPieces(state, allyIsWhite);
-        List<ChessPiece> enemyPieces = GetAllPieces(state, !allyIsWhite);
-
-        float totalScore = absoluteScore;
-
-        // 2. 【第二層級：核心戰略級】物資、單向曝險防守、微量進攻火網
-        totalScore += EvaluateStrategicTier(state, allyPieces, enemyPieces, allyData, enemyData, currentTurnCount, profile);
-
-        // 3. 【第三層級：戰術陣地級】中心控制、大子滲透、國王安全網
-        totalScore += EvaluateTacticalTier(state, allyPieces, enemyPieces, allyIsWhite, profile);
-
-        // 4. 【第四層級：運營微調級】時效狀態核銷、機動力、資源留存清算
-        totalScore += EvaluateOperationalTier(state, allyPieces, enemyPieces, allyData, enemyData, currentTurnCount, profile);
-
-        return totalScore;
-    }
-
-    private static float EvaluateAbsoluteTier(BoardState state, bool allyIsWhite, int currentTurnCount)
-    {
-        ChessPiece allyKing = state.getKing(allyIsWhite);
-        ChessPiece enemyKing = state.getKing(!allyIsWhite);
-
-        if (enemyKing == null) return SCORE_WIN;
-        if (allyKing == null) return SCORE_LOSE;
-
-        if (IsSquareThreatened(state, allyKing.getPosition(), !allyIsWhite, currentTurnCount))
-            return SCORE_CHECKED_PENALTY;
-
-        return 0f;
-    }
-
-    private static float EvaluateStrategicTier(BoardState state, List<ChessPiece> allyPieces, List<ChessPiece> enemyPieces, PlayerData allyData, PlayerData enemyData, int currentTurnCount, AiProfile profile)
-    {
-        float strategicScore = 0f;
-
-        foreach (var piece in allyPieces)
-        {
-            float dynamicValue = GetPieceDynamicValue(piece, allyData.IsLocal(), currentTurnCount, profile);
-            strategicScore += dynamicValue;
-            // 扣除我方棋子暴露在危險中的風險分數 (防禦與直接擊殺誘因)
-            strategicScore -= EvaluatePieceRisk(state, piece, dynamicValue, allyData.IsWhite(), currentTurnCount, profile);
-        }
-
-        foreach (var piece in enemyPieces)
-        {
-            float dynamicValue = GetPieceDynamicValue(piece, enemyData.IsLocal(), currentTurnCount, profile);
-            strategicScore -= dynamicValue;
-            // 給予瞄準敵軍的微量進攻紅利 (走位包圍與鋪墊誘因，設有嚴格上限防止只看不如吃)
-            strategicScore += EvaluateThreateningBonus(state, piece, dynamicValue, !allyData.IsWhite(), currentTurnCount, profile);
-        }
-
-        return strategicScore;
-    }
-
-    private static float EvaluateThreateningBonus(BoardState state, ChessPiece enemyPiece, float enemyPieceValue, bool isEnemyWhite, int currentTurnCount, AiProfile profile)
-    {
-        if (IsSquareThreatened(state, enemyPiece.getPosition(), !isEnemyWhite, currentTurnCount))
-        {
-            return (enemyPieceValue * 0.25f) * profile.getAttackWeight();
-        }
-        return 0f;
-    }
-
-    private static float EvaluatePieceRisk(BoardState state, ChessPiece piece, float pieceValue, bool isWhite, int currentTurnCount, AiProfile profile)
-    {
-        if (!IsSquareThreatened(state, piece.getPosition(), !isWhite, currentTurnCount)) return 0f;
-
-        bool isProtectedByAlly = IsSquareThreatened(state, piece.getPosition(), isWhite, currentTurnCount);
-
-        if (!isProtectedByAlly)
-        {
-            // 無保護白給棋子 (Hanging piece)：扣除幾乎全額戰力分值
-            return (pieceValue * 0.9f) * profile.getProtectWeight();
-        }
-        else
-        {
-            // 有友軍保護，檢查敵方是否能以小博大進行不對等交換
-            float lowestAttackerValue = GetLowestAttackerValue(state, piece.getPosition(), !isWhite, currentTurnCount);
-            if (lowestAttackerValue < pieceValue)
-            {
-                return ((pieceValue - lowestAttackerValue) * 0.8f) * profile.getProtectWeight();
-            }
-        }
-        return 0f;
-    }
-
-    private static float GetLowestAttackerValue(BoardState state, Vector2Int targetPos, bool byWhite, int currentTurnCount)
-    {
-        float lowestValue = 9999f;
-        List<ChessPiece> attackers = GetAllPieces(state, byWhite);
-        foreach (var p in attackers)
-        {
-            if (!p.canAttack(currentTurnCount)) continue;
-            threatCheckBuffer.Clear();
-            p.getMovementType(currentTurnCount).getAvailableMoves(state, p.getPosition(), byWhite, threatCheckBuffer);
-            foreach (var move in threatCheckBuffer)
-            {
-                if (move.targetPos == targetPos && move.actionType == ActionType.Attack)
-                {
-                    float val = GetPieceBaseValue(p.getChessType());
-                    if (val < lowestValue) lowestValue = val;
-                    break;
-                }
-            }
-        }
-        return lowestValue;
-    }
-
-    private static float EvaluateTacticalTier(BoardState state, List<ChessPiece> allyPieces, List<ChessPiece> enemyPieces, bool allyIsWhite, AiProfile profile)
-    {
-        float tacticalScore = 0f;
-
-        foreach (var piece in allyPieces)
-            tacticalScore += GetPositionalValue(piece, allyIsWhite);
-
-        foreach (var piece in enemyPieces)
-            tacticalScore -= GetPositionalValue(piece, !allyIsWhite);
-
-        tacticalScore += EvaluateKingSafety(state, state.getKing(allyIsWhite), allyIsWhite) * profile.getProtectWeight();
-        tacticalScore -= EvaluateKingSafety(state, state.getKing(!allyIsWhite), !allyIsWhite) * profile.getAttackWeight();
-
-        return tacticalScore;
-    }
-
-    private static float EvaluateOperationalTier(BoardState state, List<ChessPiece> allyPieces, List<ChessPiece> enemyPieces, PlayerData allyData, PlayerData enemyData, int currentTurnCount, AiProfile profile)
-    {
-        float opScore = 0f;
-
-        opScore += GetTotalMobility(state, allyPieces, currentTurnCount) * BASE_WEIGHT_MOBILITY * profile.getMobilityWeight();
-        opScore -= GetTotalMobility(state, enemyPieces, currentTurnCount) * BASE_WEIGHT_MOBILITY * profile.getMobilityWeight();
-
-        // 剩餘物資清算
-        float allyResourceScore = (allyData.getMana() * BASE_WEIGHT_MANA)
-                                + (allyData.getHandCardCount() * BASE_WEIGHT_HAND_CARD)
-                                + (allyData.getHoldingList().Count * BASE_WEIGHT_HOLD_CARD);
-        opScore += allyResourceScore * profile.getResourceWeight();
-
-        float enemyResourceScore = (enemyData.getMana() * BASE_WEIGHT_MANA)
-                                 + (enemyData.getHandCardCount() * BASE_WEIGHT_HAND_CARD)
-                                 + (enemyData.getHoldingList().Count * BASE_WEIGHT_HOLD_CARD);
-        opScore -= enemyResourceScore * profile.getResourceWeight();
-
-        // 時效性狀態核銷：若全域移動步數已耗盡，卡片給予的全域戰鬥狀態評估分值打一折 (杜絕空發法術)
-        float allyStatusVal = allyData.getStatusContainer().getStatusContainerAiValue(allyData.IsLocal(), currentTurnCount);
-        int allyMoveLimit = 1 + allyData.getStatusContainer().getExtraMoveCount(currentTurnCount);
-        if (allyData.getMoveCount() >= allyMoveLimit) allyStatusVal *= 0.1f;
-        opScore += allyStatusVal * profile.getCardPreference();
-
-        float enemyStatusVal = enemyData.getStatusContainer().getStatusContainerAiValue(enemyData.IsLocal(), currentTurnCount);
-        int enemyMoveLimit = 1 + enemyData.getStatusContainer().getExtraMoveCount(currentTurnCount);
-        if (enemyData.getMoveCount() >= enemyMoveLimit) enemyStatusVal *= 0.1f;
-        opScore -= enemyStatusVal * profile.getCardPreference();
-
-        return opScore;
-    }
-
-    public static float GetPieceBaseValue(ChessType type) => type switch
-    {
-        ChessType.Pawn => 10f,
-        ChessType.Knight => 30f,
-        ChessType.Bishop => 30f,
-        ChessType.Rook => 50f,
-        ChessType.Queen => 90f,
-        ChessType.King => 0f,
+        ChessType.Pawn => 100f,
+        ChessType.Knight => 320f,
+        ChessType.Bishop => 330f,
+        ChessType.Rook => 500f,
+        ChessType.Queen => 900f,
+        ChessType.King => 20000f,
         _ => 0f
     };
 
-    private static float GetPieceDynamicValue(ChessPiece piece, bool isLocal, int currentTurnCount, AiProfile profile)
+    private static readonly int[,] PawnPST = {
+        {  0,  0,  0,  0,  0,  0,  0,  0 },{ 50, 50, 50, 50, 50, 50, 50, 50 },
+        { 10, 10, 20, 30, 30, 20, 10, 10 },{  5,  5, 10, 25, 25, 10,  5,  5 },
+        {  0,  0,  0, 20, 20,  0,  0,  0 },{  5, -5,-10,  0,  0,-10, -5,  5 },
+        {  5, 10, 10,-20,-20, 10, 10,  5 },{  0,  0,  0,  0,  0,  0,  0,  0 } };
+    private static readonly int[,] KnightPST = {
+        {-50,-40,-30,-30,-30,-30,-40,-50},{-40,-20,  0,  0,  0,  0,-20,-40},
+        {-30,  0, 10, 15, 15, 10,  0,-30},{-30,  5, 15, 20, 20, 15,  5,-30},
+        {-30,  0, 15, 20, 20, 15,  0,-30},{-30,  5, 10, 15, 15, 10,  5,-30},
+        {-40,-20,  0,  5,  5,  0,-20,-40},{-50,-40,-30,-30,-30,-30,-40,-50} };
+    private static readonly int[,] BishopPST = {
+        {-20,-10,-10,-10,-10,-10,-10,-20},{-10,  0,  0,  0,  0,  0,  0,-10},
+        {-10,  0,  5, 10, 10,  5,  0,-10},{-10,  5,  5, 10, 10,  5,  5,-10},
+        {-10,  0, 10, 10, 10, 10,  0,-10},{-10, 10, 10, 10, 10, 10, 10,-10},
+        {-10,  5,  0,  0,  0,  0,  5,-10},{-20,-10,-10,-10,-10,-10,-10,-20} };
+    private static readonly int[,] RookPST = {
+        {  0,  0,  0,  0,  0,  0,  0,  0},{  5, 10, 10, 10, 10, 10, 10,  5},
+        { -5,  0,  0,  0,  0,  0,  0, -5},{ -5,  0,  0,  0,  0,  0,  0, -5},
+        { -5,  0,  0,  0,  0,  0,  0, -5},{ -5,  0,  0,  0,  0,  0,  0, -5},
+        { -5,  0,  0,  0,  0,  0,  0, -5},{  0,  0,  0,  5,  5,  0,  0,  0} };
+    private static readonly int[,] QueenPST = {
+        {-20,-10,-10, -5, -5,-10,-10,-20},{-10,  0,  0,  0,  0,  0,  0,-10},
+        {-10,  0,  5,  5,  5,  5,  0,-10},{ -5,  0,  5,  5,  5,  5,  0, -5},
+        {  0,  0,  5,  5,  5,  5,  0, -5},{-10,  5,  5,  5,  5,  5,  0,-10},
+        {-10,  0,  5,  0,  0,  0,  0,-10},{-20,-10,-10, -5, -5,-10,-10,-20} };
+    private static readonly int[,] KingPST = {
+        {-30,-40,-40,-50,-50,-40,-40,-30},{-30,-40,-40,-50,-50,-40,-40,-30},
+        {-30,-40,-40,-50,-50,-40,-40,-30},{-30,-40,-40,-50,-50,-40,-40,-30},
+        {-20,-30,-30,-40,-40,-30,-30,-20},{-10,-20,-20,-20,-20,-20,-20,-10},
+        { 20, 20,  0,  0,  0,  0, 20, 20},{ 20, 30, 10,  0,  0, 10, 30, 20} };
+
+    private static float GetPSTValue(ChessType type, Vector2Int pos, bool isWhite)
     {
-        float baseVal = GetPieceBaseValue(piece.getChessType());
-        if (baseVal == 0) return 0;
-
-        float statusModifiers = piece.getStatusContainer().getStatusContainerAiValue(isLocal, piece, currentTurnCount);
-
-        // 時效性狀態核銷：若棋子本身已無行動/攻擊能力，附帶的增益狀態分值打一折
-        if (!piece.canMove(currentTurnCount) && !piece.canAttack(currentTurnCount))
+        int x = pos.x; int y = isWhite ? (7 - pos.y) : pos.y;
+        return type switch
         {
-            statusModifiers *= 0.1f;
-        }
-
-        statusModifiers *= profile.getCardPreference();
-        return Mathf.Max(1f, baseVal + statusModifiers);
+            ChessType.Pawn => PawnPST[y, x],
+            ChessType.Knight => KnightPST[y, x],
+            ChessType.Bishop => BishopPST[y, x],
+            ChessType.Rook => RookPST[y, x],
+            ChessType.Queen => QueenPST[y, x],
+            ChessType.King => KingPST[y, x],
+            _ => 0f
+        };
     }
 
-    private static float GetPositionalValue(ChessPiece piece, bool isWhite)
+    // 相容版(中庸權重)
+    public static float EvaluateBoardState(BoardState state, PlayerData ally, PlayerData enemy, int turn)
+        => EvaluateBoardState(state, ally, enemy, turn, !ally.IsWhite(), DEFAULT_WEIGHTS);
+    public static float EvaluateBoardState(BoardState state, PlayerData ally, PlayerData enemy, int turn, bool sideToMoveIsWhite)
+        => EvaluateBoardState(state, ally, enemy, turn, sideToMoveIsWhite, DEFAULT_WEIGHTS);
+
+    // ★ 主評估:吃個性權重 w
+    public static float EvaluateBoardState(BoardState state, PlayerData allyData, PlayerData enemyData, int currentTurnCount, bool sideToMoveIsWhite, AiWeights w)
     {
-        float score = 0f;
-        Vector2Int pos = piece.getPosition();
+        bool isWhite = allyData.IsWhite();
+        bool allyToMove = (sideToMoveIsWhite == isWhite);
 
-        // 1. 中心控制力 (全棋子通用)
-        float distToCenter = Vector2.Distance(pos, new Vector2(3.5f, 3.5f));
-        score += (8f - distToCenter) * 0.5f;
+        ChessPiece allyKing = state.getKing(isWhite);
+        ChessPiece enemyKing = state.getKing(!isWhite);
+        if (enemyKing == null) return SCORE_WIN;
+        if (allyKing == null) return SCORE_LOSE;
 
-        // 2. 推進與領地滲透指數 (解決召喚後原地發呆問題)
-        if (piece.getChessType() == ChessType.Pawn)
-        {
-            // 士兵：底線指數推進分
-            int rankAdvancement = isWhite ? pos.y - 1 : 6 - pos.y;
-            if (rankAdvancement > 0)
-                score += Mathf.Pow(1.8f, rankAdvancement);
-        }
-        else if (piece.getChessType() != ChessType.King)
-        {
-            // 大子 (車/馬/象/象/后)：敵方半場領地滲透分，驅使進場後向前壓制火網
-            int penetration = isWhite ? pos.y : 7 - pos.y;
-            score += penetration * 0.3f;
-        }
+        // === 1. 攻擊圖 + 最低身價攻擊者 + 機動力 ===
+        ulong whiteAttacks = 0UL, blackAttacks = 0UL;
+        float[] whiteMinAtk = new float[64];
+        float[] blackMinAtk = new float[64];
+        for (int i = 0; i < 64; i++) { whiteMinAtk[i] = float.MaxValue; blackMinAtk[i] = float.MaxValue; }
 
-        return score;
-    }
+        int allyMobility = 0, enemyMobility = 0;
+        List<MoveAction> moveBuf = new List<MoveAction>(28);
 
-    private static float EvaluateKingSafety(BoardState state, ChessPiece king, bool isWhite)
-    {
-        if (king == null) return 0f;
-        float safetyScore = 0f;
-        Vector2Int kPos = king.getPosition();
-
-        for (int dx = -1; dx <= 1; dx++)
-        {
-            for (int dy = -1; dy <= 1; dy++)
-            {
-                if (dx == 0 && dy == 0) continue;
-
-                Vector2Int checkPos = new Vector2Int(kPos.x + dx, kPos.y + dy);
-                if (checkPos.x >= 0 && checkPos.x < 8 && checkPos.y >= 0 && checkPos.y < 8)
-                {
-                    ChessPiece neighbor = state.getChessPieceAtPosition(checkPos.x, checkPos.y);
-                    if (neighbor != null && neighbor.isWhite() == isWhite)
-                    {
-                        safetyScore += 5f;
-                    }
-                }
-            }
-        }
-        return safetyScore;
-    }
-
-    private static bool IsSquareThreatened(BoardState state, Vector2Int targetPos, bool byWhite, int currentTurnCount)
-    {
-        List<ChessPiece> threatPieces = GetAllPieces(state, byWhite);
-        foreach (var piece in threatPieces)
-        {
-            if (!piece.canAttack(currentTurnCount)) continue;
-
-            threatCheckBuffer.Clear();
-            piece.getMovementType(currentTurnCount).getAvailableMoves(state, piece.getPosition(), byWhite, threatCheckBuffer);
-            foreach (var move in threatCheckBuffer)
-            {
-                if (move.targetPos == targetPos && move.actionType == ActionType.Attack)
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    private static int GetTotalMobility(BoardState state, List<ChessPiece> pieces, int currentTurnCount)
-    {
-        int totalMoves = 0;
-        foreach (var piece in pieces)
-        {
-            if (!piece.canMove(currentTurnCount)) continue;
-
-            legalMoveBuffer.Clear();
-            piece.getMovementType(currentTurnCount).getAvailableMoves(state, piece.getPosition(), piece.isWhite(), legalMoveBuffer);
-            totalMoves += legalMoveBuffer.Count;
-        }
-        return totalMoves;
-    }
-
-    private static List<ChessPiece> GetAllPieces(BoardState state, bool isWhite)
-    {
-        List<ChessPiece> pieces = new List<ChessPiece>();
         for (int x = 0; x < 8; x++)
-        {
             for (int y = 0; y < 8; y++)
             {
                 ChessPiece p = state.getChessPieceAtPosition(x, y);
-                if (p != null && p.isWhite() == isWhite)
-                    pieces.Add(p);
+                if (p == null) continue;
+
+                moveBuf.Clear();
+                p.getMovementType(currentTurnCount).getAvailableMoves(state, p.getPosition(), p.isWhite(), moveBuf);
+
+                if (p.isWhite() == isWhite) allyMobility += moveBuf.Count;
+                else enemyMobility += moveBuf.Count;
+
+                if (!p.canAttack(currentTurnCount)) continue;
+
+                float pv = GetPieceValue(p.getChessType());
+                foreach (var m in moveBuf)
+                {
+                    if (m.actionType != ActionType.Attack) continue;
+                    int idx = m.targetPos.y * 8 + m.targetPos.x;
+                    ulong bit = 1UL << idx;
+                    if (p.isWhite()) { whiteAttacks |= bit; if (pv < whiteMinAtk[idx]) whiteMinAtk[idx] = pv; }
+                    else { blackAttacks |= bit; if (pv < blackMinAtk[idx]) blackMinAtk[idx] = pv; }
+                }
             }
+
+        // === 2. 防守圖 ===
+        bool[] whiteDefended = new bool[64];
+        bool[] blackDefended = new bool[64];
+        List<ChessPiece> defBuf = new List<ChessPiece>(16);
+        for (int x = 0; x < 8; x++)
+            for (int y = 0; y < 8; y++)
+            {
+                ChessPiece p = state.getChessPieceAtPosition(x, y);
+                if (p == null || !p.canAttack(currentTurnCount)) continue;
+                defBuf.Clear();
+                p.getMovementType(currentTurnCount).getProtectablePieces(state, p.getPosition(), p.isWhite(), defBuf);
+                foreach (var d in defBuf)
+                {
+                    int idx = d.getPosition().y * 8 + d.getPosition().x;
+                    if (p.isWhite()) whiteDefended[idx] = true; else blackDefended[idx] = true;
+                }
+            }
+
+        ulong enemyAttacks = isWhite ? blackAttacks : whiteAttacks;
+        ulong allyAttacks = isWhite ? whiteAttacks : blackAttacks;
+
+        // === 3. 國王致命檢查 ===
+        Vector2Int akp = allyKing.getPosition(), ekp = enemyKing.getPosition();
+        bool allyKingAttacked = (enemyAttacks & (1UL << (akp.y * 8 + akp.x))) != 0;
+        bool enemyKingAttacked = (allyAttacks & (1UL << (ekp.y * 8 + ekp.x))) != 0;
+        if (enemyKingAttacked && allyToMove) return SCORE_WIN;
+        if (allyKingAttacked && !allyToMove) return SCORE_LOSE;
+
+        // === 4. 逐子:材料 + 位置 + 狀態 − 受威脅損失(攻守分權重) + 威脅壓制 ===
+        float score = 0f;
+        for (int x = 0; x < 8; x++)
+            for (int y = 0; y < 8; y++)
+            {
+                ChessPiece piece = state.getChessPieceAtPosition(x, y);
+                if (piece == null) continue;
+
+                int sq = y * 8 + x;
+                ulong bit = 1UL << sq;
+                bool ownerWhite = piece.isWhite();
+                float pieceVal = GetPieceValue(piece.getChessType());
+
+                float baseVal = pieceVal
+                              + GetPSTValue(piece.getChessType(), piece.getPosition(), ownerWhite)
+                              + piece.getStatusContainerAiValue(ownerWhite == isWhite, currentTurnCount) * w.statusWeight;
+
+                if (piece.getChessType() != ChessType.King)
+                {
+                    float tl = ThreatLoss(piece, sq, ownerWhite);
+                    tl *= (ownerWhite == isWhite) ? w.defend : w.attack; // 我方子損失看防守傾向,敵方子可吃看攻擊傾向
+                    baseVal -= tl;
+                }
+
+                if (ownerWhite == isWhite) score += baseVal;
+                else score -= baseVal;
+
+                // 威脅壓制:我方攻擊到的敵方非王棋子(即使有保護也給分)× 攻擊傾向
+                if (ownerWhite != isWhite && piece.getChessType() != ChessType.King && (allyAttacks & bit) != 0)
+                    score += BASE_THREAT_PRESSURE_W * w.attack * pieceVal;
+            }
+
+        // === 5. 護王 / 逼宮(攻守分權重) ===
+        if (allyKingAttacked && allyToMove) score -= BASE_KING_HARASS * w.defend;
+        if (enemyKingAttacked && !allyToMove) score += BASE_KING_HARASS * w.attack;
+        score += BASE_KING_ZONE_W * w.attack * CountZonePressure(ekp, allyAttacks);
+        score -= BASE_KING_ZONE_W * w.defend * CountZonePressure(akp, enemyAttacks);
+
+        // === 6. 機動力 + 手牌資源 ===
+        score += w.mobilityW * (allyMobility - enemyMobility);
+        score += w.handCardW * (allyData.getHandCardCount() - enemyData.getHandCardCount());
+
+        // === 7. 玩家層級狀態 ===
+        score += allyData.getStatusContainerAiValue(currentTurnCount) * w.statusWeight;
+        score -= enemyData.getStatusContainerAiValue(currentTurnCount) * w.statusWeight;
+
+        return score;
+
+        // ---- 區域函式 ----
+        float ThreatLoss(ChessPiece piece, int sq, bool ownerWhite)
+        {
+            bool attacked = ((ownerWhite ? blackAttacks : whiteAttacks) & (1UL << sq)) != 0;
+            if (!attacked) return 0f;
+            float pieceVal = GetPieceValue(piece.getChessType());
+            float minAtk = ownerWhite ? blackMinAtk[sq] : whiteMinAtk[sq];
+            bool defended = ownerWhite ? whiteDefended[sq] : blackDefended[sq];
+            float loss = defended ? Mathf.Max(0f, pieceVal - minAtk) : pieceVal;
+            if (ownerWhite == sideToMoveIsWhite) loss *= w.ownerReactDiscount;
+            return loss;
         }
-        return pieces;
+
+        int CountZonePressure(Vector2Int kingPos, ulong attackerMap)
+        {
+            int count = 0;
+            for (int dx = -1; dx <= 1; dx++)
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+                    int nx = kingPos.x + dx, ny = kingPos.y + dy;
+                    if (nx < 0 || nx >= 8 || ny < 0 || ny >= 8) continue;
+                    if ((attackerMap & (1UL << (ny * 8 + nx))) != 0) count++;
+                }
+            return count;
+        }
+    }
+
+    public static float ScoreToWinRate(float rawScore)
+    {
+        if (rawScore >= 90000f) return 1.0f;
+        if (rawScore <= -90000f) return 0.0f;
+        return 1.0f / (1.0f + Mathf.Exp(-0.005f * rawScore));
     }
 }

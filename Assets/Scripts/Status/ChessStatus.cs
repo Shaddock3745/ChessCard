@@ -18,7 +18,7 @@ public enum ChessStatusType
 
 public abstract class ChessStatus : BaseStatus<ChessStatusType>
 {
-    public ChessStatus(ChessStatusType status, int startTurn, int endTurn) : base(status, startTurn, endTurn) { }
+    public ChessStatus(ChessStatusType status, bool isPermanetStatus, int startTurn, int endTurn) : base(status, isPermanetStatus, startTurn, endTurn) { }
 
     public virtual float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f;
 
@@ -144,36 +144,36 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
 
 public class ChessCantMoveStatus : ChessStatus
 {
-    public ChessCantMoveStatus(int startTurn, int endTurn) : base(ChessStatusType.CANT_MOVE, startTurn, endTurn) { }
+    public ChessCantMoveStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.CANT_MOVE, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => -20f;
 
-    public override BaseStatus<ChessStatusType> Clone() => new ChessCantMoveStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessCantMoveStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class ChessCantAttackStatus : ChessStatus
 {
-    public ChessCantAttackStatus(int startTurn, int endTurn) : base(ChessStatusType.CANT_ATTACK, startTurn, endTurn) { }
+    public ChessCantAttackStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.CANT_ATTACK, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => -20f;
 
-    public override BaseStatus<ChessStatusType> Clone() => new ChessCantAttackStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessCantAttackStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class ChessCantBeAttackedStatus : ChessStatus
 {
-    public ChessCantBeAttackedStatus(int startTurn, int endTurn) : base(ChessStatusType.CANT_BE_ATTACKED, startTurn, endTurn) { }
+    public ChessCantBeAttackedStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.CANT_BE_ATTACKED, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 40f;
 
-    public override BaseStatus<ChessStatusType> Clone() => new ChessCantBeAttackedStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessCantBeAttackedStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class IncreaseChessMoveCostStatus : ChessStatus
 {
     private int extraCost;
 
-    public IncreaseChessMoveCostStatus(int extraCost, int startTurn, int endTurn) : base(ChessStatusType.MOVE_COST_MODIFIER, startTurn, endTurn)
+    public IncreaseChessMoveCostStatus(int extraCost, bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.MOVE_COST_MODIFIER, isPermanetStatus, startTurn, endTurn)
     {
         this.extraCost = extraCost;
     }
@@ -182,46 +182,39 @@ public class IncreaseChessMoveCostStatus : ChessStatus
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => -5f * extraCost;
 
-    public override BaseStatus<ChessStatusType> Clone() => new IncreaseChessMoveCostStatus(this.extraCost, this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new IncreaseChessMoveCostStatus(this.extraCost, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class ChessNonCostOnMoveStatus : ChessStatus
 {
-    public ChessNonCostOnMoveStatus(int startTurn, int endTurn) : base(ChessStatusType.NON_COST_ON_MOVE, startTurn, endTurn) { }
+    public ChessNonCostOnMoveStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.NON_COST_ON_MOVE, isPermanetStatus, startTurn, endTurn) { }
 
-    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 15f;
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f;
 
-    public override BaseStatus<ChessStatusType> Clone() => new ChessNonCostOnMoveStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessNonCostOnMoveStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class ChessMovementOverrideStatus : ChessStatus
 {
     private MovementType movementType;
 
-    public ChessMovementOverrideStatus(MovementType movementType, int startTurn, int endTurn) : base(ChessStatusType.MOVEMENT_OVERRIDE, startTurn, endTurn)
+    public ChessMovementOverrideStatus(MovementType movementType, bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.MOVEMENT_OVERRIDE, isPermanetStatus, startTurn, endTurn)
     {
         this.movementType = movementType;
     }
 
     public MovementType getMovementType() => movementType;
 
-    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount)
-    {
-        float baseValue = movementType.getAiValue();
-        if (getStartTurn() == currentTurnCount && MatchDataManager.hadMovedThisTurn(isLocal))
-            return baseValue * 0.1f;
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f;
 
-        return baseValue;
-    }
-
-    public override BaseStatus<ChessStatusType> Clone() => new ChessMovementOverrideStatus(this.movementType, this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessMovementOverrideStatus(this.movementType, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class ChessCantAttackSpecificTypeStatus : ChessStatus
 {
     private ChessType type;
 
-    public ChessCantAttackSpecificTypeStatus(ChessType type, int startTurn, int endTurn) : base(ChessStatusType.CANT_ATTACK_SPECIFIC_TYPE_CHESS, startTurn, endTurn)
+    public ChessCantAttackSpecificTypeStatus(ChessType type, bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.CANT_ATTACK_SPECIFIC_TYPE_CHESS, isPermanetStatus, startTurn, endTurn)
     {
         this.type = type;
     }
@@ -230,28 +223,28 @@ public class ChessCantAttackSpecificTypeStatus : ChessStatus
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => -5f;
 
-    public override BaseStatus<ChessStatusType> Clone() => new ChessCantAttackSpecificTypeStatus(this.type, this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessCantAttackSpecificTypeStatus(this.type, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class ChessExtraMoveStatus : ChessStatus
 {
     private int extraMoveCount;
 
-    public ChessExtraMoveStatus(int extraMoveCount, int startTurn, int endTurn) : base(ChessStatusType.EXTRA_MOVE, startTurn, endTurn)
+    public ChessExtraMoveStatus(int extraMoveCount, bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.EXTRA_MOVE, isPermanetStatus, startTurn, endTurn)
     {
         this.extraMoveCount = extraMoveCount;
     }
 
     public int getExtraMoveCount() => extraMoveCount;
 
-    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 20f * extraMoveCount;
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f;
 
-    public override BaseStatus<ChessStatusType> Clone() => new ChessExtraMoveStatus(this.extraMoveCount, this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessExtraMoveStatus(this.extraMoveCount, this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class PawnRammingStatus : ChessStatus
 {
-    public PawnRammingStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, startTurn, endTurn) { }
+    public PawnRammingStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 15f;
 
@@ -284,18 +277,18 @@ public class PawnRammingStatus : ChessStatus
         }
     }
 
-    public override BaseStatus<ChessStatusType> Clone() => new PawnRammingStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new PawnRammingStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class ChessPartingShotStatus : ChessStatus
 {
-    public ChessPartingShotStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
+    public ChessPartingShotStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 20f;
 
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
-        _ = BoardManager.movePieceWithAnimation(owner.getPosition(), fromPos);
+        _ = BoardManager.movePieceWithAnimationByEffect(owner.getPosition(), fromPos);
     }
 
     public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
@@ -303,12 +296,12 @@ public class ChessPartingShotStatus : ChessStatus
         state.moveChessPiece(owner.getPosition(), fromPos);
     }
 
-    public override BaseStatus<ChessStatusType> Clone() => new ChessPartingShotStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessPartingShotStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class ChessConversionStatus : ChessStatus
 {
-    public ChessConversionStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
+    public ChessConversionStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 30f;
 
@@ -326,12 +319,12 @@ public class ChessConversionStatus : ChessStatus
         // 虛擬環境中不直接改變手牌資料 (PlayerData)，單純完成盤面戰略分數評估即可
     }
 
-    public override BaseStatus<ChessStatusType> Clone() => new ChessConversionStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new ChessConversionStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class KnightTrampleStatus : ChessStatus
 {
-    public KnightTrampleStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, startTurn, endTurn) { }
+    public KnightTrampleStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 25f;
 
@@ -379,26 +372,26 @@ public class KnightTrampleStatus : ChessStatus
             }
     }
 
-    public override BaseStatus<ChessStatusType> Clone() => new KnightTrampleStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new KnightTrampleStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }
 
 public class BattleHardenedPostAttackStatus : ChessStatus
 {
-    public BattleHardenedPostAttackStatus(int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, startTurn, endTurn) { }
+    public BattleHardenedPostAttackStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, isPermanetStatus, startTurn, endTurn) { }
 
     public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 25f;
 
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
         int currentTurn = GameManager.getCurrentTurnCount();
-        BoardManager.addStatus(owner, new ChessExtraMoveStatus(1, currentTurn, currentTurn + 1));
+        BoardManager.addStatus(owner, new ChessExtraMoveStatus(1, false, currentTurn, currentTurn + 1));
     }
 
     public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
         int currentTurn = GameManager.getCurrentTurnCount();
-        owner.addStatus(new ChessExtraMoveStatus(1, currentTurn, currentTurn + 1));
+        owner.addStatus(new ChessExtraMoveStatus(1, false, currentTurn, currentTurn + 1));
     }
 
-    public override BaseStatus<ChessStatusType> Clone() => new BattleHardenedPostAttackStatus(this.startTurn, this.endTurn);
+    public override BaseStatus<ChessStatusType> Clone() => new BattleHardenedPostAttackStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
 }

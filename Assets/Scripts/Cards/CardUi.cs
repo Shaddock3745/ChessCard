@@ -15,6 +15,7 @@ public class CardUi : MonoBehaviour
     {
         rectTransform = GetComponent<RectTransform>();
     }
+
     public void initCard(Card card)
     {
         this.card = card;

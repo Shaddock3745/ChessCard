@@ -1,31 +1,16 @@
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-
-public class AiPlan
-{
-    private AiOption firstRealOption;
-    private float finalScore;
-
-    public AiPlan(AiOption firstOption, float finalScore)
-    {
-        this.firstRealOption = firstOption;
-        this.finalScore = finalScore;
-    }
-
-    public AiOption getOption() => firstRealOption;
-    public float getScore() => finalScore;
-}
 
 public class AiManager : MonoBehaviour
 {
     private static AiManager instance;
     private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
-    private const int BEAM_WIDTH = 12;
-    private const int MAX_DEPTH = 6;
+    private const int BEAM_WIDTH = 6;
+    private const int MAX_PLAN_DEPTH = 8;        // 大軍壓境等群體移動需要較深,調到 8
+    private const int FINAL_CANDIDATES = 25;
+    private const float SCORE_IMPROVE_EPS = 0.2f;
 
     void Awake()
     {
@@ -39,111 +24,162 @@ public class AiManager : MonoBehaviour
         return new PlayerData(isLocal, isWhite, aiProfile.getDefaultDeckList(), true, aiProfile);
     }
 
-    public static AiOption getBestMove(bool isLocal, int currentTurnCount)
+    private class PlanState
     {
-        BoardState currentState = BoardManager.getCloneBoardState();
-        PlayerData currentAlly = MatchDataManager.getPlayerData(isLocal).Clone();
-        PlayerData currentEnemy = MatchDataManager.getPlayerData(!isLocal).Clone();
-
-        HashSet<string> visitedStates = new HashSet<string>();
-
-        AiPlan bestPlan = RunDFS(currentState, currentAlly, currentEnemy, currentTurnCount, 0, visitedStates, null);
-
-        if (bestPlan == null || bestPlan.getScore() <= -90000f || bestPlan.getOption() == null)
-            return null;
-
-        AiOption bestAction = bestPlan.getOption();
-        float noise = Random.Range(-currentAlly.getAiProfile().getNoiseRange(), currentAlly.getAiProfile().getNoiseRange());
-        bestAction.setScore(bestPlan.getScore() + noise);
-
-        return bestAction;
+        public BoardState board;
+        public PlayerData ally, enemy;
+        public List<AiOption> actions;
+        public bool terminal;
+        public float heuristic;
     }
 
-    private static AiPlan RunDFS(BoardState state, PlayerData ally, PlayerData enemy, int currentTurnCount, int depth, HashSet<string> visitedStates, AiOption firstActionOfThisPath)
+    public static async Task<List<AiOption>> getBestTurnPlanAsync(bool isLocal, int currentTurnCount)
     {
-        if (depth >= MAX_DEPTH || state.getKing(true) == null || state.getKing(false) == null)
-        {
-            float score = AiEvaluator.EvaluateBoardState(state, ally, enemy, currentTurnCount);
-            return new AiPlan(firstActionOfThisPath, score);
-        }
+        BoardState rootState = BoardManager.getCloneBoardState();
+        PlayerData rootAlly = MatchDataManager.getPlayerData(isLocal).Clone();
+        PlayerData rootEnemy = MatchDataManager.getPlayerData(!isLocal).Clone();
 
-        List<AiOption> candidates = GenerateLegalVirtualActions(state, ally, currentTurnCount);
+        // 取出這個 AI 的個性 / 難度
+        AiProfile profile = rootAlly.getAiProfile();
+        AiWeights w = profile.getWeights();
+        float noise = profile.getNoiseRange();
 
-        if (candidates.Count == 0)
-        {
-            float score = AiEvaluator.EvaluateBoardState(state, ally, enemy, currentTurnCount);
-            return new AiPlan(firstActionOfThisPath, score);
-        }
-
-        foreach (var candidate in candidates)
-        {
-            BoardState testState = state.Clone();
-            PlayerData testAlly = ally.Clone();
-            PlayerData testEnemy = enemy.Clone();
-
-            candidate.executeVirtually(testState, testAlly, testEnemy, currentTurnCount);
-            float quickScore = AiEvaluator.EvaluateBoardState(testState, testAlly, testEnemy, currentTurnCount);
-            candidate.setQuickScore(quickScore);
-        }
-
-        var topCandidates = candidates.OrderByDescending(c => c.getQuickScore()).Take(BEAM_WIDTH).ToList();
-        AiPlan bestPlan = new AiPlan(firstActionOfThisPath, float.MinValue);
-
-        foreach (var candidate in topCandidates)
-        {
-            BoardState nextState = state.Clone();
-            PlayerData nextAlly = ally.Clone();
-            PlayerData nextEnemy = enemy.Clone();
-
-            candidate.executeVirtually(nextState, nextAlly, nextEnemy, currentTurnCount);
-
-            string stateHash = GenerateStateHash(nextState, nextAlly);
-            if (visitedStates.Contains(stateHash)) continue;
-            visitedStates.Add(stateHash);
-
-            AiOption rootAction = (depth == 0) ? candidate : firstActionOfThisPath;
-
-            if (candidate.isRandomEffect() || candidate.isHoldAction())
-            {
-                float score = AiEvaluator.EvaluateBoardState(nextState, nextAlly, nextEnemy, currentTurnCount);
-                if (score > bestPlan.getScore()) bestPlan = new AiPlan(rootAction, score);
-                continue;
-            }
-
-            AiPlan subPlan = RunDFS(nextState, nextAlly, nextEnemy, currentTurnCount, depth + 1, visitedStates, rootAction);
-
-            if (subPlan.getScore() > bestPlan.getScore())
-            {
-                bestPlan = subPlan;
-            }
-        }
-
-        if (bestPlan.getScore() == float.MinValue)
-        {
-            float fallbackScore = AiEvaluator.EvaluateBoardState(state, ally, enemy, currentTurnCount);
-            return new AiPlan(firstActionOfThisPath, fallbackScore);
-        }
-
-        return bestPlan;
+        return await Task.Run(() => RunBeamSearch(rootState, rootAlly, rootEnemy, currentTurnCount, w, noise));
     }
 
-    private static string GenerateStateHash(BoardState state, PlayerData ally)
+    private static List<AiOption> RunBeamSearch(BoardState rootState, PlayerData rootAlly, PlayerData rootEnemy, int currentTurnCount, AiWeights w, float noise)
     {
-        StringBuilder sb = new StringBuilder();
-        sb.Append(ally.getMana()).Append("_").Append(ally.getHandCardCount()).Append("|");
+        System.Random rng = new System.Random(); // 背景執行緒,務必用 System.Random
 
+        PlanState start = new PlanState
+        {
+            board = rootState,
+            ally = rootAlly,
+            enemy = rootEnemy,
+            actions = new List<AiOption>(),
+            terminal = false,
+            heuristic = AiEvaluator.EvaluateBoardState(rootState, rootAlly, rootEnemy, currentTurnCount, !rootAlly.IsWhite(), w)
+        };
+
+        List<PlanState> beam = new List<PlanState> { start };
+        List<PlanState> allPlans = new List<PlanState> { start };
+
+        for (int depth = 0; depth < MAX_PLAN_DEPTH; depth++)
+        {
+            List<PlanState> candidates = new List<PlanState>();
+
+            foreach (var node in beam)
+            {
+                if (node.terminal) continue;
+                List<AiOption> legal = GenerateLegalVirtualActions(node.board, node.ally, currentTurnCount);
+
+                foreach (var action in legal)
+                {
+                    if (action is CardHoldOption) continue;
+
+                    BoardState nb = node.board.Clone();
+                    PlayerData na = node.ally.Clone();
+                    PlayerData ne = node.enemy.Clone();
+                    action.executeVirtually(nb, na, ne, currentTurnCount);
+
+                    List<AiOption> acts = new List<AiOption>(node.actions) { action };
+                    PlanState child = new PlanState
+                    {
+                        board = nb,
+                        ally = na,
+                        enemy = ne,
+                        actions = acts,
+                        terminal = action.isRandomEffect(),
+                        // 啟發分加入「個性的用卡偏好」,避免奇招的鋪牌分支被提早剪掉
+                        heuristic = AiEvaluator.EvaluateBoardState(nb, na, ne, currentTurnCount, !na.IsWhite(), w)
+                                  + w.cardPreference * CountCardUses(acts)
+                    };
+
+                    candidates.Add(child);
+                    allPlans.Add(child);
+                }
+            }
+
+            if (candidates.Count == 0) break;
+            candidates.Sort((a, b) => b.heuristic.CompareTo(a.heuristic));
+            beam = candidates.GetRange(0, Mathf.Min(BEAM_WIDTH, candidates.Count));
+        }
+
+        // 取前 N 條做「對手回應」精算 + 個性偏好 + 難度雜訊
+        allPlans.Sort((a, b) => b.heuristic.CompareTo(a.heuristic));
+        int take = Mathf.Min(FINAL_CANDIDATES, allPlans.Count);
+
+        float baseScore = EvaluateWithOpponentReply(rootState, rootAlly, rootEnemy, currentTurnCount, w); // 基準不加雜訊
+        PlanState best = start;
+        float bestScore = float.NegativeInfinity;
+
+        for (int i = 0; i < take; i++)
+        {
+            PlanState plan = allPlans[i];
+            float score = EvaluateWithOpponentReply(plan.board, plan.ally, plan.enemy, currentTurnCount, w)
+                        + w.cardPreference * CountCardUses(plan.actions)
+                        + (float)(rng.NextDouble() * 2.0 - 1.0) * noise; // ★ 難度雜訊
+            if (score > bestScore) { bestScore = score; best = plan; }
+        }
+
+        LogPlan(best, bestScore, baseScore);
+
+        if (best.actions.Count == 0 || bestScore < baseScore + SCORE_IMPROVE_EPS)
+        {
+            AiOption hold = DecideHoldOrEnd(rootAlly);
+            return hold != null ? new List<AiOption> { hold } : new List<AiOption>();
+        }
+        return best.actions;
+    }
+
+    // 對手最佳「單一步」(吃子或佈置威脅),取最傷我方的結果
+    private static float EvaluateWithOpponentReply(BoardState state, PlayerData ally, PlayerData enemy, int currentTurnCount, AiWeights w)
+    {
+        bool myWhite = ally.IsWhite();
+        int et = currentTurnCount + 1;
+        float worst = AiEvaluator.EvaluateBoardState(state, ally, enemy, currentTurnCount, !myWhite, w);
+
+        List<MoveAction> buf = new List<MoveAction>(28);
         for (int x = 0; x < 8; x++)
-        {
             for (int y = 0; y < 8; y++)
             {
                 ChessPiece p = state.getChessPieceAtPosition(x, y);
-                if (p != null)
+                if (p == null || p.isWhite() == myWhite || !p.canMove(et)) continue;
+
+                buf.Clear();
+                p.getMovementType(et).getAvailableMoves(state, p.getPosition(), p.isWhite(), buf);
+
+                foreach (var m in buf)
                 {
-                    sb.Append((int)p.getChessType()).Append(p.isWhite() ? "W" : "B").Append(x).Append(y).Append("-");
+                    if (m.actionType == ActionType.Attack)
+                    {
+                        ChessPiece target = state.getChessPieceAtPosition(m.targetPos);
+                        if (target == null || !target.canBeAttacked(et) || !p.canAttack(et)) continue;
+                    }
+                    BoardState nb = state.Clone();
+                    nb.moveChessPiece(p.getPosition(), m.targetPos);
+                    float s = AiEvaluator.EvaluateBoardState(nb, ally, enemy, et, myWhite, w);
+                    if (s < worst) worst = s;
                 }
             }
-        }
-        return sb.ToString();
+        return worst;
+    }
+
+    private static int CountCardUses(List<AiOption> actions)
+    {
+        int c = 0;
+        foreach (var a in actions) if (a is CardUseOption) c++;
+        return c;
+    }
+
+    private static AiOption DecideHoldOrEnd(PlayerData ally)
+    {
+        if (!ally.canUseHoldAction()) return null;
+        Card bestCard = null; int bestCost = int.MinValue;
+        foreach (Card c in ally.getHandList())
+            if (c.getCost() > bestCost) { bestCost = c.getCost(); bestCard = c; }
+        if (bestCard != null && bestCost >= 2) return new CardHoldOption(bestCard, 0f);
+        return null;
     }
 
     private static List<AiOption> GenerateLegalVirtualActions(BoardState state, PlayerData ally, int currentTurnCount)
@@ -152,7 +188,6 @@ public class AiManager : MonoBehaviour
         bool isWhite = ally.IsWhite();
         int currentMana = ally.getMana();
 
-        // 1. 虛擬卡片使用選項 (移至最前，讓 AI 優先上 Buff 再移動)
         foreach (Card card in ally.getHandList())
         {
             if (ally.getStatusContainer().canUseCard(card.getId(), currentTurnCount))
@@ -162,87 +197,82 @@ public class AiManager : MonoBehaviour
                 {
                     CardEffect cardEffect = CardEffectManager.getCardEffect(card);
                     if (cardEffect != null)
-                    {
-                        List<CardUseOption> rawOptions = cardEffect.getUseOptions(state, ally.IsLocal(), card, currentMana, currentTurnCount);
-                        foreach (var opt in rawOptions)
-                        {
-                            opt.setScore(0f);
+                        foreach (var opt in cardEffect.getUseOptions(state, ally.IsLocal(), card, currentMana, currentTurnCount))
                             options.Add(opt);
-                        }
-                    }
                 }
             }
         }
 
-        // 2. 虛擬移動選項
-        int moveLimit = 1 + ally.getStatusContainer().getExtraMoveCount(currentTurnCount);
-        if (ally.getMoveCount() < moveLimit)
-        {
-            List<ChessPiece> pieceList = new List<ChessPiece>();
-            for (int x = 0; x < 8; x++)
+        List<MoveAction> moveBuf = new List<MoveAction>(28);
+        for (int x = 0; x < 8; x++)
+            for (int y = 0; y < 8; y++)
             {
-                for (int y = 0; y < 8; y++)
-                {
-                    ChessPiece p = state.getChessPieceAtPosition(x, y);
-                    if (p != null && p.isWhite() == isWhite)
-                        pieceList.Add(p);
-                }
+                ChessPiece piece = state.getChessPieceAtPosition(x, y);
+                if (piece == null || piece.isWhite() != isWhite) continue;
+                ActionValidator.getLegalMoves(state, ally, piece, currentTurnCount, moveBuf);
+                foreach (var move in moveBuf)
+                    options.Add(new ChessMoveOption(piece, piece.getPosition(), move.targetPos, 0f));
             }
 
-            foreach (var piece in pieceList)
-            {
-                if (ally.getStatusContainer().canMoveChess(piece.getChessType(), currentTurnCount) && piece.canMove(currentTurnCount))
-                {
-                    int cost = piece.getMoveCost(currentTurnCount) + ally.getExtraMoveCost(currentTurnCount);
-                    if (currentMana >= cost)
-                    {
-                        List<MoveAction> moveActions = new List<MoveAction>();
-                        piece.getMovementType(currentTurnCount).getAvailableMoves(state, piece.getPosition(), isWhite, moveActions);
-
-                        foreach (var move in moveActions)
-                        {
-                            options.Add(new ChessMoveOption(piece, piece.getPosition(), move.targetPos, 0f));
-                        }
-                    }
-                }
-            }
-        }
-
-        // 3. 虛擬保留手牌選項
         if (ally.canUseHoldAction())
-        {
-            foreach (Card card in ally.getHandList())
-            {
-                options.Add(new CardHoldOption(card, 0f));
-            }
-        }
+            foreach (Card card in ally.getHandList()) options.Add(new CardHoldOption(card, 0f));
 
         return options;
     }
 
     public static async Task doBestMove(bool isLocal, int currentTurnCount)
     {
-        AiOption bestMove;
+        // 隨機卡執行後手牌才真正確定 → 打到隨機卡就停,用新手牌重算剩下的回合
+        int safety = 0;
+        bool replan = true;
 
-        while (!GameManager.IsGameOver() && (bestMove = getBestMove(isLocal, currentTurnCount)) != null)
+        while (replan && !GameManager.IsGameOver() && safety++ < 16)
         {
-            while (HandViewManager.isPlayingAnimation())
-                await Task.Delay(100);
+            replan = false;
+            List<AiOption> plan = await getBestTurnPlanAsync(isLocal, currentTurnCount);
 
-            await Task.Delay(OPTION_BUFFER_TIME_MILLIS);
-
-            await bestMove.execute(isLocal);
-
-            if (bestMove is CardHoldOption)
-            {
+            if (plan.Count == 0)
                 break;
+
+            foreach (var action in plan)
+            {
+                if (GameManager.IsGameOver())
+                    break;
+
+                while (HandViewManager.isPlayingAnimation())
+                    await Task.Delay(100);
+
+                await Task.Delay(OPTION_BUFFER_TIME_MILLIS);
+                await action.execute(isLocal);
+
+                if (action.isRandomEffect())
+                {
+                    replan = true;
+                    break;              // 隨機結算 → 重新規劃  
+                }
+
+                if (action is CardHoldOption)
+                    break;              // 保留 → 回合結束
             }
         }
 
-        while (HandViewManager.isPlayingAnimation())
+        while (HandViewManager.isPlayingAnimation() || BoardManager.isPlayingAnimation())
             await Task.Delay(100);
 
-        if (!GameManager.IsGameOver())
-            GameManager.ChangeTurn();
+        if (!GameManager.IsGameOver()) GameManager.ChangeTurn();
+    }
+
+    private static void LogPlan(PlanState best, float bestScore, float baseScore)
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.Append($"[Beam AI] 計畫分 {bestScore:F0} (停手基準 {baseScore:F0}) | 共 {best.actions.Count} 步: ");
+        foreach (var a in best.actions)
+        {
+            if (a is CardUseOption c) sb.Append($"[卡:{c.getCardname()}] ");
+            else if (a is ChessMoveOption m) sb.Append($"[移:{m.getChessName()}→{m.getTargetPosition()}] ");
+            else if (a is CardHoldOption) sb.Append("[保留] ");
+        }
+        if (best.actions.Count == 0) sb.Append("(直接結束回合)");
+        UnityEngine.Debug.Log(sb.ToString());
     }
 }

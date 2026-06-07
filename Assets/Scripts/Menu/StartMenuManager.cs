@@ -10,6 +10,11 @@ public class StartMenuManager : MonoBehaviour
         SceneManager.LoadScene(gameSceneName);
     } 
 
+    public void deckSetting()
+    {
+         
+    }
+
     public void quitGame()
     {
         Application.Quit();

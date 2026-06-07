@@ -4,12 +4,15 @@ using UnityEngine;
 
 public abstract class BaseStatus<TEnum> where TEnum : Enum
 {
-    public TEnum statusType;
-    public int startTurn, endTurn;
+    private TEnum statusType;
+    private int startTurn, endTurn;
+    private bool isPermanetStatus;
 
-    public BaseStatus(TEnum status, int startTurn, int endTurn)
+
+    public BaseStatus(TEnum status, bool isPermanetStatus, int startTurn, int endTurn)
     {
         this.statusType = status;
+        this.isPermanetStatus = isPermanetStatus;
         this.startTurn = startTurn;
         this.endTurn = endTurn;
     }
@@ -20,7 +23,9 @@ public abstract class BaseStatus<TEnum> where TEnum : Enum
 
     public int getEndTurn() => endTurn;
 
-    public bool isActive(int currentTurn) => currentTurn >= startTurn && currentTurn < endTurn;
+    public bool isPermanet() => isPermanetStatus;
+
+    public bool isActive(int currentTurn) => isPermanetStatus || (currentTurn >= startTurn && currentTurn < endTurn);
 
 
     public abstract BaseStatus<TEnum> Clone();

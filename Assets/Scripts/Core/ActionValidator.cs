@@ -21,7 +21,6 @@ public struct ActionRecord
 public class ActionValidator
 {
     private static readonly int MAX_MOVE_COUNT_PER_TURN = 1;
-    private static readonly List<MoveAction> rawMovesBuffer = new List<MoveAction>(64);
 
     public static bool canHoldCard(PlayerData playerData)
     {
@@ -45,10 +44,9 @@ public class ActionValidator
 
     private static int calculateGlobalMovesUsed(List<ActionRecord> records, int currentTurnCount)
     {
-        // ★ 修正：改用 getInitialPosition() 作為群組依據，避免 DFS 深拷貝後，新舊物件 Reference 不同導致計算錯誤
-        var movesByPiece = records.GroupBy(r => r.piece.getInitialPosition());
-
+        var movesByPiece = records.GroupBy(r => r.piece.getUniqueId());
         int globalMovesUsed = 0;
+
         foreach (var group in movesByPiece)
         {
             ChessPiece movedPiece = group.First().piece;
@@ -66,16 +64,16 @@ public class ActionValidator
     {
         if (player.getStatusContainer().isLimitedToMoveSpecificChess(currentTurnCount))
         {
-            ChessPiece limitedPiece = player.getStatusContainer().getLimitedToMoveSpecificChess(currentTurnCount);
-            // ★ 同理，改比對初始座標
-            if (limitedPiece != null && limitedPiece.getInitialPosition() != piece.getInitialPosition())
+            int? limitedUniqueId = player.getStatusContainer().getLimitedToMoveSpecificChessUniqueId(currentTurnCount);
+
+            if (limitedUniqueId.HasValue && limitedUniqueId.Value != piece.getUniqueId())
                 return false;
         }
 
         List<ActionRecord> records = player.getChessMoveRecords();
 
         // ★ 修正：比對 getInitialPosition() 而非直接比對 Reference
-        int pieceMoves = records.Count(r => r.piece.getInitialPosition() == piece.getInitialPosition() && r.type == ActionType.Move);
+        int pieceMoves = records.Count(r => r.piece.getUniqueId() == piece.getUniqueId());
         int pieceBonusMoves = piece.getExtraMoveCount(currentTurnCount);
 
         if (pieceMoves >= MAX_MOVE_COUNT_PER_TURN + pieceBonusMoves)
@@ -96,6 +94,7 @@ public class ActionValidator
     public static void getLegalMoves(BoardState state, PlayerData player, ChessPiece piece, int currentTurnCount, List<MoveAction> bufferList)
     {
         bufferList.Clear();
+        List<MoveAction> rawMovesBuffer = new List<MoveAction>(64);
 
         if (!canPieceMoveThisTurn(player, piece, currentTurnCount) || piece.isWhite() != player.IsWhite())
             return;
@@ -108,8 +107,6 @@ public class ActionValidator
         {
             return;
         }
-
-        rawMovesBuffer.Clear();
         // ★ 將 state 傳入 getAvailableMoves
         piece.getMovementType(currentTurnCount).getAvailableMoves(state, piece.getPosition(), piece.isWhite(), rawMovesBuffer);
 

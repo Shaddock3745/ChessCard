@@ -18,7 +18,7 @@ public class PipelineMovementEffect : CardEffect
         Vector2Int endPos = targets.getTargetPositions()[1];
 
         if (BoardManager.getChessPieceAtPosition(startPos) != null)
-            await BoardManager.movePieceWithAnimation(startPos, endPos);
+            await BoardManager.movePieceWithAnimationByEffect(startPos, endPos);
     }
 
     public Task<EffectTargetPayload> gatherTargets()

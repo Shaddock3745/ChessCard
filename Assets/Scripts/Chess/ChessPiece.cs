@@ -13,25 +13,32 @@ public enum ChessType
 
 public class ChessPiece
 {
+    private static int serialNumber = 0;
     private readonly bool isVirtual;
+    private readonly int uniqueId;
     private ChessType chessType;
     private bool isWhiteChess;
     private Vector2Int currentPosition;
     private Vector2Int initialPosition;
     private MovementType defaultMovementType;
-    private ChessStatusContainer statusContainer = new ChessStatusContainer();
+    private ChessStatusContainer statusContainer;
 
     private static readonly ChessType[] ALL_TYPES = { ChessType.Pawn, ChessType.Rook, ChessType.Knight, ChessType.Bishop, ChessType.Queen, ChessType.King };
     private static readonly ChessType[] ALL_TYPES_EXCEPT_KING = { ChessType.Pawn, ChessType.Rook, ChessType.Knight, ChessType.Bishop, ChessType.Queen };
 
     public static ChessType[] getAllChessTypes(bool exceptKing) => exceptKing ? ALL_TYPES_EXCEPT_KING : ALL_TYPES;
 
+    private static int getNextSerialNumber() => System.Threading.Interlocked.Increment(ref serialNumber);
+
     public ChessPiece(ChessType chessType, bool isWhite, Vector2Int currentPosition, bool isVirtual = false)
     {
+        this.uniqueId = getNextSerialNumber();
         this.chessType = chessType;
         this.isWhiteChess = isWhite;
         this.currentPosition = currentPosition;
         this.isVirtual = isVirtual;
+        this.initialPosition = currentPosition;
+        this.statusContainer = new ChessStatusContainer();
 
         defaultMovementType = chessType switch
         {
@@ -45,16 +52,21 @@ public class ChessPiece
         };
     }
 
-    public ChessPiece Clone()
+    private ChessPiece(ChessPiece chessPieceToClone)
     {
-        ChessPiece clone = new ChessPiece(this.chessType, this.isWhiteChess, this.currentPosition, true);
-        clone.initialPosition = this.initialPosition;
-
-        // 注意：ChessStatusContainer 也必須在內部實作 Clone() 才能達到完全深拷貝
-        clone.statusContainer = this.statusContainer.Clone();
-
-        return clone;
+        this.uniqueId = chessPieceToClone.uniqueId;
+        this.chessType = chessPieceToClone.chessType;
+        this.isWhiteChess = chessPieceToClone.isWhiteChess;
+        this.currentPosition = chessPieceToClone.currentPosition;
+        this.initialPosition = chessPieceToClone.initialPosition;
+        this.isVirtual = true;
+        this.defaultMovementType = chessPieceToClone.defaultMovementType;
+        this.statusContainer = chessPieceToClone.statusContainer.Clone();
     }
+
+    public ChessPiece Clone() => new ChessPiece(this);
+
+    public int getUniqueId() => uniqueId;
 
     public bool IsVirtual() => isVirtual;
 
@@ -69,10 +81,7 @@ public class ChessPiece
         this.initialPosition = pos;
     }
 
-    public Vector2Int getInitialPosition()
-    {
-        return initialPosition;
-    }
+    public Vector2Int getInitialPosition() => initialPosition;
 
     public void setPosition(Vector2Int newPosition)
     {
@@ -87,40 +96,26 @@ public class ChessPiece
             return 1 + statusContainer.getExtraMoveCost(currentTurnCount);
     }
 
-    public string getName()
-    {
-        return getChessColorName(isWhiteChess) + getChessTypeName(chessType);
-    }
+    public string getName() => getChessColorName(isWhiteChess) + getChessTypeName(chessType);
 
-    public string getDescription()
-    {
-        return defaultMovementType.getDescription();
-    }
 
-    public bool canAttack(int currentTurnCount)
-    {
-        return statusContainer.canAttack(currentTurnCount);
-    }
+    public string getDescription() => defaultMovementType.getDescription();
 
-    public bool canAttackSpecificTypeChess(ChessType chessType, int currentTotalTurn)
-    {
-        return statusContainer.canAttackSpecificTypeChess(chessType, currentTotalTurn);
-    }
 
-    public bool canBeAttacked(int currentTurnCount)
-    {
-        return statusContainer.canBeAttacked(currentTurnCount);
-    }
+    public bool canAttack(int currentTurnCount) => statusContainer.canAttack(currentTurnCount);
 
-    public bool canMove(int currentTurnCount)
-    {
-        return statusContainer.canMove(currentTurnCount);
-    }
 
-    public int getExtraMoveCount(int currentTurnCount)
-    {
-        return statusContainer.getExtraMoveCount(currentTurnCount);
-    }
+    public bool canAttackSpecificTypeChess(ChessType chessType, int currentTotalTurn) => statusContainer.canAttackSpecificTypeChess(chessType, currentTotalTurn);
+
+
+    public bool canBeAttacked(int currentTurnCount) => statusContainer.canBeAttacked(currentTurnCount);
+
+
+    public bool canMove(int currentTurnCount) => statusContainer.canMove(currentTurnCount);
+
+
+    public int getExtraMoveCount(int currentTurnCount) => statusContainer.getExtraMoveCount(currentTurnCount);
+
 
     private static string getChessColorName(bool isWhite)
     {
@@ -133,10 +128,8 @@ public class ChessPiece
         };
     }
 
-    public float getStatusContainerAiValue(bool isLocal, int currentTurnCount)
-    {
-        return statusContainer.getStatusContainerAiValue(isLocal, this, currentTurnCount);
-    }
+    public float getStatusContainerAiValue(bool isLocal, int currentTurnCount) => statusContainer.getStatusContainerAiValue(isLocal, this, currentTurnCount);
+
 
     public void addStatus(ChessStatus status)
     {
@@ -215,8 +208,5 @@ public class ChessPiece
         statusContainer.triggerPostAttack(this, target, from, currentTurnCount);
     }
 
-    public ChessStatusContainer getStatusContainer()
-    {
-        return statusContainer;
-    }
+    public ChessStatusContainer getStatusContainer() => statusContainer;
 }

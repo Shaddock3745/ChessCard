@@ -1,27 +1,18 @@
 [System.Serializable]
 public class Card
 {
+    private static int serialNumber = 0;
     private readonly bool isVirtual;
+    private readonly int uniqueId;
     private int id;
     private bool isExileOnUse = false;
     private int currentCost;
 
-    public Card(int id)
-    {
-        this.id = id;
-        currentCost = JsonReader.getCardCost(id);
-    }
+    private static int getNextSerialNumber() => System.Threading.Interlocked.Increment(ref serialNumber);
 
-    public Card(int id, bool isExileOnUse, bool isVirtual = false)
+    public Card(int id, bool isExileOnUse = false, bool isVirtual = false, bool noConsumption = false)
     {
-        this.id = id;
-        this.isExileOnUse = isExileOnUse;
-        currentCost = JsonReader.getCardCost(id);
-        this.isVirtual = isVirtual;
-    }
-
-    public Card(int id, bool isExileOnUse, bool noConsumption, bool isVirtual = false)
-    {
+        this.uniqueId = getNextSerialNumber();
         this.id = id;
         this.isExileOnUse = isExileOnUse;
 
@@ -33,6 +24,22 @@ public class Card
         this.isVirtual = isVirtual;
     }
 
+    private Card(Card cardToClone)
+    {
+        this.uniqueId = cardToClone.uniqueId;
+        this.id = cardToClone.id;
+        this.isExileOnUse = cardToClone.isExileOnUse;
+        this.currentCost = cardToClone.currentCost;
+        this.isVirtual = true;
+    }
+
+    public Card Clone()
+    {
+        return new Card(this);
+    }
+
+    public int getUniqueId() => uniqueId;
+
     public bool IsVirtual() => isVirtual;
 
     public void resetCost()
@@ -40,35 +47,14 @@ public class Card
         currentCost = JsonReader.getCardCost(id);
     }
 
-    public int getCost()
-    {
-        return currentCost;
-    }
+    public int getCost() => currentCost;
 
-    public string getName()
-    {
-        return JsonReader.getCardName(id);
-    }
+    public string getName() => JsonReader.getCardName(id);
 
-    public string getDescription()
-    {
-        return JsonReader.getCardDescription(id);
-    }
+    public string getDescription() => JsonReader.getCardDescription(id);
 
-    public bool isExileOnUseCard()
-    {
-        return isExileOnUse;
-    }
+    public bool isExileOnUseCard() => isExileOnUse;
 
-    public int getId()
-    {
-        return id;
-    }
+    public int getId() => id;
 
-    public Card Clone()
-    {
-        Card clone = new Card(this.id, this.isExileOnUse, true);
-        clone.currentCost = this.currentCost;
-        return clone;
-    }
 }

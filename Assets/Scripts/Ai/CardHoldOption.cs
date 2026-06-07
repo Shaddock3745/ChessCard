@@ -22,20 +22,19 @@ public class CardHoldOption : AiOption
 
     public Task execute(bool isLocal)
     {
-        Card realCard = MatchDataManager.getPlayerData(isLocal).getHandList().Find(c => c.getId() == card.getId());
+        Card realCard = MatchDataManager.getPlayerData(isLocal).getHandList().Find(c => c.getUniqueId() == card.getUniqueId());
+
         if (realCard != null)
-        {
             MatchDataManager.holdCard(isLocal, realCard);
-        }
+
         return Task.CompletedTask;
     }
 
     public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, int currentTurnCount)
     {
-        Card virtualCard = clonedAlly.getHandList().Find(c => c.getId() == card.getId());
+        Card virtualCard = clonedAlly.getHandList().Find(c => c.getUniqueId() == card.getUniqueId());
+
         if (virtualCard != null)
-        {
             clonedAlly.holdCard(virtualCard);
-        }
     }
 }

@@ -16,6 +16,10 @@ public class ChessMoveOption : AiOption
         this.score = score;
     }
 
+    public Vector2Int getCurrentPosition() => currentPos;
+
+    public Vector2Int getTargetPosition() => targetPos;
+
     public float getScore() => score;
     public void setScore(float score) => this.score = score;
     public float getQuickScore() => quickScore;

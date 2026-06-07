@@ -22,6 +22,7 @@ public class BoardManager : MonoBehaviour
     private BoardTile[,] boardTiles;
     private Dictionary<ChessPiece, ChessPieceUi> pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
     private BoardState boardState;
+    private bool isAnimating = false;
 
     public static Action<ChessPiece, Vector2Int, Vector2Int> OnChessMove;
     public static Action<ChessPiece, ChessPiece, Vector2Int, Vector2Int> OnChessAttack;
@@ -32,6 +33,16 @@ public class BoardManager : MonoBehaviour
             instance = this;
         else
             Destroy(gameObject);
+    }
+
+    private void OnEnable()
+    {
+        MatchDataManager.OnPlayerUseCard += updateBoardUiWhenPlayerUseCard;
+    }
+
+    private void OnDisable()
+    {
+        MatchDataManager.OnPlayerUseCard -= updateBoardUiWhenPlayerUseCard;
     }
 
     public static void initBoard()
@@ -50,6 +61,8 @@ public class BoardManager : MonoBehaviour
         instance.spawnPiece(ChessType.King, true, 4, 0); // White King
         instance.spawnPiece(ChessType.King, false, 4, 7); // Black King
     }
+
+    public static bool isPlayingAnimation() => instance.isAnimating;
 
     public static BoardState getRealBoardState() => instance.boardState;
 
@@ -80,7 +93,6 @@ public class BoardManager : MonoBehaviour
     {
         Vector2Int position = new Vector2Int(indexX, indexY);
         ChessPiece piece = new ChessPiece(chessType, isWhite, position);
-        piece.setInitialPosition(position);
         boardState.setChessPieceAtPosition(indexX, indexY, piece);
 
         float x = START_OFFSET + (TILE_SIZE * indexX);
@@ -209,7 +221,9 @@ public class BoardManager : MonoBehaviour
     public static async Task summonChessPieceWithAnimation(ChessType chessType, bool isWhite, Vector2Int position)
     {
         summonChessPiece(chessType, isWhite, position);
+        instance.isAnimating = true;
         await GetChessPieceUiAtPosition(position).fadeIn();
+        instance.isAnimating = false;
     }
 
     public static ChessPiece getChessPieceAtPosition(int x, int y)
@@ -331,25 +345,7 @@ public class BoardManager : MonoBehaviour
 
     public static List<ChessPiece> getAllChessPieces(bool isWhite, List<ChessType> vaildTypes)
     {
-        bool checkSpecificType = vaildTypes.Count > 0;
-        List<ChessPiece> pieces = new List<ChessPiece>();
-
-        for (int i = 0; i < 8; i++)
-            for (int j = 0; j < 8; j++)
-            {
-                ChessPiece piece = getChessPieceAtPosition(i, j);
-
-                if (piece != null && piece.isWhite() == isWhite)
-                    if (checkSpecificType)
-                    {
-                        if (vaildTypes.Contains(piece.getChessType()))
-                            pieces.Add(piece);
-                    }
-                    else
-                        pieces.Add(piece);
-            }
-
-        return pieces;
+        return instance.boardState.getAllChessPieces(isWhite, vaildTypes);
     }
 
     public static bool isEmpty(Vector2Int position)
@@ -384,6 +380,7 @@ public class BoardManager : MonoBehaviour
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
         getUiOfChess(movingPiece).moveToPoint(new Vector3(x, y, 0));
+
     }
 
     public static void movePiece(Vector2Int from, Vector2Int to)
@@ -397,11 +394,16 @@ public class BoardManager : MonoBehaviour
 
     private static async Task innerMovePieceWithAnimation(Vector2Int from, Vector2Int to)
     {
+        if (from == to)
+            return;
+
         ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
+        instance.isAnimating = true;
         await getUiOfChess(movingPiece).moveToPointWithAnimation(new Vector3(x, y, 0));
+        instance.isAnimating = false;
         instance.boardState.moveChessPiece(from, to);
     }
 
@@ -414,13 +416,23 @@ public class BoardManager : MonoBehaviour
         InputManager.tryDetectHover();
     }
 
+    public static async Task movePieceWithAnimationByEffect(Vector2Int from, Vector2Int to)
+    {
+        ChessPiece movingPiece = getChessPieceAtPosition(from.x, from.y);
+        await innerMovePieceWithAnimation(from, to);
+        movingPiece.onMoveEnd(from, to, GameManager.getCurrentTurnCount());
+        InputManager.tryDetectHover();
+    }
+
     private static async Task showRoarAnimation(Vector2Int position, Vector2Int direction)
     {
         float x = START_OFFSET + (TILE_SIZE * position.x);
         float y = START_OFFSET + (TILE_SIZE * position.y);
         RoarObject roar = GameObject.Instantiate(instance.roarPrefab, new Vector3(x, y, 0), Quaternion.LookRotation(Vector3.forward, (Vector2)direction)).GetComponent<RoarObject>();
 
+        instance.isAnimating = true;
         await roar.show();
+        instance.isAnimating = false;
     }
 
     public static async Task pieceGotRoared(Vector2Int position, Vector2Int direction, bool isWhiteRoaring)
@@ -431,10 +443,14 @@ public class BoardManager : MonoBehaviour
         Task roarTask = showRoarAnimation(position, direction);
         Vector2Int finalPosition = position + direction;
 
+        instance.isAnimating = true;
+
         if (!isEmpty(position) && (isWhiteRoaring ^ isWhiteAtPosition(position)) && isPositionOnBoard(finalPosition) && isEmpty(finalPosition))
             await Task.WhenAll(roarTask, innerMovePieceWithAnimation(position, finalPosition));
         else
             await roarTask;
+
+        instance.isAnimating = false;
     }
 
     public static bool gameOverCheck(ChessPiece attackTarget)
@@ -488,7 +504,9 @@ public class BoardManager : MonoBehaviour
         Task moveTask = attackerUi.moveToPointWithAnimation(new Vector3(x, y, 0));
         Task destroyTask = victimUi.destroyWithAnimation();
 
+        instance.isAnimating = true;
         await Task.WhenAll(moveTask, destroyTask);
+        instance.isAnimating = false;
         instance.pieceToUiMap.Remove(target);
 
         int currentTurnCount = GameManager.getCurrentTurnCount();
@@ -515,7 +533,9 @@ public class BoardManager : MonoBehaviour
     {
         ChessPiece piece = getChessPieceAtPosition(position);
         instance.boardState.removeChessPieceAtPosition(position);
+        instance.isAnimating = true;
         await getUiOfChess(piece).destroyWithAnimation();
+        instance.isAnimating = false;
         instance.pieceToUiMap.Remove(piece);
 
         InputManager.tryDetectHover();
@@ -555,7 +575,9 @@ public class BoardManager : MonoBehaviour
         if (secondUi != null)
             tasks.Add(secondUi.moveToPointWithAnimation(new Vector3(firstX, firstY, 0)));
 
+        instance.isAnimating = true;
         await Task.WhenAll(tasks);
+        instance.isAnimating = false;
         InputManager.tryDetectHover();
     }
 
@@ -608,7 +630,9 @@ public class BoardManager : MonoBehaviour
         foreach (Vector2Int position in positions)
             tasks.Add(getTileAtPosition(position).showTargetWithAnimation());
 
+        instance.isAnimating = true;
         await Task.WhenAll(tasks);
+        instance.isAnimating = false;
     }
 
     public static void removeHint(Vector2Int position)
@@ -677,5 +701,10 @@ public class BoardManager : MonoBehaviour
     {
         if (!piece.IsVirtual())
             getUiOfChess(piece).UpdateStatusFx(GameManager.getCurrentTurnCount());
+    }
+
+    private static void updateBoardUiWhenPlayerUseCard(bool isLocal, Card card)
+    {
+        refreshAllPiecesStatusFx();
     }
 }

@@ -31,7 +31,7 @@ public class CardUseOption : AiOption
     public async Task execute(bool isLocal)
     {
         // 確實從真實手牌中扣除資源，防止 0 費卡無限循環
-        Card realCard = MatchDataManager.getPlayerData(isLocal).getHandList().Find(c => c.getId() == card.getId());
+        Card realCard = MatchDataManager.getPlayerData(isLocal).getHandList().Find(c => c.getUniqueId() == card.getUniqueId());
         if (realCard != null)
         {
             MatchDataManager.getPlayerData(isLocal).useCard(realCard, GameManager.getCurrentTurnCount());
@@ -45,7 +45,7 @@ public class CardUseOption : AiOption
 
     public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, int currentTurnCount)
     {
-        Card virtualCard = clonedAlly.getHandList().Find(c => c.getId() == card.getId());
+        Card virtualCard = clonedAlly.getHandList().Find(c => c.getUniqueId() == card.getUniqueId());
         if (virtualCard == null) return;
 
         clonedAlly.useCard(virtualCard, currentTurnCount);

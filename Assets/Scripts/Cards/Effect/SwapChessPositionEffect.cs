@@ -5,45 +5,33 @@ using UnityEngine;
 
 public class SwapChessPositionEffect : CardEffect
 {
-    private Func<EffectTargetPayload, (Vector2Int, Vector2Int)> factory;
+    private Func<BoardState, bool, EffectTargetPayload, (Vector2Int, Vector2Int)> factory;
 
-    public SwapChessPositionEffect(Func<EffectTargetPayload, (Vector2Int, Vector2Int)> factory)
+    public SwapChessPositionEffect(Func<BoardState, bool, EffectTargetPayload, (Vector2Int, Vector2Int)> factory)
     {
         this.factory = factory;
     }
 
-    public bool canActivate(bool isLocal, int currentTurnCount, Card card)
-    {
-        return true;
-    }
+    public bool canActivate(bool isLocal, int currentTurnCount, Card card) => true;
 
     public async Task executeEffect(bool isLocal, Card card, EffectTargetPayload targets)
     {
-        var (firstPostion, secondPostion) = factory.Invoke(targets);
-
-        await BoardManager.swapTwoPositionWithAnimation(firstPostion, secondPostion);
+        // ★ 真實路徑:用真實盤面快照 + 真實施法方顏色決定座標
+        BoardState realView = BoardManager.getCloneBoardState();
+        bool casterIsWhite = isLocal == GameManager.IsLocalWhite();
+        var (first, second) = factory.Invoke(realView, casterIsWhite, targets);
+        await BoardManager.swapTwoPositionWithAnimation(first, second);
     }
 
-    public Task<EffectTargetPayload> gatherTargets()
-    {
-        return Task.FromResult(EffectTargetPayload.empty());
-    }
+    public Task<EffectTargetPayload> gatherTargets() => Task.FromResult(EffectTargetPayload.empty());
 
-    // ★ 更新簽章。作為 Pipeline 後端效果，不自行產生選項
     public List<CardUseOption> getUseOptions(BoardState state, bool isLocal, Card card, int currentMana, int currentTurnCount)
-    {
-        return new List<CardUseOption>();
-    }
+        => new List<CardUseOption>();
 
-    // ★ DFS 虛擬執行實作：利用 BoardState 的 API 直接對虛擬盤面進行位置互換
     public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
     {
-        if (targets == null) return;
-
-        // 透過 factory 拆解出管線傳遞過來的兩個互換座標
-        var (firstPosition, secondPosition) = factory.Invoke(targets);
-
-        // 呼叫虛擬盤面的互換方法，後續交由 DFS 結算互換後的全局戰略價值
-        clonedState.swapTwoPosition(firstPosition, secondPosition);
+        // ★ 虛擬路徑:一律用 clonedState / clonedAlly,絕不碰 BoardManager / GameManager
+        var (first, second) = factory.Invoke(clonedState, clonedAlly.IsWhite(), targets);
+        clonedState.swapTwoPosition(first, second);
     }
 }
