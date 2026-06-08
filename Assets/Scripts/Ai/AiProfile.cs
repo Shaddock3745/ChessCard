@@ -27,8 +27,8 @@ public class AiProfile
         6,24, 14,43, 34,35, 33,32, 9,25, 36,28, 41,11, 46,49   // 進攻/節奏 16
     };
     private static readonly List<int> CONSERVATIVE_DECK = new List<int> {
-        1,1,1,1, 2,2, 3, 4,4, 5,                     // 棋子 10
-        6,18,21, 10,31,39,12, 23,26, 13,40,7, 22,38,15         // 防守/資源 15
+        1,1,1, 2,2, 3, 4,4, 5,                     // 棋子 9
+        6,6,18,21, 10,31,39,12, 23,26, 13,40,7, 22,38,15         // 防守/資源 15
     };
     private static readonly List<int> TRICKY_DECK = new List<int> {
         1,1, 2,2, 3,3, 4, 5,                         // 棋子 8

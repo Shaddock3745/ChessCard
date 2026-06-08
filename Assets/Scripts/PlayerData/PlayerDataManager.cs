@@ -7,6 +7,7 @@ public class PlayerDataManager : MonoBehaviour
     private static PlayerDataManager instance;
 
     private static readonly List<int> DEFAULT_BALANCED_DECK = AiProfile.getDefaultDeckListOfPersonality(AiPersonality.Balanced);
+    private static readonly List<int> TESTING_DECK = new List<int> { 6 };
 
     private AiPersonality enemyAiPersonality = AiPersonality.Conservative;
     private AiDifficulty enemyAiDifficulty = AiDifficulty.Easy;

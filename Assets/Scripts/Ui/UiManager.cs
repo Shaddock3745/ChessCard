@@ -5,9 +5,7 @@ public class UiManager : MonoBehaviour
 {
     private static UiManager instance;
 
-    private static readonly string WHITE_WINS_TEMPLATE = "White Wins", BLACK_WINS_TEMPLATE = "Black Wins";
-
-    [SerializeField] private TMPro.TextMeshProUGUI deckCount, waitingCount, discardCount, manaCount, holdCount;
+    [SerializeField] private TMPro.TextMeshProUGUI deckCount, waitingCount, discardCount, manaCount, holdCount, currentPlayer;
     [SerializeField] private GameObject hoveredObjectDataPanel, logPanel;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private TMPro.TextMeshProUGUI gameOverText;
@@ -30,6 +28,7 @@ public class UiManager : MonoBehaviour
         MatchDataManager.OnLocalCardCountChange += updateCardCount;
         MatchDataManager.OnLocalManaCountChange += updateManaCount;
         GameManager.OnTurnStart += updateButtonActive;
+        GameManager.OnTurnStart += updateCurrentPlayer;
         GameManager.OnGameOver += showGameOverPanel;
         GameManager.OnResetGame += resetAllUi;
     }
@@ -39,13 +38,14 @@ public class UiManager : MonoBehaviour
         MatchDataManager.OnLocalCardCountChange -= updateCardCount;
         MatchDataManager.OnLocalManaCountChange -= updateManaCount;
         GameManager.OnTurnStart -= updateButtonActive;
+        GameManager.OnTurnStart -= updateCurrentPlayer;
         GameManager.OnGameOver -= showGameOverPanel;
         GameManager.OnResetGame -= resetAllUi;
     }
 
     private static void showGameOverPanel(bool isWhiteWin)
     {
-        instance.gameOverText.text = isWhiteWin ? WHITE_WINS_TEMPLATE : BLACK_WINS_TEMPLATE;
+        instance.gameOverText.text = string.Format(LocalizationManager.get("log_game_over"), LocalizationManager.get(isWhiteWin ? "white" : "black"));
         instance.gameOverPanel.SetActive(true);
     }
 
@@ -72,6 +72,11 @@ public class UiManager : MonoBehaviour
         updateManaCount();
         updateCardCount();
         hideHoveredObjectDataPanel();
+    }
+
+    private static void updateCurrentPlayer(int currentTurnCount, bool isWhiteTurn)
+    {
+        instance.currentPlayer.text = LocalizationManager.get(isWhiteTurn ? "white" : "black");
     }
 
     private static void updateButtonActive(int currentTurnCount, bool isWhiteTurn)
@@ -107,7 +112,7 @@ public class UiManager : MonoBehaviour
             string description = piece.getDescription();
 
             if (isOnBoard)
-                description += MatchDataManager.canMoveChess(true, piece, GameManager.getCurrentTurnCount()) ? "\n\n(可移動)" : "";
+                description += MatchDataManager.canMoveChess(true, piece, GameManager.getCurrentTurnCount()) ? "\n\n" + LocalizationManager.get("hint_movable") : "";
 
             showHoveredObjectDataPanel(piece.getName(), description);
         }
@@ -120,7 +125,7 @@ public class UiManager : MonoBehaviour
             string description = card.getDescription();
 
             if (isInHand)
-                description += MatchDataManager.canUseCard(true, card, GameManager.getCurrentTurnCount()) ? "\n\n(可使用)" : "\n\n(條件不符)";
+                description += MatchDataManager.canUseCard(true, card, GameManager.getCurrentTurnCount()) ? "\n\n" + LocalizationManager.get("hint_usable") : "\n\n" + LocalizationManager.get("hint_condition_not_met");
 
             showHoveredObjectDataPanel(card.getName(), description);
         }

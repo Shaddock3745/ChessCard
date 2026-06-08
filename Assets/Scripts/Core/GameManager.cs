@@ -11,8 +11,6 @@ public enum Language
 
 public class GameManager : MonoBehaviour
 {
-    [SerializeField] private TMPro.TextMeshProUGUI nowTurn;
-
     private static GameManager instance;
 
     private int turnCount;
@@ -32,6 +30,7 @@ public class GameManager : MonoBehaviour
         {
             instance = this;
             QualitySettings.vSyncCount = 1;
+            currentLanguage = JsonReader.loadLanguage();
         }
         else
             Destroy(gameObject);
@@ -80,7 +79,6 @@ public class GameManager : MonoBehaviour
         instance.turnCount++;
 
         OnTurnStart?.Invoke(instance.turnCount, instance.isWhiteTurn);
-        instance.nowTurn.text = instance.isWhiteTurn ? "White" : "Black";
         MatchDataManager.turnStart(isLocalTurn);
         BoardManager.refreshAllPiecesStatusFx();
 

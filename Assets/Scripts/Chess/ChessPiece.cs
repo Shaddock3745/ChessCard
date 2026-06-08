@@ -72,6 +72,8 @@ public class ChessPiece
 
     public ChessType getChessType() => chessType;
 
+    public string getChessTypeName() => getChessTypeName(chessType);
+
     public bool isWhite() => isWhiteChess;
 
     public Vector2Int getPosition() => currentPosition;
@@ -119,13 +121,7 @@ public class ChessPiece
 
     private static string getChessColorName(bool isWhite)
     {
-        return GameManager.getCurrentLanguage() switch
-        {
-            Language.TRADITIONAL_CHINESE => isWhite ? "白" : "黑",
-            Language.ENGLISH => isWhite ? "White" : "Black",
-            Language.JAPANESE => isWhite ? "白" : "黒",
-            _ => isWhite ? "White" : "Black"
-        };
+        return LocalizationManager.get(isWhite ? "chess_color_white" : "chess_color_black");
     }
 
     public float getStatusContainerAiValue(bool isLocal, int currentTurnCount) => statusContainer.getStatusContainerAiValue(isLocal, this, currentTurnCount);
@@ -148,44 +144,18 @@ public class ChessPiece
 
     private static string getChessTypeName(ChessType type)
     {
-        switch (GameManager.getCurrentLanguage())
+        string key = type switch
         {
-            case Language.TRADITIONAL_CHINESE:
-                return type switch
-                {
-                    ChessType.Pawn => "士兵",
-                    ChessType.Rook => "城堡",
-                    ChessType.Knight => "騎士",
-                    ChessType.Bishop => "主教",
-                    ChessType.Queen => "皇后",
-                    ChessType.King => "國王",
-                    _ => "未知棋子"
-                };
-            case Language.ENGLISH:
-                return type switch
-                {
-                    ChessType.Pawn => "Pawn",
-                    ChessType.Rook => "Rook",
-                    ChessType.Knight => "Knight",
-                    ChessType.Bishop => "Bishop",
-                    ChessType.Queen => "Queen",
-                    ChessType.King => "King",
-                    _ => "Unknown Piece"
-                };
-            case Language.JAPANESE:
-                return type switch
-                {
-                    ChessType.Pawn => "ポーン",
-                    ChessType.Rook => "ルーク",
-                    ChessType.Knight => "ナイト",
-                    ChessType.Bishop => "ビショップ",
-                    ChessType.Queen => "クイーン",
-                    ChessType.King => "キング",
-                    _ => "不明な駒"
-                };
-            default:
-                return type.ToString();
-        }
+            ChessType.Pawn => "chess_pawn",
+            ChessType.Rook => "chess_rook",
+            ChessType.Knight => "chess_knight",
+            ChessType.Bishop => "chess_bishop",
+            ChessType.Queen => "chess_queen",
+            ChessType.King => "chess_king",
+            _ => "chess_unknown_type"
+        };
+
+        return LocalizationManager.get(key);
     }
 
     public MovementType getMovementType(int currentTurnCount)

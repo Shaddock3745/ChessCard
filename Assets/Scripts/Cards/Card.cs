@@ -10,7 +10,7 @@ public class Card
 
     private static int getNextSerialNumber() => System.Threading.Interlocked.Increment(ref serialNumber);
 
-    public Card(int id, bool isExileOnUse = false, bool isVirtual = false, bool noConsumption = false)
+    public Card(int id, bool isExileOnUse = false, bool noConsumption = false, bool isVirtual = false)
     {
         this.uniqueId = getNextSerialNumber();
         this.id = id;

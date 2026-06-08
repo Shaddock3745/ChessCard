@@ -1876,6 +1876,7 @@ GameObject:
   - component: {fileID: 687202735}
   - component: {fileID: 687202737}
   - component: {fileID: 687202736}
+  - component: {fileID: 687202738}
   m_Layer: 5
   m_Name: Hold_Text
   m_TagString: Untagged
@@ -2002,6 +2003,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 687202734}
   m_CullTransparentMesh: 1
+--- !u!114 &687202738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687202734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f38312b5fa16b949b6e30b219590105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: hold
 --- !u!1 &708968555
 GameObject:
   m_ObjectHideFlags: 0
@@ -2428,6 +2442,7 @@ GameObject:
   - component: {fileID: 967049356}
   - component: {fileID: 967049358}
   - component: {fileID: 967049357}
+  - component: {fileID: 967049359}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -2554,6 +2569,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 967049355}
   m_CullTransparentMesh: 1
+--- !u!114 &967049359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 967049355}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f38312b5fa16b949b6e30b219590105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: hold_card
 --- !u!1 &970283285
 GameObject:
   m_ObjectHideFlags: 0
@@ -2565,6 +2593,7 @@ GameObject:
   - component: {fileID: 970283286}
   - component: {fileID: 970283288}
   - component: {fileID: 970283287}
+  - component: {fileID: 970283289}
   m_Layer: 5
   m_Name: Mana_Text
   m_TagString: Untagged
@@ -2611,7 +2640,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Mana:'
+  m_text: 'AP:'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 80a549a290c8e934880e2f41fcb2054e, type: 2}
   m_sharedMaterial: {fileID: -1762229733343753185, guid: 80a549a290c8e934880e2f41fcb2054e, type: 2}
@@ -2691,6 +2720,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 970283285}
   m_CullTransparentMesh: 1
+--- !u!114 &970283289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 970283285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f38312b5fa16b949b6e30b219590105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: ap
 --- !u!1 &1037248706
 GameObject:
   m_ObjectHideFlags: 0
@@ -2958,6 +3000,7 @@ GameObject:
   - component: {fileID: 1119224412}
   - component: {fileID: 1119224414}
   - component: {fileID: 1119224413}
+  - component: {fileID: 1119224415}
   m_Layer: 5
   m_Name: Deck_Text
   m_TagString: Untagged
@@ -3084,6 +3127,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1119224411}
   m_CullTransparentMesh: 1
+--- !u!114 &1119224415
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1119224411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f38312b5fa16b949b6e30b219590105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: deck
 --- !u!1 &1125284598
 GameObject:
   m_ObjectHideFlags: 0
@@ -3263,8 +3319,8 @@ Transform:
   - {fileID: 1895040108}
   - {fileID: 1187595409}
   - {fileID: 970283286}
-  - {fileID: 1981118288}
   - {fileID: 687202735}
+  - {fileID: 1981118288}
   - {fileID: 565050840}
   - {fileID: 1799423184}
   - {fileID: 2139762419}
@@ -3414,6 +3470,7 @@ GameObject:
   - component: {fileID: 1187595409}
   - component: {fileID: 1187595411}
   - component: {fileID: 1187595410}
+  - component: {fileID: 1187595412}
   m_Layer: 5
   m_Name: Discard_Text
   m_TagString: Untagged
@@ -3540,6 +3597,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1187595408}
   m_CullTransparentMesh: 1
+--- !u!114 &1187595412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1187595408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f38312b5fa16b949b6e30b219590105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: discard
 --- !u!1 &1231778528
 GameObject:
   m_ObjectHideFlags: 0
@@ -4351,6 +4421,7 @@ GameObject:
   - component: {fileID: 1427053088}
   - component: {fileID: 1427053090}
   - component: {fileID: 1427053089}
+  - component: {fileID: 1427053091}
   m_Layer: 5
   m_Name: NowTurn_Text
   m_TagString: Untagged
@@ -4477,6 +4548,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1427053087}
   m_CullTransparentMesh: 1
+--- !u!114 &1427053091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1427053087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f38312b5fa16b949b6e30b219590105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: now
 --- !u!1 &1484709535
 GameObject:
   m_ObjectHideFlags: 0
@@ -4762,6 +4846,7 @@ MonoBehaviour:
   discardCount: {fileID: 2139762420}
   manaCount: {fileID: 448292424}
   holdCount: {fileID: 565050841}
+  currentPlayer: {fileID: 1290287683}
   hoveredObjectDataPanel: {fileID: 269723845}
   logPanel: {fileID: 592024255}
   gameOverPanel: {fileID: 415470705}
@@ -5076,6 +5161,7 @@ GameObject:
   - component: {fileID: 1625493745}
   - component: {fileID: 1625493747}
   - component: {fileID: 1625493746}
+  - component: {fileID: 1625493748}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -5122,7 +5208,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Change Turn
+  m_text: Turn End
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 80a549a290c8e934880e2f41fcb2054e, type: 2}
   m_sharedMaterial: {fileID: -1762229733343753185, guid: 80a549a290c8e934880e2f41fcb2054e, type: 2}
@@ -5202,6 +5288,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1625493744}
   m_CullTransparentMesh: 1
+--- !u!114 &1625493748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1625493744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f38312b5fa16b949b6e30b219590105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: turn_end
 --- !u!1 &1740909125
 GameObject:
   m_ObjectHideFlags: 0
@@ -5439,6 +5538,7 @@ GameObject:
   - component: {fileID: 1895040108}
   - component: {fileID: 1895040110}
   - component: {fileID: 1895040109}
+  - component: {fileID: 1895040111}
   m_Layer: 5
   m_Name: Waiting_Text
   m_TagString: Untagged
@@ -5565,6 +5665,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1895040107}
   m_CullTransparentMesh: 1
+--- !u!114 &1895040111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1895040107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f38312b5fa16b949b6e30b219590105, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  key: waiting
 --- !u!1 &1932851919
 GameObject:
   m_ObjectHideFlags: 0

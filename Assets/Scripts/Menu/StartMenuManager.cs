@@ -58,6 +58,11 @@ public class StartMenuManager : MonoBehaviour
         SceneManager.LoadScene(deckEditingSceneName);
     }
 
+    public void showHelp()
+    {
+
+    }
+
     public void quitGame()
     {
         Application.Quit();
@@ -98,14 +103,15 @@ public class StartMenuManager : MonoBehaviour
 
     public void onLanguageDropDownValueChange(int value)
     {
-        JsonReader.saveLanguage(languageByIndex[value]);
+        LocalizationManager.setLanguage(languageByIndex[value]);
+        loadDropDownOptions();
     }
 
     private static List<OptionData> toOptionList<T>(T[] values)
     {
         List<OptionData> options = new List<OptionData>();
         foreach (T v in values)
-            options.Add(new OptionData(v.ToString()));
+            options.Add(new OptionData(LocalizationManager.get(v.ToString().ToLowerInvariant())));
         return options;
     }
 

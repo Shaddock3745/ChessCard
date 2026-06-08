@@ -44,21 +44,10 @@ public class JsonReader : MonoBehaviour
             instance = this;
             DontDestroyOnLoad(gameObject);
             loadCardData();
+            ensurePlayerDataExists();
         }
         else
             Destroy(gameObject);
-    }
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 
     private void loadCardData()
@@ -105,9 +94,9 @@ public class JsonReader : MonoBehaviour
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataEn))
                     return cardDataEn.name_en;
                 break;
-            case Language.JAPANESE:
+            case Language.JAPANESE: // Japanese
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataJa))
-                    return cardDataJa.name_en;
+                    return cardDataJa.name_ja;
                 break;
             default:
                 Debug.LogWarning($"Unsupported language: {language}.");
@@ -129,9 +118,9 @@ public class JsonReader : MonoBehaviour
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataEn))
                     return cardDataEn.desc_en;
                 break;
-            case Language.JAPANESE: // English
+            case Language.JAPANESE: // Japanese
                 if (instance.cardTable.TryGetValue(id, out CardTextData cardDataJa))
-                    return cardDataJa.desc_en;
+                    return cardDataJa.desc_ja;
                 break;
             default:
                 Debug.LogWarning($"Unsupported language: {language}.");
@@ -145,6 +134,15 @@ public class JsonReader : MonoBehaviour
         return Path.Combine(Application.persistentDataPath, "PlayerData.json");
     }
 
+    private static void ensurePlayerDataExists()
+    {
+        if (File.Exists(getPlayerDataPath()))
+            return;
+
+        PlayerStaticData data = new PlayerStaticData();
+        data.playDeck = AiProfile.getDefaultDeckListOfPersonality(AiPersonality.Balanced);
+        writePlayerData(data);
+    }
 
     private static PlayerStaticData loadPlayerData()
     {

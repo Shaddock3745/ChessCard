@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class ChessMoveLog : LogData
 {
-    private static readonly string MESSAGE_TEMPLATE = "{0} 移動 {1} , {2} -> {3}", LINK_STRING_TEMPLATE = "<link=\"{0}\"><u><color=#336699>{1}</color></u></link>";
+    private static readonly string LINK_STRING_TEMPLATE = "<link=\"{0}\"><u><color=#336699>{1}</color></u></link>";
 
     private ChessPiece movedChess;
     private Vector2Int from, to;
@@ -19,6 +19,6 @@ public class ChessMoveLog : LogData
         this.from = from;
         this.to = to;
 
-        message = string.Format(MESSAGE_TEMPLATE, movedChess.isWhite() ? LogData.WHITE_TEXT : LogData.BLACK_TEXT, string.Format(LINK_STRING_TEMPLATE, registerdata(movedChess), movedChess.getChessType()), LogManager.toChessCoord(from), LogManager.toChessCoord(to));
+        message = string.Format(LocalizationManager.get("log_chess_move"), playerText(movedChess.isWhite()), string.Format(LINK_STRING_TEMPLATE, registerdata(movedChess), movedChess.getChessTypeName()), LogManager.toChessCoord(from), LogManager.toChessCoord(to));
     }
 }

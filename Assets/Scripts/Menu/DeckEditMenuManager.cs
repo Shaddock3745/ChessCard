@@ -125,10 +125,10 @@ public class DeckEditMenuManager : MonoBehaviour
     {
         List<OptionData> options = new List<OptionData>();
 
-        options.Add(new OptionData(AiPersonality.Balanced.ToString()));
-        options.Add(new OptionData(AiPersonality.Aggressive.ToString()));
-        options.Add(new OptionData(AiPersonality.Conservative.ToString()));
-        options.Add(new OptionData(AiPersonality.Tricky.ToString()));
+        options.Add(new OptionData(LocalizationManager.get("balanced")));
+        options.Add(new OptionData(LocalizationManager.get("aggressive")));
+        options.Add(new OptionData(LocalizationManager.get("conservative")));
+        options.Add(new OptionData(LocalizationManager.get("tricky")));
 
         defaultDeckListDropDown.AddOptions(options);
     }
@@ -137,7 +137,9 @@ public class DeckEditMenuManager : MonoBehaviour
     {
         instance.currentHoveredCardGroup.SetActive(true);
         instance.cardNameText.SetText(getCardName(cardId));
-        instance.cardDescriptionText.SetText(getCardDescription(cardId));
+        int cardCost = JsonReader.getCardCost(cardId);
+        string cardCostDescription = string.Format(LocalizationManager.get("ap_cost"), cardCost);
+        instance.cardDescriptionText.SetText(cardCostDescription + "\n\n" + getCardDescription(cardId));
     }
 
     public static void hoverExit(int cardId)

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class ChessAttackLog : LogData
 {
-    private static readonly string MESSAGE_TEMPLATE = "{0} 移動 {1} , {2} -> {3}, 擊殺 {4}", ATTACKER_LINK_STRING_TEMPLATE = "<link=\"{0}\"><u><color=#336699>{1}</color></u></link>", VICTIM_LINK_STRING_TEMPLATE = "<link=\"{0}\"><u><color=#336699>{1}</color></u></link>";
+    private static readonly string ATTACKER_LINK_STRING_TEMPLATE = "<link=\"{0}\"><u><color=#336699>{1}</color></u></link>", VICTIM_LINK_STRING_TEMPLATE = "<link=\"{0}\"><u><color=#336699>{1}</color></u></link>";
 
     private ChessPiece attacker, victim;
     private Vector2Int from, to;
@@ -20,7 +20,7 @@ public class ChessAttackLog : LogData
         this.from = from;
         this.to = to;
 
-        message = string.Format(MESSAGE_TEMPLATE, attacker.isWhite() ? LogData.WHITE_TEXT : LogData.BLACK_TEXT, string.Format(ATTACKER_LINK_STRING_TEMPLATE, registerdata(attacker), attacker.getChessType()),
-            LogManager.toChessCoord(from), LogManager.toChessCoord(to), string.Format(VICTIM_LINK_STRING_TEMPLATE, registerdata(victim), victim.getChessType()));
+        message = string.Format(LocalizationManager.get("log_chess_attack"), playerText(attacker.isWhite()), string.Format(ATTACKER_LINK_STRING_TEMPLATE, registerdata(attacker), attacker.getChessTypeName()),
+            LogManager.toChessCoord(from), LogManager.toChessCoord(to), string.Format(VICTIM_LINK_STRING_TEMPLATE, registerdata(victim), victim.getChessTypeName()));
     }
 }
