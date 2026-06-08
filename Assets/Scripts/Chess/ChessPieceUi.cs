@@ -1,6 +1,4 @@
 using DG.Tweening;
-using NUnit.Framework;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -10,6 +8,8 @@ public class ChessPieceUi : MonoBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private SpriteRenderer cantMoveIcon, cantAttackIcon, cantBeAttackedIcon;
 
+    private static readonly int FRONT_SORTING_ORDER = 200;
+    private int? savedSortingOrder = null;
     private static readonly float MOVING_ANIMATION_DURATION = 0.5f;
     private static readonly float CHESS_FADE_DURATION = 0.5f;
     private static readonly float STATUS_FADE_DURATION = 0.5f, STATUS_HOLD_DURATION = 0.8f;
@@ -99,9 +99,20 @@ public class ChessPieceUi : MonoBehaviour
         await spriteRenderer.DOFade(1f, CHESS_FADE_DURATION).AsyncWaitForCompletion();
     }
 
-    public void BringToFrontOf(ChessPieceUi target)
+    public void BringToFront()
     {
-        if (this.spriteRenderer.sortingOrder <= target.spriteRenderer.sortingOrder)
-            this.spriteRenderer.sortingOrder = target.spriteRenderer.sortingOrder + 1;
+        if (savedSortingOrder == null)
+            savedSortingOrder = spriteRenderer.sortingOrder;
+
+        spriteRenderer.sortingOrder = FRONT_SORTING_ORDER;
+    }
+
+    public void RestoreSortingOrder()
+    {
+        if (savedSortingOrder == null)
+            return;
+
+        spriteRenderer.sortingOrder = savedSortingOrder.Value;
+        savedSortingOrder = null;
     }
 }

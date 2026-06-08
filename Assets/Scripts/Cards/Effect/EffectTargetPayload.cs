@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 public class EffectTargetPayload
@@ -22,7 +21,7 @@ public class EffectTargetPayload
 
     public EffectTargetPayload(params Vector2Int[] targetPositions)
     {
-        this.targetPositions= new List<Vector2Int>(targetPositions);
+        this.targetPositions = new List<Vector2Int>(targetPositions);
         this.targetCards = new List<Card>();
     }
 

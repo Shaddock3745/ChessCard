@@ -1,6 +1,6 @@
-using UnityEngine;
 using DG.Tweening;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class BoardTile : MonoBehaviour
 {

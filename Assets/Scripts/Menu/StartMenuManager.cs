@@ -10,6 +10,7 @@ public class StartMenuManager : MonoBehaviour
     [SerializeField] private TMPro.TMP_Dropdown enemyAiPersonalityDropDown, enemyAiDifficultyDropDown, languageDropDown;
     [SerializeField] private string gameSceneName = "GameScene";
     [SerializeField] private string deckEditingSceneName = "DeckSettingScene";
+    [SerializeField] private string helpSceneName = "HelpScene";
 
     private static readonly AiPersonality[] personalityByIndex =
    {
@@ -60,7 +61,7 @@ public class StartMenuManager : MonoBehaviour
 
     public void showHelp()
     {
-
+        SceneManager.LoadScene(helpSceneName);
     }
 
     public void quitGame()

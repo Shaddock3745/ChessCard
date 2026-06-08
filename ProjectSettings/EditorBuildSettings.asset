@@ -15,6 +15,9 @@ EditorBuildSettings:
     path: Assets/Scenes/DeckSettingScene.unity
     guid: a4fc89a266240344780cc0df678f7524
   - enabled: 1
+    path: Assets/Scenes/HelpScene.unity
+    guid: 8f775e7e00d55914baa386c9ff04fdbb
+  - enabled: 1
     path: Assets/Scenes/GameScene.unity
     guid: 12bb89ea5932e8547b06993cbdae9bb1
   m_configObjects:

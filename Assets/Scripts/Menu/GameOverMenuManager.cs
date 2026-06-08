@@ -9,17 +9,10 @@ public class GameOverMenuManager : MonoBehaviour
     public void backToStartMenu()
     {
         SceneManager.LoadScene(startSceneName);
-        resetGame();
     }
 
     public void startNewGame()
     {
-        resetGame();
         SceneManager.LoadScene(gameSceneName);
-    }
-
-    private void resetGame()
-    {
-        GameManager.triggerOnResetGame();
     }
 }

@@ -54,5 +54,25 @@
   { "key": "chess_bishop",        "context": "Chess",        "tw": "主教",       "en": "Bishop",        "ja": "ビショップ" },
   { "key": "chess_queen",         "context": "Chess",        "tw": "皇后",       "en": "Queen",         "ja": "クイーン" },
   { "key": "chess_king",          "context": "Chess",        "tw": "國王",       "en": "King",          "ja": "キング" },
-  { "key": "chess_unknown_type",  "context": "Chess",        "tw": "未知棋子",   "en": "Unknown Piece", "ja": "不明な駒" }
+  { "key": "chess_unknown_type",  "context": "Chess",        "tw": "未知棋子",   "en": "Unknown Piece", "ja": "不明な駒" },
+
+  { "key": "help_intro",         "context": "Help", "tw": "本遊戲是結合 西洋棋 與 卡牌 兩種元素的回合制對戰遊戲。", "en": "A turn-based battle game that blends chess and cards.", "ja": "チェスとカードを組み合わせたターン制対戦ゲームです。" },
+  { "key": "help_goal",          "context": "Help", "tw": "但和傳統西洋棋不同的是，遊戲的目標是擊殺對方的國王，不存在和局的情形。", "en": "Unlike traditional chess, the goal is to kill the enemy King; there are no draws.", "ja": "通常のチェスと異なり、目的は相手のキングを倒すことで、引き分けはありません。" },
+  { "key": "help_start_king",    "context": "Help", "tw": "遊戲開始時，雙方場上僅會有一枚國王。", "en": "At the start, each side has only one King on the board.", "ja": "開始時、両陣営の盤上にはキングが1体だけ存在します。" },
+  { "key": "help_zones",         "context": "Help", "tw": "玩家的卡牌分為 5 個區域: 手牌、牌組、保留區、等待區、棄牌堆。", "en": "Cards are split into 5 zones: Hand, Deck, Hold, Waiting and Discard.", "ja": "カードは手札・山札・保留・待機・捨て札の5つの領域に分かれます。" },
+  { "key": "help_deck_edit",     "context": "Help", "tw": "玩家的牌組可以在開始遊戲前進入編輯畫面調整。", "en": "You can edit your deck before the game starts.", "ja": "ゲーム開始前に編集画面でデッキを調整できます。" },
+  { "key": "help_default_deck",  "context": "Help", "tw": "也可以選擇使用預設牌組。", "en": "Or simply use a preset deck.", "ja": "既定のデッキを使うこともできます。" },
+  { "key": "help_turn_draw",     "context": "Help", "tw": "回合開始時，玩家預設會抽取 5 張手牌，並獲得 5 點 AP (行動點數)。", "en": "Each turn you draw 5 cards and gain 5 AP (Action Points).", "ja": "ターン開始時、初期状態で手札を5枚引き、5AP（行動ポイント）を得ます。" },
+  { "key": "help_hover",         "context": "Help", "tw": "移動滑鼠至棋子或卡牌上方，畫面右方會出現對應說明。\n若是我方棋子或手牌，會顯示是否可以發動或移動。", "en": "Hover over a piece or card to see its details on the right.\nFor your own pieces or hand cards, it also shows whether they can move or activate.", "ja": "駒やカードにカーソルを合わせると、画面右側に説明が表示されます。\n自分の駒や手札なら、発動・移動が可能かどうかも表示されます。" },
+  { "key": "help_move",          "context": "Help", "tw": "每回合，玩家可進行 1 次棋子移動，消耗 1 點 AP 。\n直接拖曳棋子移動 (同時畫面上會出現提示)。", "en": "Each turn you may move one piece, costing 1 AP.\nJust drag the piece to move it (on-screen hints will appear).", "ja": "各ターン、1APを消費して駒を1回移動できます。\n駒を直接ドラッグして移動します（画面にヒントが表示されます）。" },
+  { "key": "help_use_card",      "context": "Help", "tw": "消耗卡牌上對應的 AP 點數，發動卡牌效果 。\n拖曳手牌到盤面上發動 (同時畫面上會出現提示)。", "en": "Spend the card's AP cost to trigger its effect.\nDrag a hand card onto the board to play it (hints will appear).", "ja": "カードのAPコストを消費して、カード効果を発動します。\n手札を盤面にドラッグして発動します（画面にヒントが表示されます）。" },
+  { "key": "help_target",        "context": "Help", "tw": "有些卡牌需要選擇發動對象，以滑鼠點擊出現提示圖樣的棋子。\n(點擊其他區域即可取消)", "en": "Some cards need a target: click a highlighted piece.\n(Click elsewhere to cancel.)", "ja": "一部のカードは対象の選択が必要です。ヒント表示された駒をクリックします。\n（他の場所をクリックすると取消できます）" },
+  { "key": "help_hold",          "context": "Help", "tw": "可以選擇消耗 1 點 AP，保留 1 張手牌到保留區。\n保留區的卡牌會在下回合加入手牌，並取代 1 張由牌組抽出的卡牌。", "en": "You may spend 1 AP to keep a hand card in the Hold zone.\nIt rejoins your hand next turn, replacing one card drawn from the deck.", "ja": "1APを消費して、手札を1枚保留領域に置けます。\n保留したカードは次のターンに手札へ加わり、山札から引く1枚と入れ替わります。" },
+  { "key": "help_waiting",       "context": "Help", "tw": "回合結束前，未存入保留區的手牌會加入 等待區。\n等待區的卡牌會在牌組抽盡時重洗加入。", "en": "At turn end, hand cards you did not keep move to the Waiting zone.\nThey are reshuffled back in when the deck is empty.", "ja": "ターン終了時、保留しなかった手札は待機領域へ移ります。\n待機のカードは山札が尽きたとき、切り直して加えられます。" },
+  { "key": "help_discard",       "context": "Help", "tw": "使用後的卡牌會進入棄牌堆，並從遊戲中排除。\n(可透過特定卡牌效果回收)", "en": "Used cards go to the Discard pile and are removed from play.\n(Certain card effects can retrieve them.)", "ja": "使用したカードは捨て札となり、ゲームから除外されます。\n（特定のカード効果で回収できます）" },
+  { "key": "help_win",           "context": "Help", "tw": "透過不同卡牌效果與戰術組合，取得遊戲勝利。", "en": "Combine different card effects and tactics to win the game.", "ja": "様々なカード効果と戦術を組み合わせて、勝利を目指します。" },
+  { "key": "help_ai_settings",   "context": "Help", "tw": "可在開始畫面調整敵方 AI 參數。", "en": "You can adjust the enemy AI settings on the start screen.", "ja": "スタート画面で敵AIのパラメータを調整できます。" },
+  { "key": "help_next",       "context": "Help", "tw": "下一頁", "en":"Next",     "ja": "次"  },
+  { "key": "help_previous",   "context": "Help", "tw": "上一頁", "en":"Previous", "ja": "前"  },
+  { "key": "help_quit",       "context": "Help", "tw": "離開",   "en":"Quit",     "ja": "終了"}
 ]

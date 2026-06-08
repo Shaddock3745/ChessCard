@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class BoardManager : MonoBehaviour
 {
@@ -499,7 +498,7 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
-        attackerUi.BringToFrontOf(victimUi);
+        attackerUi.BringToFront();
 
         Task moveTask = attackerUi.moveToPointWithAnimation(new Vector3(x, y, 0));
         Task destroyTask = victimUi.destroyWithAnimation();
@@ -507,6 +506,7 @@ public class BoardManager : MonoBehaviour
         instance.isAnimating = true;
         await Task.WhenAll(moveTask, destroyTask);
         instance.isAnimating = false;
+        attackerUi.RestoreSortingOrder();
         instance.pieceToUiMap.Remove(target);
 
         int currentTurnCount = GameManager.getCurrentTurnCount();

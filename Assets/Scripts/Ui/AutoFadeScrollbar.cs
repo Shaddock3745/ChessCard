@@ -1,6 +1,6 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
-using DG.Tweening;
 
 [RequireComponent(typeof(CanvasGroup))]
 public class AutoFadeScrollbar : MonoBehaviour
