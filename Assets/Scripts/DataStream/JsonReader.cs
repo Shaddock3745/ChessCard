@@ -129,6 +129,11 @@ public class JsonReader : MonoBehaviour
         return null; // Return null if card not found or unsupported language
     }
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    private static extern void SyncFiles();
+#endif
+
     private static string getPlayerDataPath()
     {
         return Path.Combine(Application.persistentDataPath, "PlayerData.json");
@@ -173,6 +178,10 @@ public class JsonReader : MonoBehaviour
         {
             string json = JsonConvert.SerializeObject(data, Formatting.Indented);
             File.WriteAllText(path, json);
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            SyncFiles();   // WebGL：把虛擬檔案系統 flush 進瀏覽器 IndexedDB
+#endif
         }
         catch (System.Exception e)
         {

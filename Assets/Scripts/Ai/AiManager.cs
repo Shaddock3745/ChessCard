@@ -7,9 +7,17 @@ public class AiManager : MonoBehaviour
     private static AiManager instance;
     private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+    // WebGL 是單執行緒 + 受限的 wasm 記憶體,beam search 的大量 Clone() 會撐爆 heap 造成 OOM。
+    // 在 WebGL 降低搜尋規模(深度是記憶體用量主因),換取不 crash;桌面版維持完整強度。
+    private const int BEAM_WIDTH = 4;
+    private const int MAX_PLAN_DEPTH = 5;
+    private const int FINAL_CANDIDATES = 12;
+#else
     private const int BEAM_WIDTH = 6;
     private const int MAX_PLAN_DEPTH = 8;        // 大軍壓境等群體移動需要較深,調到 8
     private const int FINAL_CANDIDATES = 25;
+#endif
     private const float SCORE_IMPROVE_EPS = 0.2f;
 
     void Awake()
@@ -44,7 +52,14 @@ public class AiManager : MonoBehaviour
         AiWeights w = profile.getWeights();
         float noise = profile.getNoiseRange();
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // WebGL 是單執行緒環境,不支援 Task.Run(會卡死),直接在主執行緒同步計算。
+        // 先 Yield 一次讓「思考中」的 UI/動畫能更新一幀,再開始運算。
+        await Task.Yield();
+        return RunBeamSearch(rootState, rootAlly, rootEnemy, currentTurnCount, w, noise);
+#else
         return await Task.Run(() => RunBeamSearch(rootState, rootAlly, rootEnemy, currentTurnCount, w, noise));
+#endif
     }
 
     private static List<AiOption> RunBeamSearch(BoardState rootState, PlayerData rootAlly, PlayerData rootEnemy, int currentTurnCount, AiWeights w, float noise)
@@ -222,44 +237,53 @@ public class AiManager : MonoBehaviour
 
     public static async Task doBestMove(bool isLocal, int currentTurnCount)
     {
-        // 隨機卡執行後手牌才真正確定 → 打到隨機卡就停,用新手牌重算剩下的回合
-        int safety = 0;
-        bool replan = true;
-
-        while (replan && !GameManager.IsGameOver() && safety++ < 16)
+        try
         {
-            replan = false;
-            List<AiOption> plan = await getBestTurnPlanAsync(isLocal, currentTurnCount);
+            // 隨機卡執行後手牌才真正確定 → 打到隨機卡就停,用新手牌重算剩下的回合
+            int safety = 0;
+            bool replan = true;
 
-            if (plan.Count == 0)
-                break;
-
-            foreach (var action in plan)
+            while (replan && !GameManager.IsGameOver() && safety++ < 16)
             {
-                if (GameManager.IsGameOver())
+                replan = false;
+                List<AiOption> plan = await getBestTurnPlanAsync(isLocal, currentTurnCount);
+
+                if (plan.Count == 0)
                     break;
 
-                while (HandViewManager.isPlayingAnimation())
-                    await Task.Delay(100);
-
-                await Task.Delay(OPTION_BUFFER_TIME_MILLIS);
-                await action.execute(isLocal);
-
-                if (action.isRandomEffect())
+                foreach (var action in plan)
                 {
-                    replan = true;
-                    break;              // 隨機結算 → 重新規劃  
+                    if (GameManager.IsGameOver())
+                        break;
+
+                    while (HandViewManager.isPlayingAnimation())
+                        await Awaitable.WaitForSecondsAsync(0.1f);
+
+                    await Awaitable.WaitForSecondsAsync(OPTION_BUFFER_TIME_MILLIS / 1000f);
+                    await action.execute(isLocal);
+
+                    if (action.isRandomEffect())
+                    {
+                        replan = true;
+                        break;              // 隨機結算 → 重新規劃
+                    }
+
+                    if (action is CardHoldOption)
+                        break;              // 保留 → 回合結束
                 }
-
-                if (action is CardHoldOption)
-                    break;              // 保留 → 回合結束
             }
+
+            while (HandViewManager.isPlayingAnimation() || BoardManager.isPlayingAnimation())
+                await Awaitable.WaitForSecondsAsync(0.1f);
+
+            if (!GameManager.IsGameOver()) GameManager.ChangeTurn();
         }
-
-        while (HandViewManager.isPlayingAnimation() || BoardManager.isPlayingAnimation())
-            await Task.Delay(100);
-
-        if (!GameManager.IsGameOver()) GameManager.ChangeTurn();
+        catch (System.Exception e)
+        {
+            // doBestMove 是 fire-and-forget(GameManager 用 _ = 呼叫),例外不抓會被默默吞掉,
+            // 導致 AI 靜靜地不動。這裡明確印出來,WebGL 也能在瀏覽器 console 看到真正原因。
+            Debug.LogError($"[AI] doBestMove 發生例外: {e}");
+        }
     }
 
     private static void LogPlan(PlanState best, float bestScore, float baseScore)

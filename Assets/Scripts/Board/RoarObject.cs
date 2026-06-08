@@ -13,19 +13,19 @@ public class RoarObject : MonoBehaviour
         hide(third);
 
         show(first);
-        await Task.Delay(WAIT_DURATION_MILLIS);
+        await Awaitable.WaitForSecondsAsync(WAIT_DURATION_MILLIS / 1000f);
 
         if (this == null)
             return;
 
         show(second);
-        await Task.Delay(WAIT_DURATION_MILLIS);
+        await Awaitable.WaitForSecondsAsync(WAIT_DURATION_MILLIS / 1000f);
 
         if (this == null)
             return;
 
         show(third);
-        await Task.Delay(WAIT_DURATION_MILLIS);
+        await Awaitable.WaitForSecondsAsync(WAIT_DURATION_MILLIS / 1000f);
 
         if (this == null)
             return;

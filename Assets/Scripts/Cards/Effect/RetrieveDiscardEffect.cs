@@ -36,7 +36,7 @@ public class RetrieveDiscardEffect : CardEffect
                 selectedCards.Add(pick);
                 validCards.Remove(pick);
 
-                await Task.Delay(150);
+                await Awaitable.WaitForSecondsAsync(0.15f);
             }
         }
 

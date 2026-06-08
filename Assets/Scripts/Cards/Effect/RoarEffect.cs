@@ -46,6 +46,10 @@ public class RoarEffect : CardEffect
     public void executeVirtually(BoardState clonedState, PlayerData clonedAlly, PlayerData clonedEnemy, EffectTargetPayload targets, int currentTurnCount)
     {
         Vector2Int roaringPiecePosition = piecePositionFactory.Invoke(targets);
+
+        // 邊緣棋子或無效 payload 可能給出越界座標,查棋盤前先擋掉(否則 AI 推演會 IndexOutOfRange)
+        if (!clonedState.isPositionOnBoard(roaringPiecePosition)) return;
+
         ChessPiece roaringPiece = clonedState.getChessPieceAtPosition(roaringPiecePosition);
 
         if (roaringPiece == null) return;
@@ -55,6 +59,9 @@ public class RoarEffect : CardEffect
         foreach (Vector2Int direction in directions)
         {
             Vector2Int targetPos = roaringPiecePosition + direction;
+
+            // targetPos 可能落在棋盤外,先檢查再查詢
+            if (!clonedState.isPositionOnBoard(targetPos)) continue;
 
             // 檢查範圍內是否有敵方棋子
             ChessPiece affectedPiece = clonedState.getChessPieceAtPosition(targetPos);

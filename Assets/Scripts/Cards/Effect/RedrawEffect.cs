@@ -34,7 +34,7 @@ public class RedrawEffect : CardEffect
             MatchDataManager.rechargeCard(isPlayerLocal, c);
 
         MatchDataManager.replenish(isPlayerLocal);
-        await Task.Delay(500);
+        await Awaitable.WaitForSecondsAsync(0.5f);
 
         for (int i = 0; i < count; i++)
             MatchDataManager.drawCard(isPlayerLocal);

@@ -64,11 +64,6 @@ public class StartMenuManager : MonoBehaviour
         SceneManager.LoadScene(helpSceneName);
     }
 
-    public void quitGame()
-    {
-        Application.Quit();
-    }
-
     private void loadDropDownOptions()
     {
         enemyAiPersonalityDropDown.ClearOptions();
