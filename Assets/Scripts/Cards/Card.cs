@@ -49,9 +49,9 @@ public class Card
 
     public int getCost() => currentCost;
 
-    public string getName() => JsonReader.getCardName(id);
+    public string getName() => JsonReader.getCardName(id, GameManager.getCurrentLanguage());
 
-    public string getDescription() => JsonReader.getCardDescription(id);
+    public string getDescription() => JsonReader.getCardDescription(id, GameManager.getCurrentLanguage());
 
     public bool isExileOnUseCard() => isExileOnUse;
 

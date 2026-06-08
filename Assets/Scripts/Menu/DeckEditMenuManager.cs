@@ -19,6 +19,7 @@ public class DeckEditMenuManager : MonoBehaviour
     private static DeckEditMenuManager instance;
 
     private Dictionary<int, DeckEditItem> allCardList, currentCardList;
+    private Language currentLanguage = Language.TRADITIONAL_CHINESE;
 
     private void Awake()
     {
@@ -32,15 +33,30 @@ public class DeckEditMenuManager : MonoBehaviour
 
     private void Start()
     {
+        currentLanguage = JsonReader.loadLanguage();
         allCardList = new Dictionary<int, DeckEditItem>();
         currentCardList = new Dictionary<int, DeckEditItem>();
         loadDefaultDeckListDropDownOptions();
         loadAllCardList();
+        loadCurrentCardListByIds(JsonReader.loadPlayDeck());
     }
 
     public void onSaveAndExitButtonClick()
     {
-        // To Do
+        List<int> resultDeckList = new List<int>();
+
+        foreach (var item in currentCardList)
+        {
+            int cardId = item.Key;
+            int count = item.Value.getCurrentCardNumber();
+
+            for (int i = 0; i < count; i++)
+                resultDeckList.Add(cardId);
+        }
+
+        resultDeckList.Sort();
+
+        JsonReader.savePlayDeck(resultDeckList);
 
         SceneManager.LoadScene(startSceneName);
     }
@@ -52,18 +68,35 @@ public class DeckEditMenuManager : MonoBehaviour
 
     public void onClearButtonClick()
     {
-        currentCardList.Clear();
-        loadCurrentCardListByIds(new List<int>());
+        clearCurrentList();
+    }
+
+    private void clearCurrentList()
+    {
+        List<int> idList = currentCardList.Keys.ToList();
+
+        foreach (var id in idList)
+            innerCandNumberChange(id, 0);
     }
 
     public void onUseDefaultDeckToggleValueChange(bool isOn)
     {
-
+        if (isOn)
+        {
+            defaultDeckListDropDown.gameObject.SetActive(true);
+            onDefaultDeckListDropDownValueChange(0);
+        }
+        else
+            defaultDeckListDropDown.gameObject.SetActive(false);
     }
 
     public void onDefaultDeckListDropDownValueChange(int value)
     {
-
+        if (useDefaultDeckToggle.isOn)
+        {
+            AiPersonality personality = (AiPersonality)defaultDeckListDropDown.value;
+            loadCurrentCardListByIds(AiProfile.getDefaultDeckListOfPersonality(personality));
+        }
     }
 
     private void loadAllCardList()
@@ -73,24 +106,19 @@ public class DeckEditMenuManager : MonoBehaviour
 
         foreach (int cardId in cardIds)
         {
-            DeckEditItem item = allCardsScrollView.spawnDeckEditItem(cardId, JsonReader.getCardName(cardId));
+            DeckEditItem item = allCardsScrollView.spawnDeckEditItem(cardId, getCardName(cardId));
             allCardList.Add(cardId, item);
         }
     }
 
     private void loadCurrentCardListByIds(List<int> cardIds)
     {
-        currentCardList.Clear();
+        clearCurrentList();
 
         Dictionary<int, int> idNumberPairs = cardIds.GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
 
         foreach (var idNumberPair in idNumberPairs)
-        {
-            int cardId = idNumberPair.Key;
-            DeckEditItem item = currentCardsScrollView.spawnDeckEditItem(cardId, JsonReader.getCardName(cardId));
-            item.setCurrentCardNumber(idNumberPair.Value);
-            currentCardList.Add(cardId, item);
-        }
+            innerCandNumberChange(idNumberPair.Key, idNumberPair.Value);
     }
 
     private void loadDefaultDeckListDropDownOptions()
@@ -107,11 +135,62 @@ public class DeckEditMenuManager : MonoBehaviour
 
     public static void hoverEnter(int cardId)
     {
-
+        instance.currentHoveredCardGroup.SetActive(true);
+        instance.cardNameText.SetText(getCardName(cardId));
+        instance.cardDescriptionText.SetText(getCardDescription(cardId));
     }
 
     public static void hoverExit(int cardId)
     {
+        instance.currentHoveredCardGroup.SetActive(false);
+    }
 
+    public static void onCardNumberChange(int cardId, int number)
+    {
+        if (instance == null)
+            return;
+
+        if (instance.useDefaultDeckToggle.isOn)
+        {
+            instance.useDefaultDeckToggle.SetIsOnWithoutNotify(false);
+            instance.defaultDeckListDropDown.gameObject.SetActive(false);
+        }
+
+        instance.innerCandNumberChange(cardId, number);
+    }
+
+    private void innerCandNumberChange(int cardId, int number)
+    {
+        if (allCardList.TryGetValue(cardId, out DeckEditItem allListItem))
+            if (allListItem.getCurrentCardNumber() != number)
+                allListItem.setCurrentCardNumber(number);
+
+
+        if (currentCardList.TryGetValue(cardId, out DeckEditItem currentListItem))
+        {
+            if (currentListItem.getCurrentCardNumber() != number)
+                if (number == 0)
+                {
+                    currentCardList.Remove(cardId);
+                    Destroy(currentListItem.gameObject);
+                }
+                else
+                    currentListItem.setCurrentCardNumber(number);
+        }
+        else
+        {
+            DeckEditItem newItem = currentCardsScrollView.spawnDeckEditItem(cardId, getCardName(cardId), number);
+            currentCardList.Add(cardId, newItem);
+        }
+    }
+
+    private static string getCardName(int id)
+    {
+        return JsonReader.getCardName(id, instance.currentLanguage);
+    }
+
+    private static string getCardDescription(int id)
+    {
+        return JsonReader.getCardDescription(id, instance.currentLanguage);
     }
 }

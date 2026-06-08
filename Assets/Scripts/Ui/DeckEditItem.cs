@@ -54,6 +54,7 @@ public class DeckEditItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
             currentCardNumber = MAX_CARD_NUMBER;
 
         updateView();
+        DeckEditMenuManager.onCardNumberChange(cardId, currentCardNumber);
     }
 
     public void onMinusButtonClick()
@@ -62,6 +63,7 @@ public class DeckEditItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
             currentCardNumber = MIN_CARD_NUMBER;
 
         updateView();
+        DeckEditMenuManager.onCardNumberChange(cardId, currentCardNumber);
     }
 
     public void setCurrentCardNumber(int currentCardNumber)

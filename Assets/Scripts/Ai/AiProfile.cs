@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
-public enum AiPersonality { Balanced, Aggressive, Conservative, Tricky } // ★ Balanced 新增,當玩家預設
-public enum AiDifficulty { Easy, Normal, Hard }
+public enum AiPersonality { Balanced = 0, Aggressive = 1, Conservative = 2, Tricky = 3 } // ★ Balanced 新增,當玩家預設
+public enum AiDifficulty { Easy = 0, Normal = 1, Hard = 2 }
 
 // 個性 → 餵給評估函數的權重
 public struct AiWeights

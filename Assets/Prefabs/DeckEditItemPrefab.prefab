@@ -259,7 +259,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1631923802314403106}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1767590084023108165}
+        m_TargetAssemblyTypeName: DeckEditItem, Assembly-CSharp
+        m_MethodName: onMinusButtonClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!225 &1573996262886250407
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -805,7 +817,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1130401278915046924}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1767590084023108165}
+        m_TargetAssemblyTypeName: DeckEditItem, Assembly-CSharp
+        m_MethodName: onAddButtonClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!225 &625528240381025545
 CanvasGroup:
   m_ObjectHideFlags: 0

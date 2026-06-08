@@ -122,7 +122,7 @@ public class AiManager : MonoBehaviour
             if (score > bestScore) { bestScore = score; best = plan; }
         }
 
-        LogPlan(best, bestScore, baseScore);
+        // LogPlan(best, bestScore, baseScore);
 
         if (best.actions.Count == 0 || bestScore < baseScore + SCORE_IMPROVE_EPS)
         {
