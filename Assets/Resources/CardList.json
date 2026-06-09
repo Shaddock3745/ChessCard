@@ -315,9 +315,9 @@
     "name_en": "Frontal Breakthrough",
     "name_ja": "正面突破",
     "cost": 1,
-    "desc_tw": "選擇一枚我方士兵，這回合該士兵可攻擊正前方棋子",
-    "desc_en": "Select an allied Pawn. This turn, it can attack the piece directly in front of it.",
-    "desc_ja": "味方のポーンを1体選択する。このターン、そのポーンは正面の駒を攻撃できる。"
+    "desc_tw": "這回合我方士兵可攻擊正前方棋子",
+    "desc_en": "This turn, allied Pawns can attack the piece directly in front of them.",
+    "desc_ja": "このターン、味方のポーンは正面の駒を攻撃できる。"
   },
   {
     "id": 33,

@@ -114,7 +114,7 @@ public class SequentialCompositeEffect : CardEffect
                 compositePayload.addPayload(secondPayload);
 
                 // 分數給 0f，由 DFS 虛擬執行完前後兩個效果後，統一進行全盤評估
-                finalOptions.Add(new CardUseOption(card, 0f, compositePayload));
+                finalOptions.Add(new CardUseOption(card,compositePayload));
             }
         }
 

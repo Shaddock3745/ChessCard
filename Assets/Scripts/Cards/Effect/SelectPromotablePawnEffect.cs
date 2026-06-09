@@ -57,7 +57,7 @@ public class SelectPromotablePawnEffect : CardEffect
                     if (y == promotionRow)
                     {
                         // 產生 Option (基礎分數 0f，交由後續管線效果如移除與生成來決定權重)
-                        options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new List<Vector2Int> { new Vector2Int(x, y) })));
+                        options.Add(new CardUseOption(card,new EffectTargetPayload(new List<Vector2Int> { new Vector2Int(x, y) })));
                     }
                 }
             }

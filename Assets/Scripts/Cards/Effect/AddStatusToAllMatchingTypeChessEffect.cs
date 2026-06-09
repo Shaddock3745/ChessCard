@@ -77,7 +77,7 @@ public class AddStatusToAllMatchingTypeChessEffect : CardEffect
             return options;
 
         // ★ 拔除原有的計分邏輯，給予初始分數 0f，讓 DFS 透過虛擬推演後的盤面來決定真正的價值
-        options.Add(new CardUseOption(card, 0f, EffectTargetPayload.empty()));
+        options.Add(new CardUseOption(card,EffectTargetPayload.empty()));
         return options;
     }
 

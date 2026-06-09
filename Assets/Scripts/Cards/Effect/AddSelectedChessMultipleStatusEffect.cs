@@ -79,7 +79,7 @@ public class AddSelectedChessMultipleStatusEffect : CardEffect
 
                 if (piece != null && piece.isWhite() == targetIsWhite && typeSet.Contains(piece.getChessType()))
                 {
-                    options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new Vector2Int(x, y))));
+                    options.Add(new CardUseOption(card,new EffectTargetPayload(new Vector2Int(x, y))));
                 }
             }
         }

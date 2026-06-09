@@ -58,7 +58,7 @@ public class SelectChessEffect : CardEffect
                 if (piece != null && piece.isWhite() == targetIsWhite && typeSet.Contains(piece.getChessType()))
                 {
                     // 這裡給 0f，由後續的複合效果 (Pipeline) 或卡片本身決定該位置的戰略價值
-                    options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new Vector2Int(x, y))));
+                    options.Add(new CardUseOption(card,new EffectTargetPayload(new Vector2Int(x, y))));
                 }
             }
         }

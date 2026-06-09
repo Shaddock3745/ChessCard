@@ -72,7 +72,7 @@ public class ConditionalSummonEffect : CardEffect
                 if (state.getChessPieceAtPosition(x, y) == null)
                 {
                     // ★ 拔除原本的手動算分，給予 0f 讓 DFS 在落子後評估全盤分數
-                    options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new Vector2Int(x, y))));
+                    options.Add(new CardUseOption(card,new EffectTargetPayload(new Vector2Int(x, y))));
                 }
             }
         }

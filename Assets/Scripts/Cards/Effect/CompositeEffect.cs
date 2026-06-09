@@ -58,17 +58,18 @@ public class CompositeEffect : CardEffect
         if (effects == null || effects.Count == 0)
             return options;
 
-        buildOptionsRecursive(state, 0, new CompositePayload(), 0f, options, isLocal, card, currentMana, currentTurnCount);
+        buildOptionsRecursive(state, 0, new CompositePayload(), options, isLocal, card, currentMana, currentTurnCount);
 
         return options;
     }
 
     // ★ 遞迴函式也加上 BoardState state 參數
-    private void buildOptionsRecursive(BoardState state, int effectIndex, CompositePayload currentPayload, float currentScore, List<CardUseOption> result, bool isLocal, Card card, int currentMana, int currentTurnCount)
+    private void buildOptionsRecursive(BoardState state, int effectIndex, CompositePayload currentPayload, List<CardUseOption> result, bool isLocal, Card card, int currentMana, int currentTurnCount)
     {
         if (effectIndex >= effects.Count)
         {
-            result.Add(new CardUseOption(card, currentScore, currentPayload));
+            // 計分一律交給 DFS 推演,這裡帶 0f
+            result.Add(new CardUseOption(card, currentPayload));
             return;
         }
 
@@ -82,8 +83,7 @@ public class CompositeEffect : CardEffect
             CompositePayload newPayload = new CompositePayload(currentPayload);
             newPayload.addPayload(option.getTargets());
 
-            // 由於子效果現在都回傳 0f，這裡的 currentScore 加總實質上只是個保險機制，最終會帶 0f 丟給 DFS 評估
-            buildOptionsRecursive(state, effectIndex + 1, newPayload, currentScore + option.getScore(), result, isLocal, card, currentMana, currentTurnCount);
+            buildOptionsRecursive(state, effectIndex + 1, newPayload, result, isLocal, card, currentMana, currentTurnCount);
         }
     }
 

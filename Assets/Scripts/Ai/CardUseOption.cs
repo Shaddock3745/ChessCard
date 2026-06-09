@@ -2,22 +2,14 @@ using System.Threading.Tasks;
 
 public class CardUseOption : AiOption
 {
-    private float score;
-    private float quickScore;
     private Card card;
     private EffectTargetPayload targets;
 
-    public CardUseOption(Card card, float score, EffectTargetPayload targets = null)
+    public CardUseOption(Card card, EffectTargetPayload targets = null)
     {
         this.card = card;
-        this.score = score;
         this.targets = targets ?? EffectTargetPayload.empty();
     }
-
-    public float getScore() => score;
-    public void setScore(float score) => this.score = score;
-    public float getQuickScore() => quickScore;
-    public void setQuickScore(float score) => this.quickScore = score;
 
     public bool isHoldAction() => false;
 

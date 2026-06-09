@@ -87,7 +87,7 @@ public class SelectReturnableChessEffect : CardEffect
                         if (state.getChessPieceAtPosition(initPos) == null && piece.getPosition() != initPos)
                         {
                             // 產生 Option (基礎分數 0f，交由後續管線或 DFS 結算)
-                            options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new List<Vector2Int> { piece.getPosition() })));
+                            options.Add(new CardUseOption(card,new EffectTargetPayload(new List<Vector2Int> { piece.getPosition() })));
                         }
                     }
                 }

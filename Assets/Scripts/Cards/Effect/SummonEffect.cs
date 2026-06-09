@@ -47,7 +47,7 @@ public class SummonEffect : CardEffect
             if (state.getChessPieceAtPosition(position) == null)
             {
                 // 分數給予 0f，交由 DFS 模擬放子後進行全局評估
-                useOptions.Add(new CardUseOption(card, 0f, new EffectTargetPayload(position)));
+                useOptions.Add(new CardUseOption(card,new EffectTargetPayload(position)));
             }
         }
 

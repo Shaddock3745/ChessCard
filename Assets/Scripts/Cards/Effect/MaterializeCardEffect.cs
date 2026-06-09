@@ -41,7 +41,7 @@ public class MaterializeCardEffect : CardEffect
 
         if (canActivate(isLocal, currentTurnCount, card))
         {
-            options.Add(new CardUseOption(card, 0f, EffectTargetPayload.empty()));
+            options.Add(new CardUseOption(card,EffectTargetPayload.empty()));
         }
 
         return options;

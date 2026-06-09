@@ -82,7 +82,7 @@ public class ChessAmountCheckEffect : CardEffect
         if (conditionMet)
         {
             // 本身只做條件判定，無須預先計分，回傳 0f 讓 DFS 評價後續串聯的效果
-            options.Add(new CardUseOption(card, 0f));
+            options.Add(new CardUseOption(card));
         }
 
         return options;

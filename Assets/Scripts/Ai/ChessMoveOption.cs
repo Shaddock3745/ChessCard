@@ -5,25 +5,17 @@ public class ChessMoveOption : AiOption
 {
     private ChessPiece piece;
     private Vector2Int currentPos, targetPos;
-    private float score;
-    private float quickScore;
 
-    public ChessMoveOption(ChessPiece piece, Vector2Int currentPos, Vector2Int targetPos, float score)
+    public ChessMoveOption(ChessPiece piece, Vector2Int currentPos, Vector2Int targetPos)
     {
         this.piece = piece;
         this.currentPos = currentPos;
         this.targetPos = targetPos;
-        this.score = score;
     }
 
     public Vector2Int getCurrentPosition() => currentPos;
 
     public Vector2Int getTargetPosition() => targetPos;
-
-    public float getScore() => score;
-    public void setScore(float score) => this.score = score;
-    public float getQuickScore() => quickScore;
-    public void setQuickScore(float score) => this.quickScore = score;
 
     public bool isRandomEffect() => false;
     public bool isHoldAction() => false;

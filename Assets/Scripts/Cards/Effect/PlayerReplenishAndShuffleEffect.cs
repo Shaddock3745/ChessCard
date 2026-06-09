@@ -41,7 +41,7 @@ public class PlayerReplenishAndShuffleEffect : CardEffect
 
         if (card != null)
         {
-            options.Add(new CardUseOption(card, 0f));
+            options.Add(new CardUseOption(card));
         }
 
         return options;

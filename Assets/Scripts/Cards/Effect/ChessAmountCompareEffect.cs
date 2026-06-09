@@ -91,7 +91,7 @@ public class ChessAmountCompareEffect : CardEffect
         if (conditionMet)
         {
             // 作為條件節點回傳 0f，由複合卡片與 DFS 推演決定最終價值
-            options.Add(new CardUseOption(card, 0f));
+            options.Add(new CardUseOption(card));
         }
 
         return options;

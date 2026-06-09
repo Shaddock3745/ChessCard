@@ -13,7 +13,6 @@ public class InputManager : MonoBehaviour
 
     private static InputManager instance;
     private static readonly float MOVING_RELIEF = 10f;
-    private static readonly int MOVING_SORTING_ORDER = 100;
     private readonly List<MoveAction> uiMoveBuffer = new List<MoveAction>(30);
 
     private TaskCompletionSource<BoardTile> targetTileSelectionTcs;
@@ -25,7 +24,6 @@ public class InputManager : MonoBehaviour
     private bool isSelectingChess = false, isSelectingCard = false;
     private bool isRaisingChess = false, isRaisingCard = false;
     private bool isMouseHolding = false, isMouseInner = false;
-    private int originalSortingOrder;
     private bool isAwaitingChessSelection = false;
     private bool isAwaitingCardSelection = false;
 
@@ -227,8 +225,7 @@ public class InputManager : MonoBehaviour
 
     private void raiseChess()
     {
-        originalSortingOrder = selectedChess.GetComponent<SpriteRenderer>().sortingOrder;
-        selectedChess.GetComponent<SpriteRenderer>().sortingOrder = MOVING_SORTING_ORDER;
+        selectedChess.BringToFront(); // 與動畫共用同一置頂層級，避免拖曳棋子被同時播放的動畫蓋住
         showHint(selectedChess);
         isRaisingChess = true;
     }
@@ -440,7 +437,7 @@ public class InputManager : MonoBehaviour
         currentTile = lastTile = null;
 
         BoardManager.removeAllHint();
-        selectedChess.GetComponent<SpriteRenderer>().sortingOrder = originalSortingOrder;
+        selectedChess.RestoreSortingOrder();
     }
 
     private void releaseCard()

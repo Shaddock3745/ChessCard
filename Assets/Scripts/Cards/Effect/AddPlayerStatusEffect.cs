@@ -49,7 +49,7 @@ public class AddPlayerStatusEffect : CardEffect
         if (!canActivate(isLocal, currentTurnCount, card))
             return options;
 
-        options.Add(new CardUseOption(card, 0f, EffectTargetPayload.empty()));
+        options.Add(new CardUseOption(card,EffectTargetPayload.empty()));
         return options;
     }
 

@@ -2,14 +2,20 @@ using DG.Tweening;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class ChessPieceUi : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private SpriteRenderer cantMoveIcon, cantAttackIcon, cantBeAttackedIcon;
 
-    private static readonly int FRONT_SORTING_ORDER = 200;
-    private int? savedSortingOrder = null;
+    // 棋子根物件上的 SortingGroup 才是決定「棋子之間」前後順序的元件，子 SpriteRenderer 的 sortingOrder 只影響棋子內部
+    private SortingGroup sortingGroup;
+    private SortingGroup SortingGroup => sortingGroup != null ? sortingGroup : (sortingGroup = GetComponent<SortingGroup>());
+
+    private static readonly int FRONT_SORTING_ORDER = 200; // 置頂層級，需高於所有靜止棋子的基礎層級
+    private int baseSortingOrder = 0; // 靜止時的層級（依棋盤位置算好）
+    private bool isElevated = false;  // 是否正被置頂（拖曳／動畫中）
     private static readonly float MOVING_ANIMATION_DURATION = 0.5f;
     private static readonly float CHESS_FADE_DURATION = 0.5f;
     private static readonly float STATUS_FADE_DURATION = 0.5f, STATUS_HOLD_DURATION = 0.8f;
@@ -99,20 +105,24 @@ public class ChessPieceUi : MonoBehaviour
         await spriteRenderer.DOFade(1f, CHESS_FADE_DURATION).AsyncWaitForCompletion();
     }
 
+    // 設定靜止層級（依棋盤位置算好）。若正被置頂，只更新還原目標，動畫／拖曳結束會自動落到新層級。
+    public void SetSortingOrder(int order)
+    {
+        baseSortingOrder = order;
+        if (!isElevated)
+            SortingGroup.sortingOrder = order;
+    }
+
+    // 把自己暫時拉到最上層（絕對置頂，壓過途中所有棋子）。動畫／拖曳結束務必呼叫 RestoreSortingOrder() 還原。
     public void BringToFront()
     {
-        if (savedSortingOrder == null)
-            savedSortingOrder = spriteRenderer.sortingOrder;
-
-        spriteRenderer.sortingOrder = FRONT_SORTING_ORDER;
+        isElevated = true;
+        SortingGroup.sortingOrder = FRONT_SORTING_ORDER;
     }
 
     public void RestoreSortingOrder()
     {
-        if (savedSortingOrder == null)
-            return;
-
-        spriteRenderer.sortingOrder = savedSortingOrder.Value;
-        savedSortingOrder = null;
+        isElevated = false;
+        SortingGroup.sortingOrder = baseSortingOrder;
     }
 }

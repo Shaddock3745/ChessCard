@@ -36,7 +36,7 @@ public class ManaChangeEffect : CardEffect
         if (card != null)
         {
             // 給予 0f，交由 DFS 推演後面的動作來決定這張卡帶來的實質效益
-            options.Add(new CardUseOption(card, 0f, EffectTargetPayload.empty()));
+            options.Add(new CardUseOption(card,EffectTargetPayload.empty()));
         }
 
         return options;

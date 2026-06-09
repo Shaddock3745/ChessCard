@@ -86,7 +86,7 @@ public class SelectOrthogonalMoveEffect : CardEffect
                     foreach (Vector2Int targetPos in validMoves)
                     {
                         List<Vector2Int> path = new List<Vector2Int> { startPos, targetPos };
-                        options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(path)));
+                        options.Add(new CardUseOption(card,new EffectTargetPayload(path)));
                     }
                 }
             }

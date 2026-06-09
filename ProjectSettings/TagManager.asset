@@ -42,8 +42,17 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: BoardTile
+    uniqueID: 2766077335
+    locked: 0
+  - name: Chess
+    uniqueID: 647082559
+    locked: 0
   - name: ChessStatusIcon
     uniqueID: 59691833
+    locked: 0
+  - name: Effect
+    uniqueID: 1403677697
     locked: 0
   - name: UiLayer
     uniqueID: 2573568387

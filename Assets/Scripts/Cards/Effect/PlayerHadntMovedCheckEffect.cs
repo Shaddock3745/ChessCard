@@ -35,7 +35,7 @@ public class PlayerHadntMovedCheckEffect : CardEffect
         // 純條件判斷，通過則給予 0 分選項，交由 DFS 推演評估後續管線的總價值
         if (canActivate(isLocal, currentTurnCount, card))
         {
-            options.Add(new CardUseOption(card, 0f));
+            options.Add(new CardUseOption(card));
         }
 
         return options;

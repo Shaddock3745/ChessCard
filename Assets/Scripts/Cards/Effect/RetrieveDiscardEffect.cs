@@ -79,7 +79,7 @@ public class RetrieveDiscardEffect : CardEffect
             selectedCards.Add(validCards[i]);
 
         // 3. 拔除手動算分給予 0f，由 DFS 取得卡片後在接下來的推演決定實質價值
-        options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(selectedCards)));
+        options.Add(new CardUseOption(card,new EffectTargetPayload(selectedCards)));
         return options;
     }
 

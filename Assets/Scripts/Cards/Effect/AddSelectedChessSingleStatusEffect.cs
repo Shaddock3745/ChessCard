@@ -77,7 +77,7 @@ public class AddSelectedChessSingleStatusEffect : CardEffect
                 if (piece != null && piece.isWhite() == targetIsWhite && typeSet.Contains(piece.getChessType()))
                 {
                     // ★ 拔除原有的計分邏輯，給予初始分數 0f，交由 DFS 推演盤面後決定價值
-                    options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(new Vector2Int(x, y))));
+                    options.Add(new CardUseOption(card,new EffectTargetPayload(new Vector2Int(x, y))));
                 }
             }
         }

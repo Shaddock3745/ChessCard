@@ -99,7 +99,7 @@ public class SelectEqualButDifferentTeamChessEffect : CardEffect
                     foreach (Vector2Int enemyPos in enemies)
                     {
                         List<Vector2Int> positions = new List<Vector2Int> { allyPos, enemyPos };
-                        options.Add(new CardUseOption(card, 0f, new EffectTargetPayload(positions)));
+                        options.Add(new CardUseOption(card,new EffectTargetPayload(positions)));
                     }
                 }
             }

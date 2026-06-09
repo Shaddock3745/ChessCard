@@ -17,6 +17,11 @@ public class BoardManager : MonoBehaviour
     private static readonly float OUTER_ALPHA_WHEN_MOUSE_INNER = 1f, OUTER_ALPHA_WHEN_MOUSE_NOT_INNER = 0.3f;
     private static readonly float TILE_SIZE = 0.64f;
     private static readonly float START_OFFSET = -2.24f;
+    private const int BOARD_SIZE = 8;
+
+    // 依棋盤位置算靜止層級：越靠近畫面下方(較小 y)越前面；同列再用 x 當決勝，確保每格唯一、不會平手
+    private static int sortingOrderAt(int gridX, int gridY) => (BOARD_SIZE - 1 - gridY) * BOARD_SIZE + gridX;
+    private static int sortingOrderAt(Vector2Int pos) => sortingOrderAt(pos.x, pos.y);
 
     private BoardTile[,] boardTiles;
     private Dictionary<ChessPiece, ChessPieceUi> pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
@@ -101,6 +106,7 @@ public class BoardManager : MonoBehaviour
         chessPieceUi.GetComponent<BoxCollider2D>().size = new Vector2(TILE_SIZE, TILE_SIZE);
         chessPieceUi.initChessUi(piece, pieceSpriteLibrary.getSprite(chessType, isWhite));
         chessPieceUi.moveToPoint(new Vector3(x, y, 0));
+        chessPieceUi.SetSortingOrder(sortingOrderAt(indexX, indexY)); // 給予依位置的基礎層級，避免與其他棋子重疊時順序未定義
         chessPieceUi.transform.SetParent(chessBoard.transform);
 
         pieceToUiMap.Add(piece, chessPieceUi);
@@ -378,8 +384,9 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
-        getUiOfChess(movingPiece).moveToPoint(new Vector3(x, y, 0));
-
+        ChessPieceUi movingUi = getUiOfChess(movingPiece);
+        movingUi.moveToPoint(new Vector3(x, y, 0));
+        movingUi.SetSortingOrder(sortingOrderAt(to));
     }
 
     public static void movePiece(Vector2Int from, Vector2Int to)
@@ -400,8 +407,12 @@ public class BoardManager : MonoBehaviour
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
 
+        ChessPieceUi movingUi = getUiOfChess(movingPiece);
         instance.isAnimating = true;
-        await getUiOfChess(movingPiece).moveToPointWithAnimation(new Vector3(x, y, 0));
+        movingUi.BringToFront(); // 滑行期間置頂，避免被途經的棋子蓋住
+        await movingUi.moveToPointWithAnimation(new Vector3(x, y, 0));
+        movingUi.SetSortingOrder(sortingOrderAt(to)); // 更新到新位置的基礎層級
+        movingUi.RestoreSortingOrder();
         instance.isAnimating = false;
         instance.boardState.moveChessPiece(from, to);
     }
@@ -471,7 +482,9 @@ public class BoardManager : MonoBehaviour
 
         float x = START_OFFSET + (TILE_SIZE * to.x);
         float y = START_OFFSET + (TILE_SIZE * to.y);
-        getUiOfChess(attacker).moveToPoint(new Vector3(x, y, 0));
+        ChessPieceUi attackerUi = getUiOfChess(attacker);
+        attackerUi.moveToPoint(new Vector3(x, y, 0));
+        attackerUi.SetSortingOrder(sortingOrderAt(to));
 
         getUiOfChess(target).destroy();
         instance.pieceToUiMap.Remove(target);
@@ -506,6 +519,7 @@ public class BoardManager : MonoBehaviour
         instance.isAnimating = true;
         await Task.WhenAll(moveTask, destroyTask);
         instance.isAnimating = false;
+        attackerUi.SetSortingOrder(sortingOrderAt(to)); // 更新到新位置的基礎層級
         attackerUi.RestoreSortingOrder();
         instance.pieceToUiMap.Remove(target);
 
@@ -551,10 +565,16 @@ public class BoardManager : MonoBehaviour
         float secondX = START_OFFSET + (TILE_SIZE * second.x), secondY = START_OFFSET + (TILE_SIZE * second.y);
 
         if (firstUi != null)
-            firstUi.moveToPoint(new Vector3(firstX, firstY, 0));
+        {
+            firstUi.moveToPoint(new Vector3(secondX, secondY, 0)); // 原本在 first 的棋子 → 移到 second
+            firstUi.SetSortingOrder(sortingOrderAt(second));
+        }
 
         if (secondUi != null)
-            secondUi.moveToPoint(new Vector3(secondX, secondY, 0));
+        {
+            secondUi.moveToPoint(new Vector3(firstX, firstY, 0)); // 原本在 second 的棋子 → 移到 first
+            secondUi.SetSortingOrder(sortingOrderAt(first));
+        }
 
         InputManager.tryDetectHover();
     }
@@ -570,14 +590,26 @@ public class BoardManager : MonoBehaviour
         List<Task> tasks = new List<Task>();
 
         if (firstUi != null)
+        {
+            firstUi.BringToFront(); // 交換時兩顆都會交錯滑過盤面，先置頂避免被途經棋子蓋住
             tasks.Add(firstUi.moveToPointWithAnimation(new Vector3(secondX, secondY, 0)));
+        }
 
         if (secondUi != null)
+        {
+            secondUi.BringToFront();
             tasks.Add(secondUi.moveToPointWithAnimation(new Vector3(firstX, firstY, 0)));
+        }
 
         instance.isAnimating = true;
         await Task.WhenAll(tasks);
         instance.isAnimating = false;
+
+        firstUi?.SetSortingOrder(sortingOrderAt(second)); // firstUi 已移到 second 格
+        secondUi?.SetSortingOrder(sortingOrderAt(first)); // secondUi 已移到 first 格
+        firstUi?.RestoreSortingOrder();
+        secondUi?.RestoreSortingOrder();
+
         InputManager.tryDetectHover();
     }
 

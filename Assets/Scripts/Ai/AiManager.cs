@@ -7,17 +7,9 @@ public class AiManager : MonoBehaviour
     private static AiManager instance;
     private static readonly int OPTION_BUFFER_TIME_MILLIS = 1000;
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-    // WebGL 是單執行緒 + 受限的 wasm 記憶體,beam search 的大量 Clone() 會撐爆 heap 造成 OOM。
-    // 在 WebGL 降低搜尋規模(深度是記憶體用量主因),換取不 crash;桌面版維持完整強度。
-    private const int BEAM_WIDTH = 4;
-    private const int MAX_PLAN_DEPTH = 5;
-    private const int FINAL_CANDIDATES = 12;
-#else
     private const int BEAM_WIDTH = 6;
     private const int MAX_PLAN_DEPTH = 8;        // 大軍壓境等群體移動需要較深,調到 8
     private const int FINAL_CANDIDATES = 25;
-#endif
     private const float SCORE_IMPROVE_EPS = 0.2f;
 
     void Awake()
@@ -41,6 +33,20 @@ public class AiManager : MonoBehaviour
         public float heuristic;
     }
 
+    // 輕量計畫紀錄:只存「動作序列 + 啟發分」,不持有盤面 clone。
+    // 用於 allPlans 累積,最後精算時再從 root replay 重建盤面,避免大量盤面 clone 撐爆記憶體。
+    private class PlanRecord
+    {
+        public List<AiOption> actions;
+        public float heuristic;
+
+        public PlanRecord(List<AiOption> actions, float heuristic)
+        {
+            this.actions = actions;
+            this.heuristic = heuristic;
+        }
+    }
+
     public static async Task<List<AiOption>> getBestTurnPlanAsync(bool isLocal, int currentTurnCount)
     {
         BoardState rootState = BoardManager.getCloneBoardState();
@@ -52,19 +58,18 @@ public class AiManager : MonoBehaviour
         AiWeights w = profile.getWeights();
         float noise = profile.getNoiseRange();
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // WebGL 是單執行緒環境,不支援 Task.Run(會卡死),直接在主執行緒同步計算。
-        // 先 Yield 一次讓「思考中」的 UI/動畫能更新一幀,再開始運算。
-        await Task.Yield();
-        return RunBeamSearch(rootState, rootAlly, rootEnemy, currentTurnCount, w, noise);
-#else
-        return await Task.Run(() => RunBeamSearch(rootState, rootAlly, rootEnemy, currentTurnCount, w, noise));
-#endif
+        // 全平台都在主執行緒上跑,靠「時間切片」避免卡頓(見 RunBeamSearch),
+        // 因此不需要 Task.Run / 背景執行緒,WebGL 與桌面共用同一條路。
+        return await RunBeamSearch(rootState, rootAlly, rootEnemy, currentTurnCount, w, noise);
     }
 
-    private static List<AiOption> RunBeamSearch(BoardState rootState, PlayerData rootAlly, PlayerData rootEnemy, int currentTurnCount, AiWeights w, float noise)
+    // 每幀最多花在 AI 運算上的時間(毫秒)。超過就讓出一幀讓畫面更新,維持流暢。
+    private const double FRAME_BUDGET_MS = 8.0;
+
+    private static async Task<List<AiOption>> RunBeamSearch(BoardState rootState, PlayerData rootAlly, PlayerData rootEnemy, int currentTurnCount, AiWeights w, float noise)
     {
-        System.Random rng = new System.Random(); // 背景執行緒,務必用 System.Random
+        System.Random rng = new System.Random(); // 主執行緒,但仍用 System.Random 保持與盤面評估無關
+        var sw = System.Diagnostics.Stopwatch.StartNew();
 
         PlanState start = new PlanState
         {
@@ -77,7 +82,8 @@ public class AiManager : MonoBehaviour
         };
 
         List<PlanState> beam = new List<PlanState> { start };
-        List<PlanState> allPlans = new List<PlanState> { start };
+        // allPlans 只保存「動作序列 + 啟發分」(輕量),不持有盤面 clone,避免節點累積把記憶體撐爆。
+        List<PlanRecord> allPlans = new List<PlanRecord> { new PlanRecord(start.actions, start.heuristic) };
 
         for (int depth = 0; depth < MAX_PLAN_DEPTH; depth++)
         {
@@ -98,6 +104,10 @@ public class AiManager : MonoBehaviour
                     action.executeVirtually(nb, na, ne, currentTurnCount);
 
                     List<AiOption> acts = new List<AiOption>(node.actions) { action };
+                    // 啟發分加入「個性的用卡偏好」,避免奇招的鋪牌分支被提早剪掉
+                    float heuristic = AiEvaluator.EvaluateBoardState(nb, na, ne, currentTurnCount, !na.IsWhite(), w)
+                                    + w.cardPreference * CountCardUses(acts);
+
                     PlanState child = new PlanState
                     {
                         board = nb,
@@ -105,13 +115,18 @@ public class AiManager : MonoBehaviour
                         enemy = ne,
                         actions = acts,
                         terminal = action.isRandomEffect(),
-                        // 啟發分加入「個性的用卡偏好」,避免奇招的鋪牌分支被提早剪掉
-                        heuristic = AiEvaluator.EvaluateBoardState(nb, na, ne, currentTurnCount, !na.IsWhite(), w)
-                                  + w.cardPreference * CountCardUses(acts)
+                        heuristic = heuristic
                     };
 
-                    candidates.Add(child);
-                    allPlans.Add(child);
+                    candidates.Add(child);                         // 短命:本層挑完下一輪 beam 後即可回收
+                    allPlans.Add(new PlanRecord(acts, heuristic));  // 只留輕量紀錄,不持有盤面
+
+                    // 時間切片:本幀算超過預算就讓出一幀,避免單執行緒卡頓(WebGL 必須,桌面也順帶受惠)
+                    if (sw.Elapsed.TotalMilliseconds > FRAME_BUDGET_MS)
+                    {
+                        await Awaitable.NextFrameAsync();
+                        sw.Restart();
+                    }
                 }
             }
 
@@ -125,26 +140,40 @@ public class AiManager : MonoBehaviour
         int take = Mathf.Min(FINAL_CANDIDATES, allPlans.Count);
 
         float baseScore = EvaluateWithOpponentReply(rootState, rootAlly, rootEnemy, currentTurnCount, w); // 基準不加雜訊
-        PlanState best = start;
+        List<AiOption> bestActions = start.actions; // 預設:不動(空計畫)
         float bestScore = float.NegativeInfinity;
 
         for (int i = 0; i < take; i++)
         {
-            PlanState plan = allPlans[i];
-            float score = EvaluateWithOpponentReply(plan.board, plan.ally, plan.enemy, currentTurnCount, w)
+            PlanRecord plan = allPlans[i];
+
+            // 從 root 重新 replay 出該計畫的盤面(只對前 N 名做)。executeVirtually 為確定性,
+            // 重建結果與搜尋當下一致,因此可安全地用「記憶體換 CPU」。
+            BoardState pb = rootState.Clone();
+            PlayerData pa = rootAlly.Clone();
+            PlayerData pe = rootEnemy.Clone();
+            foreach (var act in plan.actions)
+                act.executeVirtually(pb, pa, pe, currentTurnCount);
+
+            float score = EvaluateWithOpponentReply(pb, pa, pe, currentTurnCount, w)
                         + w.cardPreference * CountCardUses(plan.actions)
                         + (float)(rng.NextDouble() * 2.0 - 1.0) * noise; // ★ 難度雜訊
-            if (score > bestScore) { bestScore = score; best = plan; }
+            if (score > bestScore) { bestScore = score; bestActions = plan.actions; }
+
+            // 時間切片:精算階段同樣讓幀
+            if (sw.Elapsed.TotalMilliseconds > FRAME_BUDGET_MS)
+            {
+                await Awaitable.NextFrameAsync();
+                sw.Restart();
+            }
         }
 
-        // LogPlan(best, bestScore, baseScore);
-
-        if (best.actions.Count == 0 || bestScore < baseScore + SCORE_IMPROVE_EPS)
+        if (bestActions.Count == 0 || bestScore < baseScore + SCORE_IMPROVE_EPS)
         {
             AiOption hold = DecideHoldOrEnd(rootAlly);
             return hold != null ? new List<AiOption> { hold } : new List<AiOption>();
         }
-        return best.actions;
+        return bestActions;
     }
 
     // 對手最佳「單一步」(吃子或佈置威脅),取最傷我方的結果
@@ -193,7 +222,7 @@ public class AiManager : MonoBehaviour
         Card bestCard = null; int bestCost = int.MinValue;
         foreach (Card c in ally.getHandList())
             if (c.getCost() > bestCost) { bestCost = c.getCost(); bestCard = c; }
-        if (bestCard != null && bestCost >= 2) return new CardHoldOption(bestCard, 0f);
+        if (bestCard != null && bestCost >= 2) return new CardHoldOption(bestCard);
         return null;
     }
 
@@ -226,11 +255,11 @@ public class AiManager : MonoBehaviour
                 if (piece == null || piece.isWhite() != isWhite) continue;
                 ActionValidator.getLegalMoves(state, ally, piece, currentTurnCount, moveBuf);
                 foreach (var move in moveBuf)
-                    options.Add(new ChessMoveOption(piece, piece.getPosition(), move.targetPos, 0f));
+                    options.Add(new ChessMoveOption(piece, piece.getPosition(), move.targetPos));
             }
 
         if (ally.canUseHoldAction())
-            foreach (Card card in ally.getHandList()) options.Add(new CardHoldOption(card, 0f));
+            foreach (Card card in ally.getHandList()) options.Add(new CardHoldOption(card));
 
         return options;
     }
@@ -277,6 +306,10 @@ public class AiManager : MonoBehaviour
                 await Awaitable.WaitForSecondsAsync(0.1f);
 
             if (!GameManager.IsGameOver()) GameManager.ChangeTurn();
+        }
+        catch (System.OperationCanceledException)
+        {
+            // 退出 Play / 物件被銷毀時,Awaitable.NextFrameAsync 會丟取消例外,屬正常中止,靜默忽略。
         }
         catch (System.Exception e)
         {

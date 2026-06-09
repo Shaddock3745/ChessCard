@@ -3,19 +3,11 @@ using System.Threading.Tasks;
 public class CardHoldOption : AiOption
 {
     private Card card;
-    private float score;
-    private float quickScore;
 
-    public CardHoldOption(Card card, float score)
+    public CardHoldOption(Card card)
     {
         this.card = card;
-        this.score = score;
     }
-
-    public float getScore() => score;
-    public void setScore(float score) => this.score = score;
-    public float getQuickScore() => quickScore;
-    public void setQuickScore(float score) => this.quickScore = score;
 
     public bool isRandomEffect() => false;
     public bool isHoldAction() => true;
