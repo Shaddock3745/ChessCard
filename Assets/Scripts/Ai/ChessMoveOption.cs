@@ -55,7 +55,7 @@ public class ChessMoveOption : AiOption
         // 直接改為呼叫 StatusContainer 的「虛擬」觸發介面，將虛擬盤面 (clonedState) 傳入狀態中
         if (isAttack)
         {
-            virtualPiece.getStatusContainer().virtualTriggerPostAttack(clonedState, virtualPiece, virtualVictim, currentPos, currentTurnCount);
+            virtualPiece.getStatusContainer().virtualTriggerPostAttack(clonedState, virtualPiece, virtualVictim, currentPos, currentTurnCount, clonedAlly);
         }
         else
         {

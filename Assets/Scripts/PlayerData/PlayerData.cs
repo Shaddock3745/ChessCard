@@ -20,7 +20,7 @@ public class PlayerData
     private readonly bool isLocal;
     private int mana = DEFAULT_MANA;
     private AiProfile aiProfile;
-    private PlayerStatusContainer statusContainer = new PlayerStatusContainer();
+    private PlayerStatusContainer statusContainer; // 在建構子依 isVirtual 建立(不要在這裡 new,否則 copy 建構子會多訂閱一個)
     private List<Card> deck, handList, waitingList, discardList, holdingList;
     private List<ActionRecord> chessMoveRecords = new List<ActionRecord>();
 
@@ -41,6 +41,7 @@ public class PlayerData
         this.isLocal = isLocal;
         this.isWhite = isWhite;
         this.isVirtual = isVirtual;
+        this.statusContainer = new PlayerStatusContainer(isVirtual);
         loadDeck(cardIds);
     }
 
@@ -51,6 +52,7 @@ public class PlayerData
         this.isLocal = isLocal;
         this.isWhite = isWhite;
         this.isVirtual = isVirtual;
+        this.statusContainer = new PlayerStatusContainer(isVirtual);
         loadDeck(cardIds);
     }
 
@@ -66,12 +68,13 @@ public class PlayerData
         // 注意：PlayerStatusContainer 也必須在內部實作 Clone()
         this.statusContainer = source.statusContainer.Clone();
 
-        // 牌庫深度複製
-        this.deck = source.deck.Select(c => c.Clone()).ToList();
-        this.handList = source.handList.Select(c => c.Clone()).ToList();
-        this.waitingList = source.waitingList.Select(c => c.Clone()).ToList();
-        this.discardList = source.discardList.Select(c => c.Clone()).ToList();
-        this.holdingList = source.holdingList.Select(c => c.Clone()).ToList();
+        // Card 在「回合內推演」不會被改動(getCost 唯讀;resetCost 只走真實流程;出牌只是搬移清單),
+        // 因此 clone 只複製清單結構、共用 Card 物件,大幅減少配置(WebGL 記憶體友善)。
+        this.deck = new List<Card>(source.deck);
+        this.handList = new List<Card>(source.handList);
+        this.waitingList = new List<Card>(source.waitingList);
+        this.discardList = new List<Card>(source.discardList);
+        this.holdingList = new List<Card>(source.holdingList);
 
         // 紀錄拷貝 (若 ActionRecord 為 struct，使用 List 建構子即可深拷貝；若為 class，則需 Select(r => r.Clone()))
         this.chessMoveRecords = new List<ActionRecord>(source.chessMoveRecords);

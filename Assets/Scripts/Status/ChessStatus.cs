@@ -26,18 +26,19 @@ public abstract class ChessStatus : BaseStatus<ChessStatusType>
 
     // ★ 虛擬沙盒執行：專供 DFS 推演使用，只修改虛擬盤面
     public virtual void virtualOnPostMove(BoardState state, ChessPiece owner, Vector2Int fromPos, Vector2Int toPos) { }
-    public virtual void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos) { }
+    // ownerPlayer = 出手方的虛擬 PlayerData(招降需要它把卡加進手牌);其餘效果可忽略此參數
+    public virtual void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos, PlayerData ownerPlayer) { }
 
     public abstract override BaseStatus<ChessStatusType> Clone();
 }
 
 public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType>
 {
-    public ChessStatusContainer() : base() { }
+    public ChessStatusContainer(bool isVirtual = false) : base(isVirtual) { }
 
     public ChessStatusContainer Clone()
     {
-        ChessStatusContainer clone = new ChessStatusContainer();
+        ChessStatusContainer clone = new ChessStatusContainer(true); // 虛擬:不訂閱回合事件
         clone.DeepCopyStatuses(this);
         return clone;
     }
@@ -133,10 +134,10 @@ public class ChessStatusContainer : StatusContainer<ChessStatus, ChessStatusType
             status.virtualOnPostMove(state, owner, fromPos, toPos);
     }
 
-    public void virtualTriggerPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos, int currentTotalTurn)
+    public void virtualTriggerPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos, int currentTotalTurn, PlayerData ownerPlayer)
     {
         foreach (var status in GetActiveStatuses(ChessStatusType.DO_ACTION_AFTER_ATTACK, currentTotalTurn))
-            status.virtualOnPostAttack(state, owner, victim, fromPos);
+            status.virtualOnPostAttack(state, owner, victim, fromPos, ownerPlayer);
     }
 }
 
@@ -244,7 +245,7 @@ public class PawnRammingStatus : ChessStatus
 {
     public PawnRammingStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, isPermanetStatus, startTurn, endTurn) { }
 
-    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 15f;
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f; // 觸發型:價值由搜尋模擬實現,不靜態給分(避免上 buff 後耍廢)
 
     public override void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos)
     {
@@ -282,14 +283,14 @@ public class ChessPartingShotStatus : ChessStatus
 {
     public ChessPartingShotStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, isPermanetStatus, startTurn, endTurn) { }
 
-    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 20f;
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f; // 觸發型:價值由搜尋模擬實現
 
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
         _ = BoardManager.movePieceWithAnimationByEffect(owner.getPosition(), fromPos);
     }
 
-    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos, PlayerData ownerPlayer)
     {
         state.moveChessPiece(owner.getPosition(), fromPos);
     }
@@ -301,7 +302,7 @@ public class ChessConversionStatus : ChessStatus
 {
     public ChessConversionStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, isPermanetStatus, startTurn, endTurn) { }
 
-    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 30f;
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f; // 觸發型:發牌價值由 virtualOnPostAttack 模擬(手牌數),不靜態給分
 
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
@@ -312,9 +313,14 @@ public class ChessConversionStatus : ChessStatus
             MatchDataManager.materializeCard(GameManager.IsLocalWhite() == owner.isWhite(), cardId, true);
     }
 
-    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos, PlayerData ownerPlayer)
     {
-        // 虛擬環境中不直接改變手牌資料 (PlayerData)，單純完成盤面戰略分數評估即可
+        // 虛擬:主教吃子後,把對應棋種的卡(0費)加入出手方虛擬手牌,讓搜尋透過「手牌數+1」看到招降的卡差價值
+        if (ownerPlayer == null || victim == null) return;
+
+        int cardId = CardEffectManager.getCardIdByChessType(victim.getChessType());
+        if (cardId != -1)
+            ownerPlayer.materializeCard(cardId, true);
     }
 
     public override BaseStatus<ChessStatusType> Clone() => new ChessConversionStatus(this.isPermanet(), this.getStartTurn(), this.getEndTurn());
@@ -324,7 +330,7 @@ public class KnightTrampleStatus : ChessStatus
 {
     public KnightTrampleStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_MOVE, isPermanetStatus, startTurn, endTurn) { }
 
-    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 25f;
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f; // 觸發型:踐踏的吃子由 virtualOnPostMove 模擬,不靜態給分
 
     public override void onPostMove(ChessPiece owner, Vector2Int fromPos, Vector2Int toPos)
     {
@@ -377,7 +383,7 @@ public class BattleHardenedPostAttackStatus : ChessStatus
 {
     public BattleHardenedPostAttackStatus(bool isPermanetStatus, int startTurn, int endTurn) : base(ChessStatusType.DO_ACTION_AFTER_ATTACK, isPermanetStatus, startTurn, endTurn) { }
 
-    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 25f;
+    public override float getAiValue(bool isLocal, ChessPiece owner, int currentTurnCount) => 0f; // 觸發型:吃子後的額外移動由 virtualOnPostAttack 模擬,不靜態給分
 
     public override void onPostAttack(ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
     {
@@ -385,7 +391,7 @@ public class BattleHardenedPostAttackStatus : ChessStatus
         BoardManager.addStatus(owner, new ChessExtraMoveStatus(1, false, currentTurn, currentTurn + 1));
     }
 
-    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos)
+    public override void virtualOnPostAttack(BoardState state, ChessPiece owner, ChessPiece victim, Vector2Int fromPos, PlayerData ownerPlayer)
     {
         int currentTurn = GameManager.getCurrentTurnCount();
         owner.addStatus(new ChessExtraMoveStatus(1, false, currentTurn, currentTurn + 1));

@@ -24,27 +24,34 @@ public class AiManager : MonoBehaviour
         return new PlayerData(isLocal, isWhite, aiProfile.getDefaultDeckList(), true, aiProfile);
     }
 
-    private class PlanState
-    {
-        public BoardState board;
-        public PlayerData ally, enemy;
-        public List<AiOption> actions;
-        public bool terminal;
-        public float heuristic;
-    }
-
-    // 輕量計畫紀錄:只存「動作序列 + 啟發分」,不持有盤面 clone。
-    // 用於 allPlans 累積,最後精算時再從 root replay 重建盤面,避免大量盤面 clone 撐爆記憶體。
+    // 輕量計畫紀錄:只存「動作序列 + 啟發分 + 是否封頂」,完全不持有盤面 clone。
+    // beam 與 allPlans 都用它;要盤面時才從 root replay 重建(見 ReconstructState),
+    // 讓同一時間最多只有 1~2 份盤面 clone 存活,WebGL 記憶體友善。
     private class PlanRecord
     {
         public List<AiOption> actions;
         public float heuristic;
+        public bool terminal;
 
-        public PlanRecord(List<AiOption> actions, float heuristic)
+        public PlanRecord(List<AiOption> actions, float heuristic, bool terminal)
         {
             this.actions = actions;
             this.heuristic = heuristic;
+            this.terminal = terminal;
         }
+    }
+
+    // 從 root 重放動作序列,重建出該計畫的盤面(用完即丟)。
+    // executeVirtually 為確定性(隨機效果一律封頂、不會被展開),所以重放結果與搜尋當下一致。
+    private static (BoardState, PlayerData, PlayerData) ReconstructState(
+        BoardState rootState, PlayerData rootAlly, PlayerData rootEnemy, List<AiOption> actions, int turn)
+    {
+        BoardState b = rootState.Clone();
+        PlayerData a = rootAlly.Clone();
+        PlayerData e = rootEnemy.Clone();
+        foreach (var act in actions)
+            act.executeVirtually(b, a, e, turn);
+        return (b, a, e);
     }
 
     public static async Task<List<AiOption>> getBestTurnPlanAsync(bool isLocal, int currentTurnCount)
@@ -71,36 +78,32 @@ public class AiManager : MonoBehaviour
         System.Random rng = new System.Random(); // 主執行緒,但仍用 System.Random 保持與盤面評估無關
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
-        PlanState start = new PlanState
-        {
-            board = rootState,
-            ally = rootAlly,
-            enemy = rootEnemy,
-            actions = new List<AiOption>(),
-            terminal = false,
-            heuristic = AiEvaluator.EvaluateBoardState(rootState, rootAlly, rootEnemy, currentTurnCount, !rootAlly.IsWhite(), w)
-        };
+        float rootHeuristic = AiEvaluator.EvaluateBoardState(rootState, rootAlly, rootEnemy, currentTurnCount, !rootAlly.IsWhite(), w);
+        PlanRecord start = new PlanRecord(new List<AiOption>(), rootHeuristic, false);
 
-        List<PlanState> beam = new List<PlanState> { start };
-        // allPlans 只保存「動作序列 + 啟發分」(輕量),不持有盤面 clone,避免節點累積把記憶體撐爆。
-        List<PlanRecord> allPlans = new List<PlanRecord> { new PlanRecord(start.actions, start.heuristic) };
+        // beam 與 allPlans 都只存輕量 PlanRecord(動作序列),不持有盤面 clone。
+        List<PlanRecord> beam = new List<PlanRecord> { start };
+        List<PlanRecord> allPlans = new List<PlanRecord> { start };
 
         for (int depth = 0; depth < MAX_PLAN_DEPTH; depth++)
         {
-            List<PlanState> candidates = new List<PlanState>();
+            List<PlanRecord> candidates = new List<PlanRecord>();
 
             foreach (var node in beam)
             {
                 if (node.terminal) continue;
-                List<AiOption> legal = GenerateLegalVirtualActions(node.board, node.ally, currentTurnCount);
+
+                // ★ 只在展開此節點時才從 root 重建盤面,展開完即釋放(同時最多 1~2 份盤面活著)
+                var (nodeBoard, nodeAlly, nodeEnemy) = ReconstructState(rootState, rootAlly, rootEnemy, node.actions, currentTurnCount);
+                List<AiOption> legal = GenerateLegalVirtualActions(nodeBoard, nodeAlly, currentTurnCount);
 
                 foreach (var action in legal)
                 {
                     if (action is CardHoldOption) continue;
 
-                    BoardState nb = node.board.Clone();
-                    PlayerData na = node.ally.Clone();
-                    PlayerData ne = node.enemy.Clone();
+                    BoardState nb = nodeBoard.Clone();
+                    PlayerData na = nodeAlly.Clone();
+                    PlayerData ne = nodeEnemy.Clone();
                     action.executeVirtually(nb, na, ne, currentTurnCount);
 
                     List<AiOption> acts = new List<AiOption>(node.actions) { action };
@@ -108,18 +111,10 @@ public class AiManager : MonoBehaviour
                     float heuristic = AiEvaluator.EvaluateBoardState(nb, na, ne, currentTurnCount, !na.IsWhite(), w)
                                     + w.cardPreference * CountCardUses(acts);
 
-                    PlanState child = new PlanState
-                    {
-                        board = nb,
-                        ally = na,
-                        enemy = ne,
-                        actions = acts,
-                        terminal = action.isRandomEffect(),
-                        heuristic = heuristic
-                    };
-
-                    candidates.Add(child);                         // 短命:本層挑完下一輪 beam 後即可回收
-                    allPlans.Add(new PlanRecord(acts, heuristic));  // 只留輕量紀錄,不持有盤面
+                    PlanRecord child = new PlanRecord(acts, heuristic, action.isRandomEffect());
+                    candidates.Add(child);
+                    allPlans.Add(child);
+                    // nb/na/ne 在此迴圈結束即無引用 → 可回收(不長期持有)
 
                     // 時間切片:本幀算超過預算就讓出一幀,避免單執行緒卡頓(WebGL 必須,桌面也順帶受惠)
                     if (sw.Elapsed.TotalMilliseconds > FRAME_BUDGET_MS)
@@ -131,12 +126,12 @@ public class AiManager : MonoBehaviour
             }
 
             if (candidates.Count == 0) break;
-            candidates.Sort((a, b) => b.heuristic.CompareTo(a.heuristic));
+            candidates.Sort((x, y) => y.heuristic.CompareTo(x.heuristic));
             beam = candidates.GetRange(0, Mathf.Min(BEAM_WIDTH, candidates.Count));
         }
 
         // 取前 N 條做「對手回應」精算 + 個性偏好 + 難度雜訊
-        allPlans.Sort((a, b) => b.heuristic.CompareTo(a.heuristic));
+        allPlans.Sort((x, y) => y.heuristic.CompareTo(x.heuristic));
         int take = Mathf.Min(FINAL_CANDIDATES, allPlans.Count);
 
         float baseScore = EvaluateWithOpponentReply(rootState, rootAlly, rootEnemy, currentTurnCount, w); // 基準不加雜訊
@@ -147,13 +142,8 @@ public class AiManager : MonoBehaviour
         {
             PlanRecord plan = allPlans[i];
 
-            // 從 root 重新 replay 出該計畫的盤面(只對前 N 名做)。executeVirtually 為確定性,
-            // 重建結果與搜尋當下一致,因此可安全地用「記憶體換 CPU」。
-            BoardState pb = rootState.Clone();
-            PlayerData pa = rootAlly.Clone();
-            PlayerData pe = rootEnemy.Clone();
-            foreach (var act in plan.actions)
-                act.executeVirtually(pb, pa, pe, currentTurnCount);
+            // 從 root 重建該計畫盤面(只對前 N 名做),用記憶體換 CPU
+            var (pb, pa, pe) = ReconstructState(rootState, rootAlly, rootEnemy, plan.actions, currentTurnCount);
 
             float score = EvaluateWithOpponentReply(pb, pa, pe, currentTurnCount, w)
                         + w.cardPreference * CountCardUses(plan.actions)
@@ -167,6 +157,8 @@ public class AiManager : MonoBehaviour
                 sw.Restart();
             }
         }
+
+        // LogPlan(bestActions, bestScore, baseScore);
 
         if (bestActions.Count == 0 || bestScore < baseScore + SCORE_IMPROVE_EPS)
         {
@@ -319,17 +311,17 @@ public class AiManager : MonoBehaviour
         }
     }
 
-    private static void LogPlan(PlanState best, float bestScore, float baseScore)
+    private static void LogPlan(List<AiOption> actions, float bestScore, float baseScore)
     {
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        sb.Append($"[Beam AI] 計畫分 {bestScore:F0} (停手基準 {baseScore:F0}) | 共 {best.actions.Count} 步: ");
-        foreach (var a in best.actions)
+        sb.Append($"[Beam AI] 計畫分 {bestScore:F0} (停手基準 {baseScore:F0}) | 共 {actions.Count} 步: ");
+        foreach (var a in actions)
         {
             if (a is CardUseOption c) sb.Append($"[卡:{c.getCardname()}] ");
             else if (a is ChessMoveOption m) sb.Append($"[移:{m.getChessName()}→{m.getTargetPosition()}] ");
             else if (a is CardHoldOption) sb.Append("[保留] ");
         }
-        if (best.actions.Count == 0) sb.Append("(直接結束回合)");
+        if (actions.Count == 0) sb.Append("(直接結束回合)");
         UnityEngine.Debug.Log(sb.ToString());
     }
 }

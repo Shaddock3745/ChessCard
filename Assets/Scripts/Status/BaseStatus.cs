@@ -36,9 +36,17 @@ public abstract class StatusContainer<TStatus, TEnum> : IDisposable
 {
     protected List<TStatus> activeStatuses = new List<TStatus>();
 
-    public StatusContainer()
+    // 真實實體才訂閱回合事件;虛擬(AI 推演)clone 不訂閱。
+    // 否則靜態事件 GameManager.OnTurnStart 會永久持有大量 clone 容器 → 記憶體洩漏 + 回合觸發越來越慢。
+    private readonly bool subscribedToTurnEvents;
+
+    public StatusContainer(bool isVirtual = false)
     {
-        GameManager.OnTurnStart += triggerOnTurnStart;
+        if (!isVirtual)
+        {
+            GameManager.OnTurnStart += triggerOnTurnStart;
+            subscribedToTurnEvents = true;
+        }
     }
 
     public void addStatus(TStatus status)
@@ -77,7 +85,8 @@ public abstract class StatusContainer<TStatus, TEnum> : IDisposable
 
     public void Dispose()
     {
-        GameManager.OnTurnStart -= triggerOnTurnStart;
+        if (subscribedToTurnEvents)
+            GameManager.OnTurnStart -= triggerOnTurnStart;
         activeStatuses.Clear();
     }
 }

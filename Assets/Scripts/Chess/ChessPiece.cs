@@ -37,7 +37,7 @@ public class ChessPiece
         this.currentPosition = currentPosition;
         this.isVirtual = isVirtual;
         this.initialPosition = currentPosition;
-        this.statusContainer = new ChessStatusContainer();
+        this.statusContainer = new ChessStatusContainer(isVirtual); // 虛擬棋子不訂閱回合事件
 
         defaultMovementType = chessType switch
         {

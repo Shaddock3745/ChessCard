@@ -35,6 +35,20 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    void OnDestroy()
+    {
+        // 場景卸載/重讀時清掉本管理器擁有的靜態事件,避免舊場景的訂閱者殘留
+        // (造成記憶體洩漏,或在已銷毀物件上觸發 MissingReferenceException)。
+        // 只在「真正的單例」被銷毀時清,複本自毀不影響。
+        if (instance == this)
+        {
+            OnTurnStart = null;
+            OnTurnEnd = null;
+            OnGameOver = null;
+            OnResetGame = null;
+        }
+    }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {

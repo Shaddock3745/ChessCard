@@ -25,6 +25,18 @@ public class MatchDataManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    void OnDestroy()
+    {
+        // 場景卸載/重讀時清掉本管理器擁有的靜態事件,避免舊場景訂閱者殘留(複本自毀不影響)。
+        if (instance == this)
+        {
+            OnPlayerHoldCard = null;
+            OnPlayerUseCard = null;
+            OnLocalCardCountChange = null;
+            OnLocalManaCountChange = null;
+        }
+    }
+
     public static void shuffleDeck(bool isLocal)
     {
         if (isLocal)
@@ -239,6 +251,7 @@ public class MatchDataManager : MonoBehaviour
 
     public static void initLocal(PlayerData playerData)
     {
+        instance.local?.onGameOver(); // 釋放上一局玩家的狀態容器(取消訂閱回合事件),避免重開局累積洩漏
         instance.local = playerData;
         OnLocalCardCountChange?.Invoke();
         OnLocalManaCountChange?.Invoke();
@@ -246,6 +259,7 @@ public class MatchDataManager : MonoBehaviour
 
     public static void initEnemy(PlayerData playerData)
     {
+        instance.enemy?.onGameOver(); // 同上
         instance.enemy = playerData;
     }
 

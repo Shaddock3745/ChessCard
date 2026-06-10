@@ -27,13 +27,13 @@ public abstract class PlayerStatus : BaseStatus<PlayerStatusType>
 
 public class PlayerStatusContainer : StatusContainer<PlayerStatus, PlayerStatusType>
 {
-    public PlayerStatusContainer() : base()
+    public PlayerStatusContainer(bool isVirtual = false) : base(isVirtual)
     {
     }
 
     public PlayerStatusContainer Clone()
     {
-        PlayerStatusContainer clone = new PlayerStatusContainer();
+        PlayerStatusContainer clone = new PlayerStatusContainer(true); // 虛擬:不訂閱回合事件
         clone.DeepCopyStatuses(this);
         return clone;
     }

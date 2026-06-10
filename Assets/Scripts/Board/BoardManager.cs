@@ -52,7 +52,10 @@ public class BoardManager : MonoBehaviour
     public static void initBoard()
     {
         foreach (var pieceUiItem in instance.pieceToUiMap)
+        {
+            pieceUiItem.Key.onDeath(); // 釋放上一局棋子的狀態容器(取消訂閱回合事件),避免重開局累積洩漏
             Destroy(pieceUiItem.Value.gameObject);
+        }
 
         instance.boardTiles = new BoardTile[8, 8];
         instance.pieceToUiMap = new Dictionary<ChessPiece, ChessPieceUi>();
